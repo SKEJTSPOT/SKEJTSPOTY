@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKEJTSPOTY - BAZA MIEJSCÓWEK</title>
+    <title>SKEJTSPOTY - BAZA WSPÓLNA</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;500&display=swap" rel="stylesheet">
     
     <style>
+        /* (TUTAJ BEZ ZMIAN - STYLES) */
         :root {
             --neon-green: #39ff14;
             --neon-pink: #ff00ff;
@@ -335,14 +336,33 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
+        // UWAGA: PODMIEŃ TEN BLOK Z KONFIGURACJĄ Z KROKU 1!
+        const firebaseConfig = {
+              apiKey: "AIzaSyCCxW6X7MJlWPfxP_6I8FlLc7Vp2wiR69Q",
+ 	      authDomain: "skejspoty.firebaseapp.com",
+  	      projectId: "skejspoty",
+              storageBucket: "skejspoty.firebasestorage.app",
+              messagingSenderId: "1067851773136",
+  	      appId: "1:1067851773136:web:39bdc7f7af34cbbf94dad5",
+ 	      measurementId: "G-WH6DYL95DH"
+        };
+
+        // Inicjalizacja Firebase i Firestore
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const spotsCollection = db.collection("spots"); // Nazwa kolekcji w Firestore
+        // KONIEC BLOKU KONFIGURACYJNEGO
+
         // --- 1. CONFIG & INIT ---
-        // !!! KRYTYCZNE: Odczyt danych z localStorage
-        let spots = JSON.parse(localStorage.getItem('skateSpots')) || [];
+        let spots = []; // Dane będą pobierane z Firebase, a nie z localStorage
         let editingSpotId = null;
         const map = L.map('map').setView([52.0693, 19.4803], 6);
         const markers = [];
@@ -361,7 +381,7 @@
             });
         }
 
-        // --- 2. SEARCH ENGINE (WYSZUKIWARKA MIAST) ---
+        // --- 2. SEARCH & GEOLOCATION (Bez zmian) ---
         const searchInput = document.getElementById('citySearchInput');
         const searchBtn = document.getElementById('citySearchBtn');
 
@@ -396,7 +416,6 @@
         });
 
 
-        // --- 3. GEOLOCATION (OLD GPS) ---
         document.getElementById('locateUserBtn').addEventListener('click', () => {
             const btn = document.getElementById('locateUserBtn');
             btn.innerHTML = '⌛';
@@ -433,7 +452,7 @@
             );
         });
 
-        // --- 4. MAP CLICKS ---
+        // --- 3. MAP CLICKS & FORM (Bez zmian) ---
         map.on('click', function(e) {
             const { lat, lng } = e.latlng;
             if (tempMarker) map.removeLayer(tempMarker);
@@ -450,7 +469,6 @@
             }
         });
 
-        // --- 5. FORM LOGIC ---
         const formEl = document.getElementById('spot-form');
         
         function toggleForm(show) {
@@ -481,6 +499,7 @@
             });
         }
 
+        // --- 4. FUNKCJA ZAPISU DO FIREBASE ---
         document.getElementById('saveSpotBtn').addEventListener('click', async () => {
             const name = document.getElementById('spotName').value;
             const desc = document.getElementById('spotDesc').value;
@@ -504,29 +523,29 @@
                 imgBase64 = 'https://via.placeholder.com/400x200/ddd/333?text=Brak+Foty';
             }
 
-            if (editingSpotId) {
-                const spotIndex = spots.findIndex(s => s.id === editingSpotId);
-                if (spotIndex > -1) {
-                    spots[spotIndex] = {
-                        ...spots[spotIndex],
-                        name, desc, img: imgBase64, lat: parseFloat(lat), lng: parseFloat(lng),
-                        tags, bust: bustFactor, lights: hasLights
-                    };
+            const spotData = {
+                name, desc, img: imgBase64, lat: parseFloat(lat), lng: parseFloat(lng),
+                tags, bust: bustFactor, lights: hasLights, comments: []
+            };
+
+            try {
+                if (editingSpotId) {
+                    // Aktualizacja istniejącego dokumentu w Firestore
+                    await spotsCollection.doc(editingSpotId).update(spotData);
+                    alert("Spot zaktualizowany w bazie!");
+                } else {
+                    // Dodanie nowego dokumentu (Firestore automatycznie generuje ID)
+                    await spotsCollection.add(spotData);
+                    alert("Nowy spot dodany do wspólnej bazy!");
                 }
-            } else {
-                const newSpot = {
-                    id: Date.now(),
-                    name, desc, img: imgBase64, lat: parseFloat(lat), lng: parseFloat(lng),
-                    tags, bust: bustFactor, lights: hasLights, comments: []
-                };
-                spots.push(newSpot);
+            } catch (error) {
+                console.error("Błąd zapisu do Firebase: ", error);
+                alert("Błąd zapisu spota. Sprawdź konsolę i reguły Firebase!");
             }
 
-            // !!! KRYTYCZNE: Zapis danych do localStorage po każdej zmianie
-            updateStorage();
-            renderSpots();
             resetForm();
             toggleForm(false);
+            // Nie musimy wywoływać renderSpots(), ponieważ zrobi to listener w initApp
         });
 
         function resetForm() {
@@ -559,7 +578,7 @@
             document.getElementById('spotLat').value = spot.lat;
             document.getElementById('spotLng').value = spot.lng;
             document.getElementById('spotBust').value = spot.bust;
-            document.getElementById('spotLights').checked = spot.lights;
+            document.getElementById('spotLights').checked = spot.lights || false; // Upewnienie się, że jest false
 
             document.querySelectorAll('.spot-tag').forEach(cb => {
                 cb.checked = spot.tags && spot.tags.includes(cb.value);
@@ -579,7 +598,37 @@
             document.querySelector('.sidebar').scrollTop = 0;
         };
 
-        // --- 6. RENDER LOGIC ---
+        // --- 5. FUNKCJE USUWANIA I KOMENTOWANIA W FIREBASE ---
+        window.deleteSpot = async (id) => {
+            if(confirm("Usunąć spota ze wspólnej bazy?")) {
+                try {
+                    await spotsCollection.doc(id).delete();
+                    alert("Spot usunięty z bazy!");
+                } catch (error) {
+                    console.error("Błąd usuwania z Firebase: ", error);
+                    alert("Błąd usuwania spota.");
+                }
+            }
+        };
+
+        window.addComment = async (id) => {
+            const txt = prompt("Skomentuj to:");
+            if(txt) {
+                const spot = spots.find(s => s.id === id);
+                if(spot) {
+                    const newComments = [...(spot.comments || []), txt];
+                    try {
+                        await spotsCollection.doc(id).update({ comments: newComments });
+                        alert("Komentarz dodany!");
+                    } catch (error) {
+                        console.error("Błąd komentarza: ", error);
+                        alert("Błąd dodawania komentarza.");
+                    }
+                }
+            }
+        };
+
+        // --- 6. RENDER LOGIC (Minimalnie zmieniona) ---
         function renderSpots() {
             const list = document.getElementById('spotsList');
             list.innerHTML = '';
@@ -591,7 +640,7 @@
             spots.forEach((spot, index) => {
                 const marker = L.marker([spot.lat, spot.lng], { icon: createCustomMarkerIcon(index + 1) }).addTo(map);
                 marker.bindPopup(`<b>${spot.name}</b><br>${spot.desc}`);
-                markers.push(marker);
+                // Marker nie ma już listenera kliknięcia, bo renderSpots jest wywoływany przez Firebase
 
                 const card = document.createElement('div');
                 card.className = 'spot-card';
@@ -615,9 +664,9 @@
                     <p style="font-size:0.9rem; color:#444;">${spot.desc}</p>
                     
                     <div class="card-actions">
-                        <button class="card-btn" onclick="addComment(${spot.id})">💬 Komentarz (${spot.comments ? spot.comments.length : 0})</button>
-                        <button class="card-btn" style="color:var(--neon-orange); border-color:var(--neon-orange)" onclick="editSpot(${spot.id})">✏️ Edytuj</button>
-                        <button class="card-btn" style="color:red; border-color:red" onclick="deleteSpot(${spot.id})">🗑️ Usuń</button>
+                        <button class="card-btn" onclick="addComment('${spot.id}')">💬 Komentarz (${spot.comments ? spot.comments.length : 0})</button>
+                        <button class="card-btn" style="color:var(--neon-orange); border-color:var(--neon-orange)" onclick="editSpot('${spot.id}')">✏️ Edytuj</button>
+                        <button class="card-btn" style="color:red; border-color:red" onclick="deleteSpot('${spot.id}')">🗑️ Usuń</button>
                     </div>
 
                     <div class="comments-section" id="comments-${spot.id}">
@@ -636,6 +685,38 @@
             });
         }
 
+        // --- 7. INICJALIZACJA I NASŁUCH NA FIREBASE ---
+        
+        // Ta funkcja jest wywoływana, gdy tylko coś się zmieni w bazie danych!
+        function initApp() {
+            // Nasłuchiwanie na zmiany w kolekcji 'spots'
+            spotsCollection.onSnapshot(snapshot => {
+                spots = snapshot.docs.map(doc => ({
+                    id: doc.id, // Używamy ID dokumentu Firestore jako ID spota
+                    ...doc.data()
+                }));
+                // Wersja z sortowaniem po dacie dodania (nowe na górze)
+                spots.sort((a, b) => b.id - a.id); 
+
+                renderSpots();
+            }, error => {
+                console.error("Błąd nasłuchu Firebase: ", error);
+                alert("Nie udało się połączyć ze wspólną bazą spotów. Sprawdź konsolę.");
+            });
+
+            gsap.to("#loader", { duration: 0.8, y: "-100%", ease: "expo.inOut", delay: 0.5 });
+            gsap.to(".app-container", { duration: 1, opacity: 1, delay: 1 });
+            gsap.to(".sidebar", { duration: 1, x: 0, ease: "power3.out", delay: 1.2 });
+        }
+
+
+        // Zastępujemy window.onload!
+        window.onload = () => {
+             // Uruchomienie mapy i połączenie z Firebase
+            initApp();
+        };
+
+        // (Reszta kodu: Kursory i 3D background bez zmian)
         window.openLightbox = (src) => {
             const lb = document.getElementById('lightbox');
             document.getElementById('lightbox-img').src = src;
@@ -646,43 +727,6 @@
             const lb = document.getElementById('lightbox');
             gsap.to(lb, { opacity: 0, duration: 0.3, onComplete: () => lb.style.display = 'none' });
         }
-
-        window.deleteSpot = (id) => {
-            if(confirm("Usunąć spota?")) {
-                spots = spots.filter(s => s.id !== id);
-                if(editingSpotId === id) resetForm();
-                // !!! KRYTYCZNE: Zapis po usunięciu
-                updateStorage(); 
-                renderSpots();
-            }
-        };
-
-        window.addComment = (id) => {
-            const txt = prompt("Skomentuj to:");
-            if(txt) {
-                const spot = spots.find(s => s.id === id);
-                if(spot) {
-                    if(!spot.comments) spot.comments = [];
-                    spot.comments.push(txt);
-                    // !!! KRYTYCZNE: Zapis po komentarzu
-                    updateStorage(); 
-                    renderSpots();
-                }
-            }
-        };
-
-        // Funkcja zapisująca do localStorage
-        function updateStorage() { 
-            localStorage.setItem('skateSpots', JSON.stringify(spots)); 
-        }
-
-        window.onload = () => {
-            gsap.to("#loader", { duration: 0.8, y: "-100%", ease: "expo.inOut", delay: 0.5 });
-            gsap.to(".app-container", { duration: 1, opacity: 1, delay: 1 });
-            gsap.to(".sidebar", { duration: 1, x: 0, ease: "power3.out", delay: 1.2 });
-            renderSpots();
-        };
-
         const cursor = document.getElementById('cursor');
         document.addEventListener('mousemove', e => { cursor.style.left = e.clientX + 'px'; cursor.style.top = e.clientY + 'px'; });
         document.addEventListener('mouseover', e => {

@@ -94,7 +94,7 @@
 
         h1 {
             font-family: 'Orbitron', sans-serif; font-size: 2.2rem;
-            margin-bottom: 15px; text-transform: uppercase; letter-spacing: 2px;
+            margin-bottom: 35px; text-transform: uppercase; letter-spacing: 2px;
             text-shadow: 2px 2px 0px var(--neon-green); animation: glitch 3s infinite;
         }
         @keyframes glitch {
@@ -123,15 +123,9 @@
         .btn-green::before { background: var(--neon-green); }
         .btn-green:hover { box-shadow: 0 0 15px var(--neon-green); }
 
-        .btn-blue { border-color: var(--neon-blue); width: 48%; display: inline-block;}
-        .btn-blue::before { background: var(--neon-blue); }
-        .btn-blue:hover { box-shadow: 0 0 15px var(--neon-blue); }
-
         .btn-orange { border-color: var(--neon-orange); }
         .btn-orange::before { background: var(--neon-orange); }
         .btn-orange:hover { box-shadow: 0 0 15px var(--neon-orange); }
-
-        .file-controls { display: flex; justify-content: space-between; margin-bottom: 20px; }
 
         /* --- FORM --- */
         #spot-form {
@@ -257,8 +251,6 @@
         @media (max-width: 768px) {
             .app-container { grid-template-columns: 1fr; grid-template-rows: 50% 50%; }
             .sidebar { transform: translateY(100%); order: 2; }
-            .file-controls { flex-direction: column; gap: 10px; }
-            .btn-blue { width: 100%; }
             .search-overlay { width: 90%; top: 10px; }
         }
     </style>
@@ -282,12 +274,6 @@
         <div class="sidebar">
             <h1>SKEJT<span style="color:var(--neon-pink)">SPOTY</span></h1>
             
-            <div class="file-controls">
-                <button class="btn-neon btn-blue" id="exportBtn" data-hover>💾 Zapisz Bazę</button>
-                <button class="btn-neon btn-blue" id="importBtn" onclick="document.getElementById('fileInput').click()" data-hover>📂 Wczytaj</button>
-                <input type="file" id="fileInput" accept=".json" style="display: none;">
-            </div>
-
             <button class="btn-neon" id="toggleFormBtn" data-hover>+ Dodaj Nowy Spot</button>
 
             <div id="spot-form">
@@ -355,9 +341,10 @@
 
     <script>
         // --- 1. CONFIG & INIT ---
+        // !!! KRYTYCZNE: Odczyt danych z localStorage
         let spots = JSON.parse(localStorage.getItem('skateSpots')) || [];
         let editingSpotId = null;
-        const map = L.map('map').setView([52.0693, 19.4803], 6); // Środek Polski zoom startowy
+        const map = L.map('map').setView([52.0693, 19.4803], 6);
         const markers = [];
         let tempMarker = null;
 
@@ -385,7 +372,6 @@
             searchBtn.innerText = "⏳";
             
             try {
-                // Używamy darmowego API Nominatim z OpenStreetMap
                 const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
                 const data = await response.json();
 
@@ -536,6 +522,7 @@
                 spots.push(newSpot);
             }
 
+            // !!! KRYTYCZNE: Zapis danych do localStorage po każdej zmianie
             updateStorage();
             renderSpots();
             resetForm();
@@ -664,7 +651,9 @@
             if(confirm("Usunąć spota?")) {
                 spots = spots.filter(s => s.id !== id);
                 if(editingSpotId === id) resetForm();
-                updateStorage(); renderSpots();
+                // !!! KRYTYCZNE: Zapis po usunięciu
+                updateStorage(); 
+                renderSpots();
             }
         };
 
@@ -675,33 +664,17 @@
                 if(spot) {
                     if(!spot.comments) spot.comments = [];
                     spot.comments.push(txt);
-                    updateStorage(); renderSpots();
+                    // !!! KRYTYCZNE: Zapis po komentarzu
+                    updateStorage(); 
+                    renderSpots();
                 }
             }
         };
 
-        function updateStorage() { localStorage.setItem('skateSpots', JSON.stringify(spots)); }
-
-        document.getElementById('exportBtn').addEventListener('click', () => {
-            if(spots.length === 0) { alert("Pusto! Dodaj coś najpierw."); return; }
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(spots));
-            const a = document.createElement('a');
-            a.href = dataStr; a.download = "skejtspoty_baza.json";
-            document.body.appendChild(a); a.click(); a.remove();
-        });
-
-        document.getElementById('fileInput').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    spots = JSON.parse(e.target.result);
-                    updateStorage(); renderSpots(); alert("Baza wczytana!");
-                } catch(err) { alert("Zły plik!"); }
-            };
-            reader.readAsText(file);
-        });
+        // Funkcja zapisująca do localStorage
+        function updateStorage() { 
+            localStorage.setItem('skateSpots', JSON.stringify(spots)); 
+        }
 
         window.onload = () => {
             gsap.to("#loader", { duration: 0.8, y: "-100%", ease: "expo.inOut", delay: 0.5 });

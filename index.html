@@ -497,17 +497,26 @@
         });
 
         window.handleRegister = async () => {
+            const nick = document.getElementById('registerNick').value; // POBIERANIE NICKA
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
 
-            try {
-                await auth.createUserWithEmailAndPassword(email, password);
-                alert("Rejestracja udana! Zalogowano.");
-            } catch (error) {
-                alert("Błąd rejestracji: " + error.message);
-                console.error(error);
-            }
-        };
+        if (!nick) { alert("Musisz podać Nick/Ksywę!"); return; }
+
+        try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        
+        // USTAWIANIE NICKA (Display Name)
+        await userCredential.user.updateProfile({
+            displayName: nick
+        });
+
+        alert("Rejestracja udana! Zalogowano jako: " + nick);
+    } catch (error) {
+        alert("Błąd rejestracji: " + error.message);
+        console.error(error);
+    }
+};
 
         window.handleLogin = async () => {
             const email = document.getElementById('loginEmail').value;
@@ -970,6 +979,7 @@
     </script>
 </body>
 </html>
+
 
 
 

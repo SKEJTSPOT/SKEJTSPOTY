@@ -9,6 +9,37 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;500&display=swap" rel="stylesheet">
     
     <style>
+
+        /* --- NOWY STYL POWIADOMIEŃ --- */
+#notification-container {
+    position: fixed;
+    bottom: 20px; 
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10001; 
+    pointer-events: none; /* Pozwala klikać to, co jest pod spodem */
+    display: flex;
+    flex-direction: column-reverse; /* Nowe powiadomienia będą na dole */
+    gap: 10px;
+    width: 90%; 
+    max-width: 450px;
+}
+
+.notification {
+    padding: 15px 20px;
+    border: 2px solid;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.9rem;
+    color: var(--card-bg);
+    background: var(--text-color);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+    transform: translateY(100%); /* Start poza ekranem */
+}
+
+/* Kolory w zależności od typu */
+.notification.success { border-color: var(--neon-green); background: #1f3d24; }
+.notification.error { border-color: var(--neon-red); background: #4d2d2d; }
+.notification.info { border-color: var(--neon-blue); background: #2d3d4d; }
         /* --- ZMIENNE KOLORÓW --- */
         :root {
             /* Tryb Domyślny (Jasny) */
@@ -333,6 +364,442 @@
     </style>
 </head>
 <body>
+
+    <div id="loader">
+        </div>
+
+    <div id="notification-container">
+        </div>
+
+    <div id="canvas-container">
+        ```
+
+## 3. 🖥️ JavaScript (Wklej do bloku `<script>`)
+
+Poniższy kod zawiera **nową funkcję `showNotification`** i **wszystkie zmodyfikowane bloki** (Logowanie, Zapis, Edycja, Usuwanie), gdzie stare `alert()` zostało zamienione na nowe powiadomienia.
+
+**Skopiuj cały ten kod i zastąp nim cały swój dotychczasowy blok `<script>`.** Pamiętaj, aby podmienić swoje klucze Firebase na samym początku!
+
+```javascript
+// UWAGA: KLUCZOWE! PODMIEŃ TEN BLOK Z KLUCZAMI FIREBASE!
+const firebaseConfig = {
+    apiKey: "Twoj-UNIKALNY-KLUCZ-API", // <-- Wklej DOKŁADNIE swój klucz
+    authDomain: "twoja-domena.firebaseapp.com",
+    projectId: "twoj-unikalny-id-projektu",
+    // Pamiętaj, że zrezygnowaliśmy z Storage. 
+};
+
+// Inicjalizacja Firebase i Firestore
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth(); 
+const spotsCollection = db.collection("spots"); 
+
+let currentUser = null; 
+let isAdminUser = false; 
+
+// --- NOWY SYSTEM POWIADOMIEŃ ---
+const notificationContainer = document.getElementById('notification-container');
+
+function showNotification(message, type = 'info', duration = 3500) {
+    const notif = document.createElement('div');
+    notif.className = `notification ${type}`;
+    notif.innerHTML = message;
+
+    notificationContainer.prepend(notif);
+
+    // Animacja wlotu (GSAP)
+    gsap.fromTo(notif, 
+        { y: 50, opacity: 0 }, 
+        { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" }
+    );
+
+    // Automatyczne usuwanie i animacja wylotu (GSAP)
+    gsap.to(notif, { 
+        delay: duration / 1000, 
+        y: 50, 
+        opacity: 0, 
+        duration: 0.5, 
+        ease: "power2.in",
+        onComplete: () => {
+            notif.remove();
+        }
+    });
+}
+// --- KONIEC NOWEGO SYSTEMU POWIADOMIEŃ ---
+
+
+// --- ZMIENIONA LOGIKA AUTORYZACJI (TERAZ UŻYWA POWIADOMIEŃ) ---
+const authStatusEl = document.getElementById('authStatus');
+const showLoginBtn = document.getElementById('showLoginBtn');
+const showRegisterBtn = document.getElementById('showRegisterBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const loginFormEl = document.getElementById('loginForm');
+const registerFormEl = document.getElementById('registerForm');
+const toggleFormBtn = document.getElementById('toggleFormBtn');
+
+// Sprawdzenie statusu logowania (Zaktualizowano o logikę Admina)
+auth.onAuthStateChanged(async user => { 
+    currentUser = user;
+    isAdminUser = false; 
+
+    if (user) {
+        // ZALOGOWANY
+        
+        // POBIERANIE LISTY ADMINÓW I SPRAWDZANIE STATUSU (używamy "settings" z uwagi na konfigurację użytkownika)
+        try {
+            const adminDoc = await db.collection('settings').doc('admin').get();
+            const adminUIDs = adminDoc.exists ? adminDoc.data().uids : [];
+            if (adminUIDs.includes(user.uid)) {
+                isAdminUser = true;
+            }
+        } catch (e) {
+            console.warn("Nie udało się pobrać konfiguracji adminów. Czy dokument 'settings/admin' istnieje? Szczegóły:", e);
+        }
+        
+        authStatusEl.innerHTML = `Zalogowano jako: <b>${user.displayName || user.email}</b>`;
+        if (isAdminUser) {
+            authStatusEl.innerHTML += ` <span style="color:var(--neon-red);">(ADMIN)</span>`;
+        }
+
+        showLoginBtn.style.display = 'none';
+        showRegisterBtn.style.display = 'none';
+        logoutBtn.style.display = 'inline-block';
+        toggleFormBtn.disabled = false;
+        toggleFormBtn.innerHTML = '+ Dodaj Nowy Spot';
+    } else {
+        // NIEZALOGOWANY
+        authStatusEl.innerHTML = 'Niezalogowany. Zaloguj się lub zarejestruj.';
+        showLoginBtn.style.display = 'inline-block';
+        showRegisterBtn.style.display = 'inline-block';
+        logoutBtn.style.display = 'none';
+        toggleFormBtn.disabled = true;
+        toggleFormBtn.innerHTML = '+ Dodaj Nowy Spot (Zaloguj się)';
+    }
+    loginFormEl.style.display = 'none';
+    registerFormEl.style.display = 'none';
+    renderSpots(); 
+});
+
+showLoginBtn.addEventListener('click', () => {
+    registerFormEl.style.display = 'none';
+    loginFormEl.style.display = loginFormEl.style.display === 'block' ? 'none' : 'block';
+});
+
+showRegisterBtn.addEventListener('click', () => {
+    loginFormEl.style.display = 'none';
+    registerFormEl.style.display = registerFormEl.style.display === 'block' ? 'none' : 'block';
+});
+
+window.handleRegister = async () => {
+    const nick = document.getElementById('registerNick').value; 
+    const email = document.getElementById('registerEmail').value;
+    const password = document.getElementById('registerPassword').value;
+
+    if (!nick) { showNotification("Musisz podać Nick/Ksywę!", 'error'); return; }
+
+    try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        
+        await userCredential.user.updateProfile({
+            displayName: nick
+        });
+
+        showNotification("REJESTRACJA UDANA! Witaj: " + nick, 'success');
+    } catch (error) {
+        showNotification("BŁĄD REJESTRACJI: " + error.message, 'error', 5000);
+        console.error(error);
+    }
+};
+
+window.handleLogin = async () => {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+
+    try {
+        await auth.signInWithEmailAndPassword(email, password);
+        showNotification("LOGOWANIE UDANE!", 'success');
+    } catch (error) {
+        showNotification("BŁĄD LOGOWANIA: " + error.message, 'error', 5000);
+        console.error(error);
+    }
+};
+
+logoutBtn.addEventListener('click', async () => {
+    try {
+        await auth.signOut();
+        showNotification("Wylogowano pomyślnie.", 'info');
+    } catch (error) {
+        console.error("Błąd wylogowania:", error);
+    }
+});
+// --- KONIEC ZMIENIONEJ LOGIKI AUTORYZACJI ---
+
+
+// --- 1. CONFIG & INIT (BEZ ZMIAN) ---
+let spots = [];
+let editingSpotId = null;
+const map = L.map('map').setView([52.0693, 19.4803], 6);
+const markers = [];
+let tempMarker = null;
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+}).addTo(map);
+
+function createCustomMarkerIcon(number) {
+    return L.divIcon({
+        className: 'custom-marker-icon',
+        html: number,
+        iconSize: [30, 30],
+        iconAnchor: [15, 30]
+    });
+}
+
+// --- 2. SEARCH & GEOLOCATION (TERAZ UŻYWA POWIADOMIEŃ) ---
+const searchInput = document.getElementById('citySearchInput');
+const searchBtn = document.getElementById('citySearchBtn');
+
+async function searchLocation() {
+    const query = searchInput.value;
+    if(!query) return;
+
+    searchBtn.innerText = "⏳";
+    
+    try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+
+        if (data && data.length > 0) {
+            const { lat, lon } = data[0];
+            map.flyTo([lat, lon], 14, { duration: 1.5 });
+            showNotification(`Znaleziono: ${data[0].display_name.split(',')[0]!}`, 'info');
+            searchBtn.innerText = "SZUKAJ";
+        } else {
+            showNotification("Nie znaleziono takiego miejsca. Spróbuj inaczej.", 'error', 4000);
+            searchBtn.innerText = "SZUKAJ";
+        }
+    } catch (error) {
+        console.error(error);
+        showNotification("Błąd połączenia z mapą.", 'error');
+        searchBtn.innerText = "SZUKAJ";
+    }
+}
+
+searchBtn.addEventListener('click', searchLocation);
+searchInput.addEventListener('keypress', (e) => {
+    if(e.key === 'Enter') searchLocation();
+});
+
+
+document.getElementById('locateUserBtn').addEventListener('click', () => {
+    const btn = document.getElementById('locateUserBtn');
+    btn.innerHTML = '⌛';
+
+    if (!navigator.geolocation) {
+        showNotification("Brak wsparcia dla GPS w Twojej przeglądarce.", 'error'); btn.innerHTML = '📍'; return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            
+            map.eachLayer((layer) => {
+                if (layer instanceof L.CircleMarker && layer.options.fillColor === "#00f3ff") {
+                    map.removeLayer(layer);
+                }
+            });
+
+            map.flyTo([lat, lng], 16, { duration: 1.5 });
+            
+            L.circleMarker([lat, lng], {
+                radius: 10, fillColor: "#00f3ff", color: "#fff",
+                weight: 3, opacity: 1, fillOpacity: 0.7
+            }).addTo(map).bindPopup("Twoja lokalizacja").openPopup();
+            
+            showNotification("Lokalizacja GPS znaleziona!", 'success');
+            btn.innerHTML = '📍';
+        },
+        (error) => {
+            showNotification("Błąd GPS. Odmowa dostępu lub brak sygnału.", 'error', 5000);
+            btn.innerHTML = '📍';
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+    );
+});
+
+// --- 3. MAP CLICKS & FORM (TERAZ UŻYWA POWIADOMIEŃ) ---
+map.on('click', function(e) {
+    if (!currentUser) {
+        showNotification("Musisz być zalogowany, aby dodawać spoty!", 'error', 3000);
+        return;
+    }
+    const { lat, lng } = e.latlng;
+    if (tempMarker) map.removeLayer(tempMarker);
+    
+    tempMarker = L.marker([lat, lng]).addTo(map);
+    
+    document.getElementById('spotLat').value = lat;
+    document.getElementById('spotLng').value = lng;
+    
+    showNotification("Lokalizacja ustawiona na mapie.", 'info', 2000);
+
+    const form = document.getElementById('spot-form');
+    if(form.style.display !== 'block') {
+        resetForm();
+        toggleForm(true);
+    }
+});
+
+const formEl = document.getElementById('spot-form');
+// ... (reszta form i toggleForm bez zmian)
+
+document.getElementById('toggleFormBtn').addEventListener('click', () => {
+     if (!currentUser) {
+        showNotification("Musisz być zalogowany, aby dodawać spoty!", 'error');
+        return;
+    }
+    resetForm();
+    toggleForm(formEl.style.display === 'none');
+});
+
+// ... (funkcja convertFileToBase64 bez zmian)
+
+// --- 4. ZMIENIONA FUNKCJA ZAPISU DO FIREBASE (TERAZ UŻYWA POWIADOMIEŃ) ---
+document.getElementById('saveSpotBtn').addEventListener('click', async () => {
+    if (!currentUser) { showNotification("Musisz być zalogowany, aby zapisywać spoty!", 'error'); return; }
+
+    const name = document.getElementById('spotName').value;
+    const desc = document.getElementById('spotDesc').value;
+    const lat = document.getElementById('spotLat').value;
+    const lng = document.getElementById('spotLng').value;
+    const fileInput = document.getElementById('spotImageUpload');
+    
+    const tags = Array.from(document.querySelectorAll('.spot-tag:checked')).map(cb => cb.value);
+    const bustFactor = document.getElementById('spotBust').value;
+    const hasLights = document.getElementById('spotLights').checked;
+
+    if(!name || !lat) { showNotification("Kliknij na mapę, żeby ustawić pinezkę!", 'error'); return; }
+
+    let imgBase64 = null;
+    if (fileInput.files.length > 0) {
+        imgBase64 = await convertFileToBase64(fileInput.files[0]);
+    } else if (editingSpotId) {
+        const oldSpot = spots.find(s => s.id === editingSpotId);
+        imgBase64 = oldSpot.img;
+    } else {
+        imgBase64 = 'https://via.placeholder.com/400x200/ddd/333?text=Brak+Foty';
+    }
+
+    const spotData = {
+        name, desc, img: imgBase64, lat: parseFloat(lat), lng: parseFloat(lng),
+        tags, bust: bustFactor, lights: hasLights, 
+        authorId: currentUser.uid,
+        authorName: currentUser.displayName || currentUser.email, 
+        comments: editingSpotId ? spots.find(s => s.id === editingSpotId).comments : [] 
+    };
+
+    try {
+        if (editingSpotId) {
+            await spotsCollection.doc(editingSpotId).update(spotData);
+            showNotification("Spot ZAKTUALIZOWANY pomyślnie!", 'success');
+        } else {
+            await spotsCollection.add(spotData);
+            showNotification("Nowy spot DODANY do bazy!", 'success');
+        }
+    } catch (error) {
+        console.error("Błąd zapisu do Firebase: ", error);
+        showNotification("BŁĄD ZAPISU! Sprawdź, czy reguły Firestore są opublikowane!", 'error', 6000);
+    }
+
+    resetForm();
+    toggleForm(false);
+});
+
+// ... (funkcja resetForm bez zmian)
+
+window.editSpot = (id) => {
+    if (!currentUser) { showNotification("Musisz być zalogowany, aby edytować spoty!", 'error'); return; }
+
+    const spot = spots.find(s => s.id === id);
+    if (!spot) return;
+
+    if (spot.authorId !== currentUser.uid && !isAdminUser) {
+        showNotification("Możesz edytować tylko swoje spoty (lub jako Admin)!", 'error', 4000);
+        return;
+    }
+
+    // ... (reszta logiki edycji bez zmian)
+    // ...
+};
+
+// --- 5. ZMIENIONE FUNKCJE USUWANIA I KOMENTOWANIA (TERAZ UŻYWAJĄ POWIADOMIEŃ) ---
+window.deleteSpot = async (id, authorId) => {
+    if (!currentUser) { showNotification("Musisz być zalogowany, aby usuwać spoty!", 'error'); return; }
+    
+    if (authorId !== currentUser.uid && !isAdminUser) { showNotification("Możesz usunąć tylko swoje spoty (lub jako Admin)!", 'error'); return; }
+
+    if(confirm("Usunąć spota ze wspólnej bazy? TEGO NIE DA SIĘ COFNĄĆ!")) {
+        try {
+            await spotsCollection.doc(id).delete();
+            showNotification("Spot USUNIĘTY z bazy!", 'info');
+        } catch (error) {
+            console.error("Błąd usuwania z Firebase: ", error);
+            showNotification("BŁĄD USUWANIA! Upewnij się, że reguły Firestore są poprawne!", 'error', 6000);
+        }
+    }
+};
+
+window.addComment = async (id) => {
+    if (!currentUser) { showNotification("Musisz być zalogowany, aby komentować!", 'error'); return; } 
+
+    const txt = prompt("Wpisz swój komentarz:");
+    if(txt) {
+        const spot = spots.find(s => s.id === id);
+        if(spot) {
+            const commentData = {
+                text: txt,
+                author: currentUser.displayName || currentUser.email
+            };
+            
+            const newComments = [...(spot.comments || []), commentData];
+            try {
+                await spotsCollection.doc(id).update({ comments: newComments });
+                showNotification("Komentarz DODANY!", 'success');
+            } catch (error) {
+                console.error("Błąd komentarza: ", error);
+                showNotification("BŁĄD DODAWANIA KOMENTARZA! Sprawdź reguły Firestore!", 'error', 6000);
+            }
+        }
+    }
+};
+
+window.deleteComment = async (spotId, commentIndex) => {
+    if (!currentUser || !isAdminUser) { 
+        showNotification("Tylko Administrator może usuwać komentarze!", 'error'); 
+        return; 
+    }
+
+    if(confirm("Czy na pewno chcesz usunąć ten komentarz?")) {
+        const spot = spots.find(s => s.id === spotId);
+        if(spot && spot.comments && spot.comments.length > commentIndex) {
+            const newComments = [...spot.comments];
+            newComments.splice(commentIndex, 1); 
+
+            try {
+                await spotsCollection.doc(spotId).update({ comments: newComments });
+                showNotification("Komentarz USUNIĘTY przez Administratora.", 'info');
+            } catch (error) {
+                console.error("Błąd usuwania komentarza: ", error);
+                showNotification("BŁĄD USUWANIA KOMENTARZA! Sprawdź reguły Firestore!", 'error', 6000);
+            }
+        }
+    }
+}
+// --- KONIEC ZMIENIONYCH FUNKCJI ---
+
+// ... (reszta kodu: renderSpots, initApp, obsługa kursora, 3D background bez zmian)
 
     <div id="cursor"></div>
 
@@ -1060,4 +1527,5 @@
     </script>
 </body>
 </html>
+
 

@@ -169,6 +169,12 @@
         .fab:hover {
             background: var(--neon-green);
         }
+        /* Dodatkowe style dla trybu "Formularz Otwarty" lub "Tryb Umieszczania" */
+        .fab.form-active { 
+            background: var(--neon-red); 
+            transform: rotate(45deg); 
+            font-size: 24px; /* Zmniejszenie fontu dla X */
+        }
         
         /* --- NEON BUTTON STYLES (Dla logowania, rejestracji, zapisu) --- */
         .btn-neon {
@@ -340,8 +346,8 @@
             #toggleModeBtn { display: none; }
             
             .fab { bottom: 80px; }
-            .fab.form-active { background: var(--neon-red); transform: rotate(45deg); }
-
+            /* Zostawiamy fab.form-active dla mobilnej rotacji/koloru X - jest już zaimplementowane */
+            
             /* --- POPRAWKA: FORMULARZ DODAWANIA SPOTÓW NA MOBILNYCH (z nowym stylem dla zamknięcia) --- */
             #spot-form {
                 bottom: 60px !important; 
@@ -622,7 +628,7 @@
             apiKey: "AIzaSyCCxW6X7MJlWPfxP_6I8FlLc7Vp2wiR69Q",
             authDomain: "skejspoty.firebaseapp.com",
             projectId: "skejspoty",
-            storageBucket: "skejspoty.firebasestorage.app",
+            storageBucket: "skejspoty.firebasestorag.app",
             messagingSenderId: "1067851773136",
             appId: "1:1067851773136:web:39bdc7f7af34cbbf94dad5",
             measurementId: "G-WH6DYL95DH"
@@ -807,6 +813,7 @@
         const map = L.map('map').setView([52.0693, 19.4803], 6); 
         let markers = []; 
         let tempMarker = null;
+        let isPlacingSpot = false; // NOWA ZMIENNA STANU
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap'
@@ -848,6 +855,11 @@
             cancelEditBtn.style.display = 'none';
             spotTags.forEach(cb => cb.checked = false);
             
+            // RESETOWANIE STANU FAB I PLACEMENT MODE
+            isPlacingSpot = false; 
+            addSpotFab.innerHTML = '+'; 
+            addSpotFab.classList.remove('form-active');
+            
             if (tempMarker) {
                 map.removeLayer(tempMarker);
                 tempMarker = null;
@@ -857,19 +869,18 @@
         function toggleForm(show, lat = null, lng = null) {
             if (show) {
                 spotFormEl.style.display = 'block';
-                addSpotFab.classList.add('form-active');
+                addSpotFab.classList.add('form-active'); // Używamy, aby FAB działał jako przycisk zamknięcia
+                addSpotFab.innerHTML = 'X'; // Wyświetl X, gdy formularz jest otwarty
                 if (lat !== null && lng !== null) {
                     placeTempMarker(lat, lng);
                 }
                 // Upewnij się, że na mobile mapa jest widoczna, ale fab zostaje na swoim miejscu
                 if (isMobile()) {
                     switchSidebarSection('map');
-                    // Przesuń formularz na środek ekranu (już jest to zrobione przez CSS)
                 }
             } else {
                 spotFormEl.style.display = 'none';
-                addSpotFab.classList.remove('form-active');
-                resetForm();
+                resetForm(); // Resetuje formularz, usuwa marker tymczasowy i przywraca FAB
             }
         }
         
@@ -889,18 +900,41 @@
             spotLngEl.value = lng;
         }
 
+        // ZMIANA LOGIKI KLIKNIĘCIA FAB: Inicjuje tryb umieszczania spota
         addSpotFab.addEventListener('click', () => {
             if (!currentUser) { showNotification("Musisz być zalogowany, aby dodawać spoty!", 'error'); return; }
             
-            const isVisible = spotFormEl.style.display === 'block';
-            resetForm();
-            toggleForm(!isVisible);
+            const isFormVisible = spotFormEl.style.display === 'block';
+
+            if (isFormVisible) {
+                // Case 1: Formularz jest otwarty (kliknięcie FAB zamyka go)
+                toggleForm(false);
+            } else if (isPlacingSpot) {
+                // Case 2: Jesteśmy w trybie umieszczania (kliknięcie FAB anuluje tryb)
+                resetForm(); // Resetuje isPlacingSpot i FAB
+                showNotification("Anulowano dodawanie spota.", 'info', 3000);
+            } else {
+                // Case 3: Start trybu umieszczania (Formularz zamknięty, nie umieszczamy)
+                resetForm(); 
+                isPlacingSpot = true;
+                addSpotFab.innerHTML = '<i class="fas fa-crosshairs"></i>'; // Ikonka celownika
+                addSpotFab.classList.add('form-active'); 
+                showNotification("Wybierz lokalizację na mapie (kliknij) lub anuluj klikając na ikonę.", 'info', 5000);
+                
+                if (isMobile()) switchSidebarSection('map');
+            }
         });
 
         cancelEditBtn.addEventListener('click', () => toggleForm(false)); // Używamy toggleForm(false) do resetowania i zamykania
         
+        // ZMIANA LOGIKI KLIKNIĘCIA MAPY: Otwiera formularz tylko w trybie isPlacingSpot
         map.on('click', function(e) {
-            if (spotFormEl.style.display === 'block') {
+            if (isPlacingSpot) {
+                // Wychodzimy z trybu umieszczania (bo zaraz otworzymy formularz)
+                isPlacingSpot = false; 
+                toggleForm(true, e.latlng.lat, e.latlng.lng); // Otwiera formularz i ustawia marker
+            } else if (spotFormEl.style.display === 'block') {
+                // Jesteśmy w trakcie edycji / dodawania, ale forma jest już otwarta
                 placeTempMarker(e.latlng.lat, e.latlng.lng);
             }
         });
@@ -1103,6 +1137,9 @@
         window.openEditForm = (spotId) => {
             const spot = spots.find(s => s.id === spotId);
             if (!spot || spot.authorId !== currentUser.uid) return showNotification("Brak uprawnień do edycji.", 'error');
+            
+            // Najpierw resetujemy form i tryb umieszczania
+            resetForm(); 
 
             editingSpotId = spotId;
             editModeLabel.style.display = 'block';
@@ -1116,7 +1153,7 @@
             spotLightsEl.checked = spot.lights;
             
             spotTags.forEach(cb => {
-                cb.checked = spot.tags.includes(cb.value);
+                cb.checked = (spot.tags || []).includes(cb.value);
             });
             
             // Ustawienie markera i koordynat
@@ -1323,12 +1360,31 @@
             }
         }
         
+        // --- FUNKCJA PEŁNEGO EKRANU ---
+        function requestFullscreen() {
+            const element = document.documentElement; // Targetujemy cały dokument HTML
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.mozRequestFullScreen) { // Firefox
+                element.mozRequestFullScreen();
+            } else if (element.webkitRequestFullscreen) { // Chrome, Safari i Opera
+                element.webkitRequestFullscreen();
+            } else if (element.msRequestFullscreen) { // IE/Edge
+                element.msRequestFullscreen();
+            }
+        }
+        
         // --- START APLIKACJI ---
         document.addEventListener('DOMContentLoaded', () => {
             loadMode();
             gsap.to('#loader', { opacity: 0, duration: 0.8, delay: 1, onComplete: () => {
                 document.getElementById('loader').style.display = 'none';
                 gsap.to('.app-container', { opacity: 1, duration: 0.5 });
+                
+                // === AUTOMATYCZNY PEŁNY EKRAN ===
+                // Próba włączenia pełnego ekranu (może być zablokowana przez przeglądarkę)
+                requestFullscreen();
+                // =================================
             }});
             
             // Subskrypcja zmian w bazie danych

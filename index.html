@@ -669,7 +669,8 @@
                 if (data && data.length > 0) {
                     const { lat, lon } = data[0];
                     map.flyTo([lat, lon], 14, { duration: 1.5 });
-                    showNotification(`Znaleziono: ${data[0].display_name.split(',')[0]!}`, 'info');
+                    // POPRAWIONY KOD:
+                    showNotification(`Znaleziono: ${data[0].display_name.split(',')[0]}`, 'info');
                     searchBtn.innerText = "SZUKAJ";
                 } else {
                     showNotification("Nie znaleziono takiego miejsca. Spróbuj inaczej.", 'error', 4000);
@@ -1119,3 +1120,4 @@
     </script>
 </body>
 </html>
+

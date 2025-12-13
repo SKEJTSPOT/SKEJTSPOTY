@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKEJTSPOTY - BAZA WSPÓLNA</title>
+    <title>SKEJTSPOTY - BAZA WSPÓLNA V9</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;500&display=swap" rel="stylesheet">
@@ -28,7 +28,7 @@
 
         /* --- TRYB CIEMNY (Dark Mode) --- */
         body.dark-mode {
-            --neon-green: #39ff14; /* Zostawiamy neonowe kolory */
+            --neon-green: #39ff14;
             --neon-pink: #ff00ff;
             --neon-blue: #00f3ff;
             --neon-red: #ff3131;
@@ -361,10 +361,11 @@
                 </div>
 
                 <div id="registerForm">
-                   <input type="text" id="registerNick" placeholder="Twój Nick/Ksywa" data-hover> <input type="email" id="registerEmail" placeholder="Email (np. skater@gmail.com)" data-hover>
-                   <input type="password" id="registerPassword" placeholder="Hasło (min. 6 znaków)" data-hover>
-                   <button class="btn-neon btn-orange" onclick="handleRegister()" data-hover>ZAREJESTRUJ</button>
-               </div>
+                    <input type="text" id="registerNick" placeholder="Twój Nick/Ksywa" data-hover>
+                    <input type="email" id="registerEmail" placeholder="Email (np. skater@gmail.com)" data-hover>
+                    <input type="password" id="registerPassword" placeholder="Hasło (min. 6 znaków)" data-hover>
+                    <button class="btn-neon btn-orange" onclick="handleRegister()" data-hover>ZAREJESTRUJ</button>
+                </div>
             </div>
             <button class="btn-neon" id="toggleFormBtn" data-hover disabled>+ Dodaj Nowy Spot (Zaloguj się)</button>
 
@@ -429,28 +430,30 @@
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script> 
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // UWAGA: PODMIEŃ TEN BLOK Z KONFIGURACJĄ FIREBASE!
+        // UWAGA: PODMIEŃ TEN BLOK Z KLUCZAMI FIREBASE!
         const firebaseConfig = {
-            apiKey: "AIzaSyCCxW6X7MJlWPfxP_6I8FlLc7Vp2wiR69Q", // <-- Wklej tutaj swój klucz
-            authDomain: "skejspoty.firebaseapp.com",
-            projectId: "skejspoty",
-            storageBucket: "skejspoty.firebasestorage.app",
-            messagingSenderId: "1067851773136",
-            appId: "1:1067851773136:web:39bdc7f7af34cbbf94dad5"
+            apiKey: "Twoj-UNIKALNY-KLUCZ-API", // <-- Wklej DOKŁADNIE tutaj
+            authDomain: "twoja-domena.firebaseapp.com",
+            projectId: "twoj-unikalny-id-projektu",
+            storageBucket: "...",
+            messagingSenderId: "...",
+            appId: "..."
         };
 
         // Inicjalizacja Firebase i Firestore
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const auth = firebase.auth(); // Inicjalizacja Autoryzacji
+        const auth = firebase.auth(); 
         const spotsCollection = db.collection("spots"); 
         
-        let currentUser = null; // Zmienna przechowująca aktualnie zalogowanego użytkownika
+        let currentUser = null; 
         
         // --- LOGIKA AUTORYZACJI ---
         const authStatusEl = document.getElementById('authStatus');
@@ -466,7 +469,7 @@
             currentUser = user;
             if (user) {
                 // ZALOGOWANY
-                authStatusEl.innerHTML = `Zalogowano jako: <b>${user.email}</b>`;
+                authStatusEl.innerHTML = `Zalogowano jako: <b>${user.displayName || user.email}</b>`;
                 showLoginBtn.style.display = 'none';
                 showRegisterBtn.style.display = 'none';
                 logoutBtn.style.display = 'inline-block';
@@ -483,7 +486,7 @@
             }
             loginFormEl.style.display = 'none';
             registerFormEl.style.display = 'none';
-            renderSpots(); // Odświeżenie listy spotów, aby pokazać/ukryć przyciski edycji
+            renderSpots(); 
         });
 
         showLoginBtn.addEventListener('click', () => {
@@ -497,26 +500,26 @@
         });
 
         window.handleRegister = async () => {
-            const nick = document.getElementById('registerNick').value; // POBIERANIE NICKA
+            const nick = document.getElementById('registerNick').value; // DODANO: POBIERANIE NICKA
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
 
-        if (!nick) { alert("Musisz podać Nick/Ksywę!"); return; }
+            if (!nick) { alert("Musisz podać Nick/Ksywę!"); return; }
 
-        try {
-        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-        
-        // USTAWIANIE NICKA (Display Name)
-        await userCredential.user.updateProfile({
-            displayName: nick
-        });
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                
+                // DODANO: USTAWIANIE NICKA
+                await userCredential.user.updateProfile({
+                    displayName: nick
+                });
 
-        alert("Rejestracja udana! Zalogowano jako: " + nick);
-    } catch (error) {
-        alert("Błąd rejestracji: " + error.message);
-        console.error(error);
-    }
-};
+                alert("Rejestracja udana! Zalogowano jako: " + nick);
+            } catch (error) {
+                alert("Błąd rejestracji: " + error.message);
+                console.error(error);
+            }
+        };
 
         window.handleLogin = async () => {
             const email = document.getElementById('loginEmail').value;
@@ -688,7 +691,7 @@
             });
         }
 
-        // --- 4. FUNKCJA ZAPISU DO FIREBASE (Dodano authorId) ---
+        // --- 4. FUNKCJA ZAPISU DO FIREBASE (Dodano authorId i authorName) ---
         document.getElementById('saveSpotBtn').addEventListener('click', async () => {
             if (!currentUser) { alert("Musisz być zalogowany, aby zapisywać spoty!"); return; }
 
@@ -717,7 +720,8 @@
             const spotData = {
                 name, desc, img: imgBase64, lat: parseFloat(lat), lng: parseFloat(lng),
                 tags, bust: bustFactor, lights: hasLights, comments: [],
-                authorId: currentUser.uid // Zapisujemy ID autora!
+                authorId: currentUser.uid,
+                authorName: currentUser.displayName || currentUser.email // Zapisujemy NICK AUTORA
             };
 
             try {
@@ -794,7 +798,7 @@
             document.querySelector('.sidebar').scrollTop = 0;
         };
 
-        // --- 5. FUNKCJE USUWANIA I KOMENTOWANIA W FIREBASE (Dodano sprawdzenie autoryzacji) ---
+        // --- 5. FUNKCJE USUWANIA I KOMENTOWANIA W FIREBASE (Poprawiona logika komentarzy) ---
         window.deleteSpot = async (id, authorId) => {
             if (!currentUser) { alert("Musisz być zalogowany, aby usuwać spoty!"); return; }
             if (authorId !== currentUser.uid) { alert("Możesz usunąć tylko swoje spoty!"); return; }
@@ -811,24 +815,31 @@
         };
 
         window.addComment = async (id) => {
-            // Komentarze może dodawać każdy (nawet niezalogowany)
-            const txt = prompt("Skomentuj to:");
+            if (!currentUser) { alert("Musisz być zalogowany, aby komentować!"); return; } // WYMAGANE LOGOWANIE
+
+            const txt = prompt("Wpisz swój komentarz:");
             if(txt) {
                 const spot = spots.find(s => s.id === id);
                 if(spot) {
-                    const newComments = [...(spot.comments || []), txt];
+                    // DODANO STRUKTURĘ KOMENTARZA Z NICKIEM
+                    const commentData = {
+                        text: txt,
+                        author: currentUser.displayName || currentUser.email
+                    };
+                    
+                    const newComments = [...(spot.comments || []), commentData];
                     try {
                         await spotsCollection.doc(id).update({ comments: newComments });
                         alert("Komentarz dodany!");
                     } catch (error) {
                         console.error("Błąd komentarza: ", error);
-                        alert("Błąd dodawania komentarza.");
+                        alert("Błąd dodawania komentarza. Upewnij się, że reguły Firestore są opublikowane!");
                     }
                 }
             }
         };
 
-        // --- 6. RENDER LOGIC (Zmodyfikowano wyświetlanie przycisków Edytuj/Usuń) ---
+        // --- 6. RENDER LOGIC (Wyświetlanie autora i nicków w komentarzach) ---
         function renderSpots() {
             const list = document.getElementById('spotsList');
             list.innerHTML = '';
@@ -856,6 +867,9 @@
                 const isAuthor = currentUser && spot.authorId === currentUser.uid;
                 const editDeleteBtnClass = isAuthor ? '' : 'hidden';
 
+                // DODANO: WYŚWIETLANIE AUTORA SPOTA
+                const authorDisplay = spot.authorName ? `<div style="font-size:0.8rem; color:#aaa; margin-top:5px; margin-bottom:10px;">Dodane przez: <b>${spot.authorName}</b></div>` : '';
+
 
                 card.innerHTML = `
                     <div class="spot-img-container" onclick="openLightbox('${spot.img}')">
@@ -865,6 +879,7 @@
                         <h3 style="color:var(--neon-pink)">${index + 1}. ${spot.name}</h3>
                         <span class="bust-level ${bustClass}">${bustText}</span>
                     </div>
+                    ${authorDisplay} 
                     <div class="tags-container">${tagsHtml} ${lightsHtml}</div>
                     <p style="font-size:0.9rem; color:var(--text-color); transition: color 0.5s;">${spot.desc}</p>
                     
@@ -875,7 +890,10 @@
                     </div>
 
                     <div class="comments-section" id="comments-${spot.id}">
-                        ${(spot.comments || []).map(c => `<div class="comment"><b>Skater:</b> ${c}</div>`).join('')}
+                        ${(spot.comments || []).map(c => 
+                            // WYŚWIETLANIE NICKA PRZY KOMENTARZU
+                            `<div class="comment"><b>${c.author || 'Anonim'}:</b> ${c.text}</div>`
+                        ).join('')}
                     </div>
                 `;
                 
@@ -905,8 +923,6 @@
                 renderSpots();
             }, error => {
                 console.error("Błąd nasłuchu Firebase: ", error);
-                // Komunikat o błędzie autoryzacji z reguł Firestore może się tutaj pojawić, jeśli reguły są źle ustawione.
-                // Użytkownicy wciąż mogą czytać, więc ogólne połączenie jest ok.
             });
 
             gsap.to("#loader", { duration: 0.8, y: "-100%", ease: "expo.inOut", delay: 0.5 });
@@ -979,7 +995,3 @@
     </script>
 </body>
 </html>
-
-
-
-

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKEJTSPOTY - BAZA WSPÓLNA V9</title>
+    <title>SKEJTSPOTY - BAZA WSPÓLNA V10</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;500&display=swap" rel="stylesheet">
@@ -259,7 +259,14 @@
             border-top: 1px solid #ddd; max-height: 100px; overflow-y: auto;
             transition: background 0.5s;
         }
-        .comment { font-size: 0.75rem; border-bottom: 1px solid var(--main-bg); padding: 4px 0; }
+        /* Style dla pojedynczego komentarza */
+        .comment { 
+            font-size: 0.75rem; 
+            border-bottom: 1px solid var(--main-bg); 
+            padding: 4px 0; 
+            display: flex; /* Dodane dla przycisku usuwania */
+            justify-content: space-between; /* Dodane dla przycisku usuwania */
+        }
 
         .card-actions { display: flex; gap: 5px; margin-top: 10px; }
         .card-btn {
@@ -437,7 +444,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // UWAGA: PODMIEŃ TEN BLOK Z KLUCZAMI FIREBASE!
+        // UWAGA: KLUCZOWE! PODMIEŃ TEN BLOK Z KLUCZAMI FIREBASE!
         const firebaseConfig = {
             apiKey: "AIzaSyCCxW6X7MJlWPfxP_6I8FlLc7Vp2wiR69Q",
             authDomain: "skejspoty.firebaseapp.com",
@@ -455,6 +462,7 @@
         const spotsCollection = db.collection("spots"); 
         
         let currentUser = null; 
+        let isAdminUser = false; // NOWA ZMIENNA DLA STATUSU ADMINA
         
         // --- LOGIKA AUTORYZACJI ---
         const authStatusEl = document.getElementById('authStatus');
@@ -465,12 +473,31 @@
         const registerFormEl = document.getElementById('registerForm');
         const toggleFormBtn = document.getElementById('toggleFormBtn');
 
-        // Sprawdzenie statusu logowania
-        auth.onAuthStateChanged(user => {
+        // Sprawdzenie statusu logowania (Zaktualizowano o logikę Admina)
+        auth.onAuthStateChanged(async user => { 
             currentUser = user;
+            isAdminUser = false; // Resetujemy status admina
+
             if (user) {
                 // ZALOGOWANY
+                
+                // NOWY KOD: POBIERANIE LISTY ADMINÓW I SPRAWDZANIE STATUSU
+                try {
+                    const adminDoc = await db.collection('config').doc('admin').get();
+                    const adminUIDs = adminDoc.exists ? adminDoc.data().uids : [];
+                    if (adminUIDs.includes(user.uid)) {
+                        isAdminUser = true;
+                    }
+                } catch (e) {
+                    // Ignorujemy błąd, jeśli kolekcja 'config' jeszcze nie istnieje
+                    console.warn("Nie udało się pobrać konfiguracji adminów, być może kolekcja 'config' nie istnieje.", e);
+                }
+                
                 authStatusEl.innerHTML = `Zalogowano jako: <b>${user.displayName || user.email}</b>`;
+                if (isAdminUser) {
+                    authStatusEl.innerHTML += ` <span style="color:var(--neon-red);">(ADMIN)</span>`;
+                }
+
                 showLoginBtn.style.display = 'none';
                 showRegisterBtn.style.display = 'none';
                 logoutBtn.style.display = 'inline-block';
@@ -501,7 +528,7 @@
         });
 
         window.handleRegister = async () => {
-            const nick = document.getElementById('registerNick').value; // DODANO: POBIERANIE NICKA
+            const nick = document.getElementById('registerNick').value; 
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
 
@@ -510,7 +537,6 @@
             try {
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 
-                // DODANO: USTAWIANIE NICKA
                 await userCredential.user.updateProfile({
                     displayName: nick
                 });
@@ -546,7 +572,7 @@
         // --- KONIEC LOGIKI AUTORYZACJI ---
 
 
-        // --- 1. CONFIG & INIT (Reszta bez zmian w logice) ---
+        // --- 1. CONFIG & INIT ---
         let spots = [];
         let editingSpotId = null;
         const map = L.map('map').setView([52.0693, 19.4803], 6);
@@ -692,7 +718,7 @@
             });
         }
 
-        // --- 4. FUNKCJA ZAPISU DO FIREBASE (Dodano authorId i authorName) ---
+        // --- 4. FUNKCJA ZAPISU DO FIREBASE ---
         document.getElementById('saveSpotBtn').addEventListener('click', async () => {
             if (!currentUser) { alert("Musisz być zalogowany, aby zapisywać spoty!"); return; }
 
@@ -720,9 +746,10 @@
 
             const spotData = {
                 name, desc, img: imgBase64, lat: parseFloat(lat), lng: parseFloat(lng),
-                tags, bust: bustFactor, lights: hasLights, comments: [],
+                tags, bust: bustFactor, lights: hasLights, 
                 authorId: currentUser.uid,
-                authorName: currentUser.displayName || currentUser.email // Zapisujemy NICK AUTORA
+                authorName: currentUser.displayName || currentUser.email, 
+                comments: editingSpotId ? spots.find(s => s.id === editingSpotId).comments : [] // Zachowaj komentarze przy edycji
             };
 
             try {
@@ -768,8 +795,9 @@
             const spot = spots.find(s => s.id === id);
             if (!spot) return;
 
-            if (spot.authorId !== currentUser.uid) {
-                alert("Możesz edytować tylko swoje spoty!");
+            // Sprawdzenie uprawnień do edycji (Autor LUB Admin)
+            if (spot.authorId !== currentUser.uid && !isAdminUser) {
+                alert("Możesz edytować tylko swoje spoty (lub jako Admin)!");
                 return;
             }
 
@@ -799,10 +827,12 @@
             document.querySelector('.sidebar').scrollTop = 0;
         };
 
-        // --- 5. FUNKCJE USUWANIA I KOMENTOWANIA W FIREBASE (Poprawiona logika komentarzy) ---
+        // --- 5. FUNKCJE USUWANIA I KOMENTOWANIA W FIREBASE ---
         window.deleteSpot = async (id, authorId) => {
             if (!currentUser) { alert("Musisz być zalogowany, aby usuwać spoty!"); return; }
-            if (authorId !== currentUser.uid) { alert("Możesz usunąć tylko swoje spoty!"); return; }
+            
+            // Sprawdzenie uprawnień do usuwania (Autor LUB Admin)
+            if (authorId !== currentUser.uid && !isAdminUser) { alert("Możesz usunąć tylko swoje spoty (lub jako Admin)!"); return; }
 
             if(confirm("Usunąć spota ze wspólnej bazy?")) {
                 try {
@@ -816,13 +846,12 @@
         };
 
         window.addComment = async (id) => {
-            if (!currentUser) { alert("Musisz być zalogowany, aby komentować!"); return; } // WYMAGANE LOGOWANIE
+            if (!currentUser) { alert("Musisz być zalogowany, aby komentować!"); return; } 
 
             const txt = prompt("Wpisz swój komentarz:");
             if(txt) {
                 const spot = spots.find(s => s.id === id);
                 if(spot) {
-                    // DODANO STRUKTURĘ KOMENTARZA Z NICKIEM
                     const commentData = {
                         text: txt,
                         author: currentUser.displayName || currentUser.email
@@ -840,7 +869,32 @@
             }
         };
 
-        // --- 6. RENDER LOGIC (Wyświetlanie autora i nicków w komentarzach) ---
+        // NOWA FUNKCJA USUWANIA KOMENTARZA DLA ADMINA
+        window.deleteComment = async (spotId, commentIndex) => {
+            if (!currentUser || !isAdminUser) { 
+                alert("Tylko Administrator może usuwać komentarze!"); 
+                return; 
+            }
+
+            if(confirm("Czy na pewno chcesz usunąć ten komentarz?")) {
+                const spot = spots.find(s => s.id === spotId);
+                if(spot && spot.comments && spot.comments.length > commentIndex) {
+                    const newComments = [...spot.comments];
+                    newComments.splice(commentIndex, 1); // Usuwamy element z tablicy
+
+                    try {
+                        await spotsCollection.doc(spotId).update({ comments: newComments });
+                        alert("Komentarz usunięty przez Administratora.");
+                    } catch (error) {
+                        console.error("Błąd usuwania komentarza: ", error);
+                        alert("Błąd usuwania komentarza. Sprawdź reguły Firestore!");
+                    }
+                }
+            }
+        }
+
+
+        // --- 6. RENDER LOGIC ---
         function renderSpots() {
             const list = document.getElementById('spotsList');
             list.innerHTML = '';
@@ -864,11 +918,11 @@
                 const tagsHtml = (spot.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
                 const lightsHtml = spot.lights ? `<span class="tag" style="border-color:var(--neon-blue); color:var(--neon-blue)">💡 Lampy</span>` : '';
                 
-                // Logika wyświetlania przycisków Edytuj/Usuń tylko dla autora
+                // Logika wyświetlania przycisków Edytuj/Usuń tylko dla autora LUB Admina
                 const isAuthor = currentUser && spot.authorId === currentUser.uid;
-                const editDeleteBtnClass = isAuthor ? '' : 'hidden';
+                const canEditDelete = isAuthor || isAdminUser; // NOWY WARUNEK
+                const editDeleteBtnClass = canEditDelete ? '' : 'hidden';
 
-                // DODANO: WYŚWIETLANIE AUTORA SPOTA
                 const authorDisplay = spot.authorName ? `<div style="font-size:0.8rem; color:#aaa; margin-top:5px; margin-bottom:10px;">Dodane przez: <b>${spot.authorName}</b></div>` : '';
 
 
@@ -891,10 +945,20 @@
                     </div>
 
                     <div class="comments-section" id="comments-${spot.id}">
-                        ${(spot.comments || []).map(c => 
-                            // WYŚWIETLANIE NICKA PRZY KOMENTARZU
-                            `<div class="comment"><b>${c.author || 'Anonim'}:</b> ${c.text}</div>`
-                        ).join('')}
+                        ${(spot.comments || []).map((c, commentIdx) => { 
+                            // DODANO: Przycisk usuwania komentarza dla Admina
+                            const deleteBtn = isAdminUser ? 
+                                `<button style="font-size:0.6rem; color:var(--neon-red); margin-left:10px; border:none; background:none; cursor:pointer !important;" 
+                                    onclick="deleteComment('${spot.id}', ${commentIdx})" data-hover>
+                                    [X]
+                                </button>` 
+                                : '';
+                            
+                            return `<div class="comment">
+                                        <div><b>${c.author || 'Anonim'}:</b> ${c.text}</div> 
+                                        ${deleteBtn}
+                                    </div>`;
+                        }).join('')}
                     </div>
                 `;
                 
@@ -996,4 +1060,3 @@
     </script>
 </body>
 </html>
-

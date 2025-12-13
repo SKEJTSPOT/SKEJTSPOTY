@@ -324,6 +324,23 @@
             
             .fab { bottom: 80px; }
             .fab.form-active { background: var(--neon-red); transform: rotate(45deg); }
+
+            /* --- POPRAWKA: FORMULARZ DODAWANIA SPOTÓW NA MOBILNYCH (nowe style dla dopasowania do ekranu) --- */
+            #spot-form {
+                bottom: 60px !important; /* Umieszcza formularz nad paskiem nawigacji mobilnej */
+                right: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                max-width: none !important; /* Usuwa ograniczenie szerokości */
+                max-height: calc(100vh - 70px) !important; /* Ogranicza wysokość do obszaru widocznego */
+                overflow-y: auto !important; /* Umożliwia przewijanie, jeśli zawartość jest za długa */
+                border-radius: 10px 10px 0 0 !important; /* Zaokrąglenie górnych rogów */
+                border: 2px solid var(--neon-pink) !important;
+                border-bottom: none !important;
+                padding-bottom: 20px !important;
+                /* Należy użyć !important, aby nadpisać style inline z HTML */
+            }
+            /* -------------------------------------------------------- */
         }
         
         /* --- STYLE KART SPOTÓW --- */

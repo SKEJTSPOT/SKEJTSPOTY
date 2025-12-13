@@ -617,8 +617,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script> 
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script> 
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -628,7 +626,7 @@
             apiKey: "AIzaSyCCxW6X7MJlWPfxP_6I8FlLc7Vp2wiR69Q",
             authDomain: "skejspoty.firebaseapp.com",
             projectId: "skejspoty",
-            storageBucket: "skejspoty.firebasestorag.app",
+            storageBucket: "skejspoty.firebasestorag.app", // To pole nie jest już używane, ale zostawiamy dla spójności
             messagingSenderId: "1067851773136",
             appId: "1:1067851773136:web:39bdc7f7af34cbbf94dad5",
             measurementId: "G-WH6DYL95DH"
@@ -637,7 +635,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth(); 
-        const storage = firebase.storage(); 
         const spotsCollection = db.collection("spots"); 
         
         let currentUser = null; 
@@ -943,17 +940,27 @@
             if (!currentUser) { showNotification("Musisz być zalogowany!", 'error'); return; }
             if (!spotNameEl.value || !spotLatEl.value) { showNotification("Wypełnij nazwę i wybierz miejsce na mapie.", 'error'); return; }
             
-            let imageUrl = '';
+            let imageData = ''; // Będziemy przechowywać ciąg Base64
             saveSpotBtn.innerText = editingSpotId ? "ZAPISYWANIE..." : "DODAWANIE...";
 
             try {
-                // 1. Upload obrazu
+                // 1. Konwersja obrazu na Base64
                 const imageFile = spotImageUploadEl.files[0];
                 if (imageFile) {
-                    const storageRef = storage.ref();
-                    const imageRef = storageRef.child(`spot_images/${Date.now()}_${imageFile.name}`);
-                    const uploadTask = await imageRef.put(imageFile);
-                    imageUrl = await uploadTask.ref.getDownloadURL();
+                    // UWAGA: Limit dokumentu w Firestore to 1MB. Obrazy Base64 są duże!
+                    if (imageFile.size > 800000) { 
+                        showNotification("Plik jest za duży! Max ok. 800KB. Base64 bardzo zwiększa rozmiar.", 'error', 7000);
+                        saveSpotBtn.innerText = editingSpotId ? "ZAPISZ ZMIANY" : "ZAPISZ NA MAPIE";
+                        return;
+                    }
+                    
+                    // Zapisanie Base64 jako Promise
+                    imageData = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(imageFile);
+                    });
                 }
 
                 // 2. Przygotowanie danych
@@ -973,9 +980,24 @@
                     comments: editingSpotId ? spots.find(s => s.id === editingSpotId).comments : [], 
                 };
 
-                if (imageUrl) {
-                    spotData.imageUrl = imageUrl;
+                // Zapis lub aktualizacja Base64
+                if (imageData) {
+                    spotData.imageData = imageData; 
+                } else if (editingSpotId) {
+                    // Jeśli to edycja i nie wybrano nowego pliku, zachowaj stary Base64, jeśli istniał
+                    const oldSpot = spots.find(s => s.id === editingSpotId);
+                    if (oldSpot.imageData) {
+                        spotData.imageData = oldSpot.imageData;
+                    } else {
+                        // Jeśli nie było Base64 i nie wybrano nowego, upewnij się, że pole jest usunięte
+                        spotData.imageData = firebase.firestore.FieldValue.delete();
+                    }
+                } else {
+                     // Jeśli nowy spot i brak pliku, upewnij się, że pole Base64 nie istnieje
+                     // (Firestore automatycznie nie zapisze pustego pola, ale dla pewności)
+                     // Usuwamy linię dodającą puste imageData.
                 }
+
 
                 // 3. Zapis do Firestore
                 if (editingSpotId) {
@@ -1087,7 +1109,7 @@
                     <span class="${bustClass} bust-level">${bustText}</span>
                     <span style="font-size: 0.8rem; color: #888;">Autor: ${spot.authorName || 'Anonim'}</span>
                 </div>
-                ${spot.imageUrl ? `<div class="spot-img-container" onclick="openLightbox('${spot.imageUrl}')"><img src="${spot.imageUrl}" alt="${spot.name}" class="spot-img"></div>` : ''}
+                ${spot.imageData ? `<div class="spot-img-container" onclick="openLightbox('${spot.imageData}')"><img src="${spot.imageData}" alt="${spot.name}" class="spot-img"></div>` : ''}
                 <p style="font-size: 0.9rem; margin-bottom: 10px;">${spot.description}</p>
                 <p style="font-size: 0.8rem; color: var(--neon-green);">${spot.lights ? '💡 SPOT OŚWIETLONY W NOCY' : '🌚 BRAK LAMP'}</p>
                 <div class="tags-container">${(spot.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}</div>

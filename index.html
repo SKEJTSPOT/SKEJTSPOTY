@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKEJTY </title>
+    <title>SKEJTY.PL</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;500&display=swap" rel="stylesheet">
@@ -41,6 +41,38 @@
             --comment-bg: #4a4a7d;
             --shadow-color: rgba(0, 243, 255, 0.1);
         }
+
+        /* --- STYLIZACJA NOWEGO LOGO SKEJTY (NOWOŚĆ) --- */
+        .brand-logo-container {
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .brand-logo-container .logo-text {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--neon-green);
+            text-shadow: 
+                0 0 7px var(--neon-green),
+                0 0 10px var(--neon-green),
+                0 0 21px rgba(57, 255, 20, 0.7);
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+        
+        .brand-logo-container .logo-icon {
+            font-size: 2.2rem;
+            color: var(--neon-pink);
+            text-shadow: 
+                0 0 5px var(--neon-pink),
+                0 0 10px var(--neon-pink),
+                0 0 20px rgba(255, 0, 255, 0.7);
+            margin-right: 10px;
+        }
+        /* --- KONIEC NOWEJ STYLIZACJI LOGO --- */
 
         /* --- OGÓLNE STYLI DLA OBU TRYBÓW --- */
         * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
@@ -477,7 +509,10 @@
 
     <div class="app-container">
         <div class="sidebar" id="mainSidebar">
-            <h1>SKEJT<span style="color:var(--neon-pink)">SPOTY</span>.PL</h1>
+            <div class="brand-logo-container">
+                <i class="fas fa-skateboarding logo-icon"></i>
+                <span class="logo-text">SKEJTY</span>
+            </div>
             
             <button id="toggleModeBtn" class="btn-neon btn-green" style="width: auto;" data-hover>🌑 Zmień Tryb</button> 
             

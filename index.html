@@ -130,7 +130,7 @@
             background: var(--text-color);
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
             transform: translateY(100%); 
-            pointer-events: auto; /* Działają na powiadomienia */
+            pointer-events: auto;
         }
 
         .notification.success { border-color: var(--neon-green); background: #1f3d24; }
@@ -239,7 +239,7 @@
         /* --- STYLE WYSZUKIWANIA I GEOLOKALIZACJI (Zmniejszona szerokość) --- */
         .search-overlay {
             position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 10px; z-index: 1000; width: 90%; max-width: 350px; /* Zmniejszona max-width */
+            display: flex; gap: 10px; z-index: 1000; width: 90%; max-width: 350px; 
         }
         .search-overlay input {
             flex-grow: 1; padding: 10px 15px;
@@ -272,6 +272,23 @@
 
         /* --- MOBILE NAV BAR --- */
         .mobile-nav { display: none; }
+
+        /* --- STYL PRZYCISKU ZAMYKAJĄCEGO FORMULARZ --- */
+        .close-form-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            color: var(--neon-red);
+            cursor: pointer;
+            z-index: 2010;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+        .close-form-btn:hover {
+            color: var(--neon-pink);
+        }
+        /* ----------------------------------------------- */
 
         @media (max-width: 768px) {
             .app-container { 
@@ -325,22 +342,21 @@
             .fab { bottom: 80px; }
             .fab.form-active { background: var(--neon-red); transform: rotate(45deg); }
 
-            /* --- POPRAWKA: FORMULARZ DODAWANIA SPOTÓW NA MOBILNYCH (nowe style dla dopasowania do ekranu) --- */
+            /* --- POPRAWKA: FORMULARZ DODAWANIA SPOTÓW NA MOBILNYCH (z nowym stylem dla zamknięcia) --- */
             #spot-form {
-                bottom: 60px !important; /* Umieszcza formularz nad paskiem nawigacji mobilnej */
+                bottom: 60px !important; 
                 right: 0 !important;
                 left: 0 !important;
                 width: 100% !important;
-                max-width: none !important; /* Usuwa ograniczenie szerokości */
-                max-height: calc(100vh - 70px) !important; /* Ogranicza wysokość do obszaru widocznego */
-                overflow-y: auto !important; /* Umożliwia przewijanie, jeśli zawartość jest za długa */
-                border-radius: 10px 10px 0 0 !important; /* Zaokrąglenie górnych rogów */
+                max-width: none !important; 
+                max-height: calc(100vh - 70px) !important; 
+                overflow-y: auto !important; 
+                border-radius: 10px 10px 0 0 !important; 
                 border: 2px solid var(--neon-pink) !important;
                 border-bottom: none !important;
                 padding-bottom: 20px !important;
-                /* Należy użyć !important, aby nadpisać style inline z HTML */
+                padding-top: 40px !important; /* Dodatkowy padding na górze dla krzyżyka */
             }
-            /* -------------------------------------------------------- */
         }
         
         /* --- STYLE KART SPOTÓW --- */
@@ -352,7 +368,7 @@
             margin-bottom: 20px;
             box-shadow: 0 0 10px var(--shadow-color);
             transition: all 0.3s;
-            cursor: pointer; /* Dodany cursor pointer */
+            cursor: pointer; 
         }
         .spot-card.highlight {
             border-color: var(--neon-green);
@@ -530,6 +546,8 @@
             <div class="fab" id="addSpotFab" data-hover style="display:none;">+</div>
             
             <div id="spot-form" style="display:none; position: fixed; bottom: 150px; right: 20px; z-index: 2000; width: 90%; max-width: 350px; background: var(--form-bg); padding: 15px; border: 2px solid var(--neon-pink); box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);">
+                
+                <div class="close-form-btn" onclick="toggleForm(false)" data-hover>&times;</div>
                 <div style="font-size: 0.8rem; margin-bottom: 5px; color: var(--neon-orange); display: none;" id="editModeLabel">TRYB EDYCJI</div>
                 <input type="text" id="spotName" placeholder="Nazwa spota (np. Schody Kina)" data-hover>
                 <textarea id="spotDesc" rows="2" placeholder="Opis nawierzchni..." data-hover></textarea>
@@ -692,9 +710,9 @@
 
         // Domyślny widok przy ładowaniu strony
         if (isMobile()) {
-             switchSidebarSection('map'); // Na mobile startujemy z mapą
+             switchSidebarSection('map'); 
         } else {
-             switchSidebarSection('spotsList'); // Na desktopie startujemy z listą spotów
+             switchSidebarSection('spotsList'); 
         }
 
 
@@ -843,6 +861,11 @@
                 if (lat !== null && lng !== null) {
                     placeTempMarker(lat, lng);
                 }
+                // Upewnij się, że na mobile mapa jest widoczna, ale fab zostaje na swoim miejscu
+                if (isMobile()) {
+                    switchSidebarSection('map');
+                    // Przesuń formularz na środek ekranu (już jest to zrobione przez CSS)
+                }
             } else {
                 spotFormEl.style.display = 'none';
                 addSpotFab.classList.remove('form-active');
@@ -874,7 +897,7 @@
             toggleForm(!isVisible);
         });
 
-        cancelEditBtn.addEventListener('click', resetForm);
+        cancelEditBtn.addEventListener('click', () => toggleForm(false)); // Używamy toggleForm(false) do resetowania i zamykania
         
         map.on('click', function(e) {
             if (spotFormEl.style.display === 'block') {

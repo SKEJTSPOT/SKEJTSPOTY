@@ -686,10 +686,14 @@
         const searchInput = document.getElementById('citySearchInput');
         const searchBtn = document.getElementById('citySearchBtn');
         const locateUserBtn = document.getElementById('locateUserBtn');
-
+// ... (fragment kodu, który to realizuje) ...
         async function searchLocation() {
-            const query = searchInput.value;
-            if(!query) return;
+    // ...
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+    // ...
+        }
+// ...
 
             searchBtn.innerText = "⏳";
             
@@ -1140,3 +1144,4 @@
     </script>
 </body>
 </html>
+

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKEJTSPOTY - BAZA WSPÓLNA V12.1</title>
+    <title>SKEJTSPOTY </title>
     
     <link rel="icon" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/svgs/solid/skateboarding.svg" type="image/svg+xml">
 
@@ -109,8 +109,171 @@
         #map-container { position: relative; width: 100%; height: 100%; }
         #map { width: 100%; height: 100%; z-index: 1; }
         
-        /* ... pozostałe style (powiadomienia, przyciski neon, fab, wyszukiwanie) bez zmian ... */
+        /* --- POWIADOMIENIA --- */
+        #notification-container {
+            position: fixed;
+            bottom: 20px; 
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9000; 
+            pointer-events: none; 
+            display: flex;
+            flex-direction: column-reverse; 
+            gap: 10px;
+            width: 90%; 
+            max-width: 450px;
+        }
+
+        .notification {
+            padding: 15px 20px;
+            border: 2px solid;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            color: #fff; 
+            background: var(--text-color);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+            transform: translateY(100%); 
+            pointer-events: auto;
+        }
+
+        .notification.success { border-color: var(--neon-green); background: #1f3d24; }
+        .notification.error { border-color: var(--neon-red); background: #4d2d2d; }
+        .notification.info { border-color: var(--neon-blue); background: #2d3d4d; }
+
+        /* --- SIDEBAR SECTIONS --- */
+        .sidebar-section {
+            display: none; 
+            height: 100%;
+            overflow-y: auto;
+            padding-top: 20px;
+        }
+        .sidebar-section.active {
+            display: block;
+        }
         
+        /* --- Floating Action Button (FAB) --- */
+        .fab {
+            position: fixed;
+            bottom: 80px; 
+            right: 20px;
+            width: 55px; height: 55px;
+            background: var(--neon-pink);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            z-index: 2000;
+            transition: transform 0.3s, background 0.3s;
+        }
+        .fab:hover {
+            background: var(--neon-green);
+        }
+        .fab.form-active { background: var(--neon-red); transform: rotate(45deg); }
+        
+        /* --- NEON BUTTON STYLES --- */
+        .btn-neon {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            padding: 10px 15px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            border: 2px solid;
+            border-radius: 5px;
+            cursor: pointer !important;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            background: transparent;
+            width: 100%; 
+        }
+
+        .btn-neon.btn-green {
+            color: var(--neon-green);
+            border-color: var(--neon-green);
+            text-shadow: 0 0 5px var(--neon-green);
+        }
+
+        .btn-neon.btn-orange {
+            color: var(--neon-orange);
+            border-color: var(--neon-orange);
+            text-shadow: 0 0 5px var(--neon-orange);
+        }
+
+        .btn-neon.btn-red {
+            color: var(--neon-red);
+            border-color: var(--neon-red);
+            text-shadow: 0 0 5px var(--neon-red);
+        }
+
+        .btn-neon.btn-blue {
+            color: var(--neon-blue);
+            border-color: var(--neon-blue);
+            text-shadow: 0 0 5px var(--neon-blue);
+        }
+        
+        .btn-neon:hover {
+            box-shadow: 0 0 15px var(--neon-pink);
+            color: var(--text-color); 
+            text-shadow: none;
+            transform: translateY(-2px);
+        }
+
+        .btn-neon.btn-green:hover { background: var(--neon-green); }
+        .btn-neon.btn-orange:hover { background: var(--neon-orange); }
+        .btn-neon.btn-red:hover { background: var(--neon-red); }
+        .btn-neon.btn-blue:hover { background: var(--neon-blue); }
+        
+        /* Grupa przycisków autoryzacji */
+        .auth-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .auth-actions .btn-neon {
+            flex: 1;
+        }
+        .auth-actions .btn-red {
+            width: auto;
+            flex: none;
+        }
+
+        /* --- STYLE WYSZUKIWANIA I GEOLOKALIZACJI --- */
+        .search-overlay {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 10px; z-index: 1000; width: 90%; max-width: 350px; 
+        }
+        .search-overlay input {
+            flex-grow: 1; padding: 10px 15px;
+            background: rgba(17, 17, 17, 0.8); color: white;
+            border: 2px solid var(--neon-blue); border-radius: 5px;
+            font-family: 'Roboto Mono', monospace; font-size: 1rem;
+        }
+        .search-overlay .search-btn {
+            padding: 10px 15px;
+            background: var(--neon-blue); color: white;
+            border: none; border-radius: 5px;
+            font-family: 'Orbitron', sans-serif; font-size: 1rem;
+            cursor: pointer !important; transition: background 0.3s;
+        }
+        .search-overlay .search-btn:hover { background: var(--neon-pink); }
+        
+        .geo-btn {
+            position: absolute; top: 80px; right: 20px;
+            width: 40px; height: 40px;
+            background: rgba(17, 17, 17, 0.7); color: var(--neon-green);
+            border: 2px solid var(--neon-green); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 20px; cursor: pointer !important; z-index: 1000;
+            transition: background 0.3s, color 0.3s;
+        }
+        .geo-btn:hover {
+            background: var(--neon-green); color: black;
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+
         /* --- MOBILE NAV BAR --- */
         .mobile-nav { display: none; }
 
@@ -120,7 +283,9 @@
                 grid-template-rows: calc(100vh - 60px) 0; 
                 overflow: hidden;
             }
-            /* ... style mobilne dla sidebar, nav, fab ... */
+
+            .map-wrapper { grid-row: 1 / 2; height: 100%; }
+
             .sidebar { 
                 position: fixed; bottom: 60px; left: 0; 
                 width: 100%; height: calc(100vh - 60px); 
@@ -133,7 +298,8 @@
                 padding-bottom: 70px; 
             }
             .sidebar.active { transform: translateY(0); }
-            
+
+            .search-overlay { width: 90%; top: 10px; max-width: 90%; }
             .mobile-nav {
                 display: flex; position: fixed; bottom: 0; left: 0;
                 width: 100%; height: 60px;
@@ -142,6 +308,24 @@
                 z-index: 6000; justify-content: space-around; align-items: center;
             }
 
+            .nav-item {
+                display: flex; flex-direction: column;
+                align-items: center; justify-content: center;
+                color: #ccc; font-size: 0.65rem;
+                font-family: 'Orbitron'; padding: 5px; cursor: pointer !important; transition: color 0.2s;
+            }
+            .nav-item i {
+                font-size: 20px; margin-bottom: 3px;
+                text-shadow: 0 0 5px rgba(255, 255, 255, 0.5); 
+            }
+            .nav-item.active i {
+                color: var(--neon-green);
+                text-shadow: 0 0 10px var(--neon-green), 0 0 20px rgba(57, 255, 20, 0.5);
+            }
+            .nav-item.active span { color: var(--neon-green); }
+            
+            #toggleModeBtn { display: none; }
+            
             .fab { bottom: 80px; }
             
             /* Poprawka formularza dla mobile */
@@ -159,8 +343,22 @@
             }
         }
         
-        /* --- STYLE KART SPOTÓW (POZOSTAJĄ BEZ ZMIAN) --- */
-        /* ... (styles dla spot-card) ... */
+        /* --- STYLE KART SPOTÓW --- */
+        .spot-card {
+            background: var(--card-bg);
+            border: 2px solid var(--neon-pink);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 10px var(--shadow-color);
+            transition: all 0.3s;
+            cursor: pointer; 
+        }
+        .spot-card.highlight {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 15px var(--neon-green);
+        }
+        /* ... pozostałe style kart ... */
 
         /* Styl dla inputów w formularzu */
         #spot-form input, #spot-form textarea, #spot-form select {
@@ -170,7 +368,7 @@
             font-family: 'Roboto Mono', monospace;
         }
         
-        /* === STYLER CHECKBOXÓW W FORMULARZU === */
+        /* === STYLE CHECKBOXÓW W FORMULARZU === */
         .checkbox-group {
             display: flex;
             flex-wrap: wrap;
@@ -189,7 +387,7 @@
             flex: 1 1 calc(50% - 10px); 
         }
         
-        /* Powiększenie i stylizacja boxów (tak jak chciano) */
+        /* Powiększenie i stylizacja boxów */
         .checkbox-item input[type="checkbox"] {
             width: 20px;
             height: 20px;
@@ -218,7 +416,7 @@
             line-height: 18px;
             font-weight: bold;
         }
-        
+
     </style>
 </head>
 <body>
@@ -239,11 +437,47 @@
         <div class="sidebar" id="mainSidebar">
              <h1 style="color: var(--neon-pink); font-family: 'Orbitron';">SKEJTSPOTY</h1>
              <button id="toggleModeBtn" class="btn-neon btn-green" style="width: auto;" onclick="toggleMode()" data-hover>🌑 Zmień Tryb</button> 
+             
+             <div class="sidebar-section active" id="auth-section">
+                <div id="loggedInView" style="display: none;">
+                    <p>Zalogowano jako: <span id="userEmail" style="font-weight: bold; color: var(--neon-green);"></span></p>
+                    <div class="auth-actions">
+                        <button class="btn-neon btn-green" onclick="switchSidebarSection('spotsList')">+ Dodaj Nowy Spot</button>
+                        <button class="btn-neon btn-red" id="logoutBtn">Wyloguj</button>
+                    </div>
+                    <p style="margin-top: 15px;">**Ostatnie Spoty w Twojej okolicy:**</p>
+                    <div id="recentSpotsList"></div>
+                </div>
+                
+                <div id="loggedOutView">
+                    <h2>Logowanie / Rejestracja</h2>
+                    <input type="email" id="authEmail" placeholder="Email" data-hover>
+                    <input type="password" id="authPassword" placeholder="Hasło" data-hover>
+                    <div class="auth-actions">
+                        <button class="btn-neon btn-blue" id="loginBtn">Zaloguj</button>
+                        <button class="btn-neon btn-orange" id="registerBtn">Zarejestruj</button>
+                    </div>
+                    <p style="font-size: 0.8rem; margin-top: 20px;">*Zaloguj się, by dodawać i edytować spoty.</p>
+                </div>
              </div>
+             
+             <div class="sidebar-section" id="spotsList-section">
+                <h2>Lista Spotów</h2>
+                <input type="text" id="spotFilterInput" placeholder="Filtruj po tagach (np. Murki, Flat)" data-hover>
+                <div id="spotsListContainer">
+                    </div>
+             </div>
+
+        </div>
         
         <div id="map-container" class="map-wrapper"> 
             <div id="map" data-hover></div>
             
+            <div class="search-overlay">
+                <input type="text" id="citySearchInput" placeholder="Wpisz miasto / wieś / ulicę..." data-hover>
+                <button class="search-btn" id="citySearchBtn" data-hover>SZUKAJ</button>
+            </div>
+
             <button class="geo-btn" id="locateUserBtn" title="Znajdź mnie (GPS)" data-hover>📍</button>
             
             <div class="fab" id="addSpotFab" data-hover style="display:none;">+</div>
@@ -283,14 +517,30 @@
                 <div style="font-size: 0.7rem; color: #888; margin-bottom: 10px;">*Kliknij na mapę aby zmienić lokalizację</div>
                 <input type="hidden" id="spotLat">
                 <input type="hidden" id="spotLng">
-                <button class="btn-neon btn-green" id="saveSpotBtn" data-hover>ZAPISZ NA MAPIE</button>
+                <input type="hidden" id="spotIdToEdit"> <button class="btn-neon btn-green" id="saveSpotBtn" data-hover>ZAPISZ NA MAPIE</button>
                 <button class="btn-neon btn-orange" id="cancelEditBtn" style="display:none;" data-hover>ANULUJ</button>
             </div>
         </div>
     </div>
     
     <div class="mobile-nav" id="mobileNav">
+        <div class="nav-item" id="navKonto" data-target="auth">
+            <i class="fas fa-user-circle"></i>
+            <span>Konto</span>
         </div>
+        <div class="nav-item active" id="navMapa" data-target="map">
+            <i class="fas fa-map-marked-alt"></i>
+            <span>Mapa</span>
+        </div>
+        <div class="nav-item" id="navSpoty" data-target="spotsList">
+            <i class="fas fa-skateboarding"></i>
+            <span>Spoty</span>
+        </div>
+        <div class="nav-item" id="navMode" onclick="toggleMode()">
+            <i class="fas fa-lightbulb"></i>
+            <span>Tryb</span>
+        </div>
+    </div>
 
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -302,7 +552,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // === KRYTYCZNY BLOK: WPROWADŹ SWOJE KLUCZE FIREBASE ===
+        // === KLUCZE FIREBASE ===
         const firebaseConfig = {
             apiKey: "AIzaSyCCxW6X7MJlWPfxP_6I8FlLc7Vp2wiR69Q",
             authDomain: "skejspoty.firebaseapp.com",
@@ -323,18 +573,17 @@
         let spots = [];
         let map = null;
         let markers = []; 
+        let tempMarker = null;
+        let isAddingSpot = false;
         
         // ===================================================================
-        // === FUNKCJE NAPRAWIAJĄCE BŁĄD loadMode IS NOT DEFINED ===
+        // === FUNKCJE: TRYB JASNY/CIEMNY (Naprawa błędu loadMode) ===
         // ===================================================================
         
         function toggleMode() {
             document.body.classList.toggle('dark-mode');
             const isDarkMode = document.body.classList.contains('dark-mode');
             localStorage.setItem('darkMode', isDarkMode);
-            // Zmiana ikony w przycisku (opcjonalne, jeśli jest potrzebne w tej wersji)
-            // const btn = document.getElementById('toggleModeBtn');
-            // btn.innerHTML = isDarkMode ? '☀️ Zmień Tryb' : '🌑 Zmień Tryb';
         }
 
         function loadMode() {
@@ -345,18 +594,480 @@
                  document.body.classList.remove('dark-mode');
             }
         }
-        
-        // ... (wszystkie Twoje pozostałe funkcje JS) ...
 
-        // --- START APLIKACJI (Używa naprawionych loadMode) ---
+        // ===================================================================
+        // === FUNKCJE: POWIADOMIENIA (Notification) ===
+        // ===================================================================
+        
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notification-container');
+            const notif = document.createElement('div');
+            notif.className = `notification ${type}`;
+            notif.textContent = message;
+            container.appendChild(notif);
+
+            gsap.fromTo(notif, 
+                { opacity: 0, y: 50 },
+                { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
+            );
+
+            setTimeout(() => {
+                gsap.to(notif, { opacity: 0, y: 50, duration: 0.5, onComplete: () => container.removeChild(notif) });
+            }, 5000);
+        }
+
+        // ===================================================================
+        // === FUNKCJE: MAPA I LOKALIZACJA ===
+        // ===================================================================
         
         function initMap() {
             map = L.map('map').setView([52.0693, 19.4803], 6); 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap'
             }).addTo(map);
+
+            map.on('click', (e) => {
+                if (isAddingSpot) {
+                    placeTempMarker(e.latlng.lat, e.latlng.lng);
+                }
+            });
         }
         
+        function locateUserOnMap() {
+            if (!navigator.geolocation) {
+                showNotification('Twoja przeglądarka nie wspiera geolokalizacji.', 'error');
+                return;
+            }
+
+            map.locate({setView: true, maxZoom: 16});
+            map.on('locationfound', (e) => {
+                L.marker(e.latlng).addTo(map)
+                    .bindPopup("Jesteś tutaj").openPopup();
+                showNotification('Znaleziono Twoją lokalizację!', 'success');
+            });
+
+            map.on('locationerror', (e) => {
+                showNotification(`Błąd geolokalizacji: ${e.message}`, 'error');
+            });
+        }
+        
+        function searchLocation() {
+            const query = document.getElementById('citySearchInput').value;
+            if (!query) return;
+
+            // Użycie darmowego API Nominatim (OpenStreetMap) do geokodowania
+            fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lon = parseFloat(data[0].lon);
+                        map.setView([lat, lon], 14); 
+                        L.marker([lat, lon]).addTo(map).bindPopup(data[0].display_name).openPopup();
+                        showNotification(`Znaleziono: ${data[0].display_name}`, 'success');
+                    } else {
+                        showNotification('Nie znaleziono lokalizacji.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Błąd geokodowania:', error);
+                    showNotification('Wystąpił błąd podczas wyszukiwania.', 'error');
+                });
+        }
+        
+        function locateSpotOnMap(lat, lng) {
+            map.setView([lat, lng], 16);
+        }
+
+        function highlightCard(spotId) {
+            document.querySelectorAll('.spot-card').forEach(card => card.classList.remove('highlight'));
+            const card = document.getElementById(`spot-card-${spotId}`);
+            if (card) {
+                card.classList.add('highlight');
+                // Przewinięcie do karty
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+        
+        // ===================================================================
+        // === FUNKCJE: AUTORYZACJA ===
+        // ===================================================================
+        
+        function updateAuthUI(user) {
+            const loggedInView = document.getElementById('loggedInView');
+            const loggedOutView = document.getElementById('loggedOutView');
+            const userEmailSpan = document.getElementById('userEmail');
+            const fab = document.getElementById('addSpotFab');
+            
+            if (user) {
+                currentUser = user;
+                loggedInView.style.display = 'block';
+                loggedOutView.style.display = 'none';
+                userEmailSpan.textContent = user.email;
+                fab.style.display = 'flex';
+            } else {
+                currentUser = null;
+                loggedInView.style.display = 'none';
+                loggedOutView.style.display = 'block';
+                fab.style.display = 'none';
+                toggleForm(false); // Ukryj formularz, jeśli się wylogowano
+            }
+        }
+
+        function handleRegister() {
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+
+            auth.createUserWithEmailAndPassword(email, password)
+                .then(() => {
+                    showNotification('Rejestracja udana! Zostałeś zalogowany.', 'success');
+                })
+                .catch(error => {
+                    showNotification(`Błąd rejestracji: ${error.message}`, 'error');
+                });
+        }
+
+        function handleLogin() {
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    showNotification('Logowanie udane!', 'success');
+                })
+                .catch(error => {
+                    showNotification(`Błąd logowania: ${error.message}`, 'error');
+                });
+        }
+
+        function handleLogout() {
+            auth.signOut()
+                .then(() => {
+                    showNotification('Wylogowano pomyślnie.', 'info');
+                    // Opcjonalnie przełącz na widok mapy po wylogowaniu na mobile
+                    if (window.innerWidth <= 768) {
+                        switchSidebarSection('map');
+                    }
+                })
+                .catch(error => {
+                    showNotification(`Błąd wylogowania: ${error.message}`, 'error');
+                });
+        }
+        
+        // Listener autoryzacji
+        auth.onAuthStateChanged(updateAuthUI);
+        
+        // ===================================================================
+        // === FUNKCJE: FORMULARZ I DODAWANIE SPOTA ===
+        // ===================================================================
+
+        function toggleForm(show, spot = null) {
+            const form = document.getElementById('spot-form');
+            const fab = document.getElementById('addSpotFab');
+            const editLabel = document.getElementById('editModeLabel');
+            const cancelBtn = document.getElementById('cancelEditBtn');
+            const saveBtn = document.getElementById('saveSpotBtn');
+
+            isAddingSpot = show;
+
+            if (show) {
+                // Tryb dodawania/edycji
+                form.style.display = 'block';
+                fab.classList.add('form-active');
+                
+                // Czyszczenie formularza
+                document.getElementById('spotName').value = '';
+                document.getElementById('spotDesc').value = '';
+                document.getElementById('spotImageUpload').value = '';
+                document.getElementById('spotIdToEdit').value = '';
+                document.getElementById('spotBust').value = 'safe';
+                document.getElementById('spotLights').checked = false;
+                document.querySelectorAll('.spot-tag').forEach(cb => cb.checked = false);
+
+                if (tempMarker) map.removeLayer(tempMarker);
+                
+                if (spot) {
+                    // Tryb Edycji
+                    document.getElementById('spotName').value = spot.name || '';
+                    document.getElementById('spotDesc').value = spot.description || '';
+                    document.getElementById('spotIdToEdit').value = spot.id;
+                    document.getElementById('spotBust').value = spot.bust || 'safe';
+                    document.getElementById('spotLights').checked = spot.lights || false;
+                    
+                    if (spot.tags) {
+                        spot.tags.forEach(tag => {
+                            const cb = document.querySelector(`.spot-tag[value="${tag}"]`);
+                            if (cb) cb.checked = true;
+                        });
+                    }
+
+                    editLabel.style.display = 'block';
+                    cancelBtn.style.display = 'block';
+                    saveBtn.textContent = 'ZAPISZ ZMIANY';
+                    
+                    placeTempMarker(spot.lat, spot.lng); // Ustawienie markera na pozycji edytowanego spota
+
+                } else {
+                    // Tryb Dodawania
+                    editLabel.style.display = 'none';
+                    cancelBtn.style.display = 'none';
+                    saveBtn.textContent = 'ZAPISZ NA MAPIE';
+                    // Ustawienie początkowej lokalizacji na centrum mapy
+                    const center = map.getCenter();
+                    placeTempMarker(center.lat, center.lng);
+                }
+
+            } else {
+                // Ukrycie formularza
+                form.style.display = 'none';
+                fab.classList.remove('form-active');
+                if (tempMarker) map.removeLayer(tempMarker);
+                // Wróć do sekcji listy spotów na mobile
+                if (window.innerWidth <= 768) {
+                    switchSidebarSection('spotsList');
+                }
+            }
+        }
+
+        function placeTempMarker(lat, lng) {
+            if (tempMarker) {
+                map.removeLayer(tempMarker);
+            }
+            tempMarker = L.marker([lat, lng], { draggable: true }).addTo(map)
+                .bindPopup("Lokalizacja nowego spota").openPopup();
+            
+            // Aktualizacja ukrytych pól formularza
+            document.getElementById('spotLat').value = lat;
+            document.getElementById('spotLng').value = lng;
+            
+            tempMarker.on('dragend', (e) => {
+                const markerLatLng = tempMarker.getLatLng();
+                document.getElementById('spotLat').value = markerLatLng.lat;
+                document.getElementById('spotLng').value = markerLatLng.lng;
+            });
+        }
+        
+        async function saveSpot() {
+            const id = document.getElementById('spotIdToEdit').value;
+            const name = document.getElementById('spotName').value;
+            const desc = document.getElementById('spotDesc').value;
+            const lat = parseFloat(document.getElementById('spotLat').value);
+            const lng = parseFloat(document.getElementById('spotLng').value);
+            const imageFile = document.getElementById('spotImageUpload').files[0];
+            const bust = document.getElementById('spotBust').value;
+            const lights = document.getElementById('spotLights').checked;
+            const tags = Array.from(document.querySelectorAll('.spot-tag:checked')).map(cb => cb.value);
+
+            if (!name || isNaN(lat) || isNaN(lng)) {
+                showNotification('Nazwa i lokalizacja są wymagane!', 'error');
+                return;
+            }
+
+            let imageUrl = '';
+
+            if (imageFile) {
+                 const storageRef = storage.ref(`spot_images/${Date.now()}_${imageFile.name}`);
+                 try {
+                     const snapshot = await storageRef.put(imageFile);
+                     imageUrl = await snapshot.ref.getDownloadURL();
+                 } catch (error) {
+                     showNotification(`Błąd ładowania obrazu: ${error.message}`, 'error');
+                     return;
+                 }
+            }
+            
+            // Obiekt spota do zapisu
+            const spotData = {
+                name: name,
+                description: desc,
+                lat: lat,
+                lng: lng,
+                tags: tags,
+                bust: bust,
+                lights: lights,
+                imageUrl: imageUrl,
+                author: currentUser.email,
+                createdAt: id ? spots.find(s => s.id === id).createdAt : firebase.firestore.FieldValue.serverTimestamp(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                if (id) {
+                    // Edycja istniejącego spota
+                    await spotsCollection.doc(id).update(spotData);
+                    showNotification('Spot zaktualizowany pomyślnie!', 'success');
+                } else {
+                    // Dodawanie nowego spota
+                    await spotsCollection.add(spotData);
+                    showNotification('Nowy spot dodany pomyślnie!', 'success');
+                }
+                toggleForm(false); // Ukryj formularz po zapisie
+            } catch (error) {
+                showNotification(`Błąd zapisu spota: ${error.message}`, 'error');
+            }
+        }
+        
+        function openEditForm(spotId) {
+            const spot = spots.find(s => s.id === spotId);
+            if (spot && currentUser && currentUser.email === spot.author) {
+                toggleForm(true, spot);
+                switchSidebarSection('map'); // Przełącz na mapę, aby zobaczyć marker
+            } else {
+                showNotification('Brak uprawnień do edycji tego spota.', 'error');
+            }
+        }
+
+        async function deleteSpot(spotId) {
+            const spot = spots.find(s => s.id === spotId);
+            if (!spot) return;
+
+            if (currentUser && currentUser.email === spot.author && confirm('Czy na pewno chcesz usunąć ten spot? Tej operacji nie można cofnąć!')) {
+                try {
+                    // Opcjonalnie: Usuń obraz z Storage
+                    if (spot.imageUrl) {
+                        await storage.refFromURL(spot.imageUrl).delete();
+                    }
+                    // Usuń dokument z Firestore
+                    await spotsCollection.doc(spotId).delete();
+                    showNotification('Spot usunięty pomyślnie!', 'info');
+                } catch (error) {
+                    showNotification(`Błąd usuwania: ${error.message}`, 'error');
+                }
+            } else if (!currentUser || currentUser.email !== spot.author) {
+                showNotification('Brak uprawnień do usunięcia tego spota.', 'error');
+            }
+        }
+        
+        // ===================================================================
+        // === FUNKCJE: WIDOKI I KARTY SPOTÓW ===
+        // ===================================================================
+
+        function createSpotCard(spot) {
+            const card = document.createElement('div');
+            card.className = 'spot-card';
+            card.id = `spot-card-${spot.id}`;
+            card.setAttribute('data-hover', '');
+            
+            // ... (HTML CARD CONTENT - ZAWARTOSC KARTY Z OBRAZKIEM, TAGAMI, ITD.)
+            card.innerHTML = `
+                <h3 style="color: var(--neon-blue); font-family: 'Orbitron';">${spot.name}</h3>
+                <p style="font-size: 0.85rem; margin-top: 5px;">${spot.description || 'Brak opisu.'}</p>
+                <div style="margin-top: 10px;">
+                    ${spot.imageUrl ? `<img src="${spot.imageUrl}" onclick="openLightbox('${spot.imageUrl}')" style="max-width: 100%; height: auto; border: 1px solid var(--neon-pink); margin-bottom: 5px; cursor: pointer;">` : ''}
+                </div>
+                <p style="font-size: 0.75rem; color: #888; margin-top: 5px;">Dodano przez: ${spot.author}</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px;">
+                    ${(spot.tags || []).map(tag => `<span style="background: var(--neon-orange); color: black; padding: 2px 5px; border-radius: 3px; font-size: 0.7rem;">${tag}</span>`).join('')}
+                    <span style="background: ${spot.lights ? 'yellow' : 'gray'}; color: black; padding: 2px 5px; border-radius: 3px; font-size: 0.7rem;">${spot.lights ? '💡 Lampy' : 'Bez Lamp'}</span>
+                </div>
+                <div style="margin-top: 10px; display: flex; gap: 10px;">
+                    <button class="btn-neon btn-blue" style="flex: 1; padding: 8px;" onclick="locateSpotOnMap(${spot.lat}, ${spot.lng})">Pokaż na Mapie</button>
+                    ${currentUser && currentUser.email === spot.author ? `
+                        <button class="btn-neon btn-orange" style="width: 80px; padding: 8px;" onclick="openEditForm('${spot.id}')">Edytuj</button>
+                        <button class="btn-neon btn-red" style="width: 80px; padding: 8px;" onclick="deleteSpot('${spot.id}')">Usuń</button>
+                    ` : ''}
+                </div>
+            `;
+            
+            card.onclick = () => { highlightCard(spot.id); locateSpotOnMap(spot.lat, spot.lng); };
+            return card;
+        }
+
+        function renderSpots(filteredSpots) {
+            const spotsListContainer = document.getElementById('spotsListContainer');
+            if (spotsListContainer) {
+                spotsListContainer.innerHTML = '';
+                markers.forEach(marker => map.removeLayer(marker));
+                markers = [];
+
+                if (filteredSpots.length === 0) {
+                     spotsListContainer.innerHTML = '<p style="margin-top: 20px; text-align: center;">Nie znaleziono spotów spełniających kryteria.</p>';
+                }
+
+                filteredSpots.forEach(spot => {
+                    // 1. Dodaj marker do mapy
+                    const color = spot.bust === 'high' ? 'red' : spot.bust === 'medium' ? 'orange' : 'green';
+                    const customIcon = L.divIcon({
+                        className: 'custom-spot-marker',
+                        html: `<i class="fas fa-skateboarding" style="color: ${color}; font-size: 24px;"></i>`,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 30]
+                    });
+
+                    const marker = L.marker([spot.lat, spot.lng], { icon: customIcon }).addTo(map)
+                        .bindPopup(`<b>${spot.name}</b><br>Dodano przez: ${spot.author}`);
+                    
+                    marker.on('click', () => {
+                        switchSidebarSection('spotsList');
+                        highlightCard(spot.id);
+                    });
+                    markers.push(marker);
+
+                    // 2. Dodaj kartę do listy
+                    spotsListContainer.appendChild(createSpotCard(spot));
+                });
+            }
+        }
+        
+        function getActiveFilters() {
+            const filterText = document.getElementById('spotFilterInput').value.toLowerCase().split(',').map(s => s.trim()).filter(s => s);
+            
+            if (filterText.length === 0) return spots;
+
+            return spots.filter(spot => 
+                filterText.every(filter => 
+                    (spot.tags && spot.tags.some(tag => tag.toLowerCase().includes(filter))) ||
+                    spot.name.toLowerCase().includes(filter) ||
+                    spot.description.toLowerCase().includes(filter)
+                )
+            );
+        }
+
+        // ===================================================================
+        // === FUNKCJE: PRZEŁĄCZANIE WIDOKÓW I ZDJĘCIA ===
+        // ===================================================================
+        
+        function switchSidebarSection(sectionId) {
+            const sections = document.querySelectorAll('.sidebar-section');
+            sections.forEach(sec => sec.classList.remove('active'));
+            
+            const target = document.getElementById(`${sectionId}-section`);
+            if (target) {
+                target.classList.add('active');
+            }
+            
+            // Logika dla Mobile Sidebar
+            const sidebar = document.getElementById('mainSidebar');
+            if (window.innerWidth <= 768) {
+                if (sectionId === 'map') {
+                    sidebar.classList.remove('active');
+                } else {
+                    sidebar.classList.add('active');
+                }
+            }
+
+            // Podświetlenie nawigacji mobilnej
+            document.querySelectorAll('.mobile-nav .nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-target') === sectionId) {
+                    item.classList.add('active');
+                }
+            });
+        }
+        
+        function openLightbox(url) {
+            document.getElementById('lightbox-img').src = url;
+            document.getElementById('lightbox').style.display = 'flex';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').style.display = 'none';
+        }
+
+        // ===================================================================
+        // === LISTENERY I START APLIKACJI ===
+        // ===================================================================
+
         function hideLoader() {
              const loader = document.getElementById('loader');
              const appContainer = document.querySelector('.app-container');
@@ -380,23 +1091,55 @@
         }
         
         document.addEventListener('DOMContentLoaded', () => {
-            loadMode(); // TERAZ JEST ZDEFINIOWANE I POWINNO DZIAŁAĆ
+            loadMode();
             initMap(); 
+            hideLoader();
+
+            // Ustawienie początkowego widoku dla urządzeń mobilnych
+            if (window.innerWidth <= 768) {
+                switchSidebarSection('map');
+            } else {
+                switchSidebarSection('auth');
+            }
+
+            // LISTENERY:
+            document.getElementById('registerBtn').addEventListener('click', handleRegister);
+            document.getElementById('loginBtn').addEventListener('click', handleLogin);
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+            document.getElementById('addSpotFab').addEventListener('click', () => toggleForm(isAddingSpot ? false : true));
+            document.getElementById('saveSpotBtn').addEventListener('click', saveSpot);
+            document.getElementById('cancelEditBtn').addEventListener('click', () => toggleForm(false));
+            document.getElementById('locateUserBtn').addEventListener('click', locateUserOnMap);
+            document.getElementById('citySearchBtn').addEventListener('click', searchLocation);
+            document.getElementById('spotFilterInput').addEventListener('input', () => renderSpots(getActiveFilters()));
+
+            // Listenery dla mobilnej nawigacji
+            document.querySelectorAll('.mobile-nav .nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const target = item.getAttribute('data-target');
+                    switchSidebarSection(target);
+                });
+            });
 
             // Subskrypcja zmian w bazie danych
             spotsCollection.onSnapshot(snapshot => {
                 spots = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                // ...
-                // W tym miejscu powinna być wywołana funkcja renderSpots()
-                // ...
+                renderSpots(getActiveFilters()); 
             });
-            
-            // Uruchomienie procedury ukrywania loadera
-            hideLoader();
         });
         
-        // --- Custom Cursor Logic (Bez zmian) ---
-        // ...
+        // --- Custom Cursor Logic ---
+        const customCursor = document.getElementById('cursor');
+        document.addEventListener('mousemove', (e) => {
+            customCursor.style.left = e.clientX + 'px';
+            customCursor.style.top = e.clientY + 'px';
+        });
+
+        document.querySelectorAll('[data-hover]').forEach(el => {
+            el.addEventListener('mouseover', () => customCursor.classList.add('hovered'));
+            el.addEventListener('mouseout', () => customCursor.classList.remove('hovered'));
+        });
+        
     </script>
 </body>
 </html>

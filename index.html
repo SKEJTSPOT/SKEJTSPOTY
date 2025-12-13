@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKEJTSPOTY - BAZA WSPÓLNA V12.1</title>
+    <title>SKEJTSPOTY </title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;500&display=swap" rel="stylesheet">
@@ -236,10 +236,10 @@
             flex: none;
         }
 
-        /* --- STYLE WYSZUKIWANIA I GEOLOKALIZACJI --- */
+        /* --- STYLE WYSZUKIWANIA I GEOLOKALIZACJI (Zmniejszona szerokość) --- */
         .search-overlay {
             position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 10px; z-index: 1000; width: 90%; max-width: 450px; /* Zmniejszona max-width */
+            display: flex; gap: 10px; z-index: 1000; width: 90%; max-width: 350px; /* Zmniejszona max-width */
         }
         .search-overlay input {
             flex-grow: 1; padding: 10px 15px;
@@ -993,9 +993,13 @@
             
             // Przewijanie i podświetlanie po kliknięciu karty
             card.addEventListener('click', () => {
-                // Dodana logika przełączania na mapę
-                if (isMobile()) switchSidebarSection('map');
-                map.flyTo([spot.lat, spot.lng], 17, { duration: 0.8 });
+                // Jeśli klikasz w kartę, upewnij się, że mapa jest widoczna (dla desktopu/mobile w widoku mapy)
+                if (isMobile() && mainSidebar.classList.contains('active')) {
+                    // Jesteśmy na liście, nic nie robimy.
+                } else if (!isMobile()) {
+                    // Desktop: centrowanie mapy i podświetlenie
+                    map.flyTo([spot.lat, spot.lng], 17, { duration: 0.8 });
+                }
                 highlightCard(spot.id);
             });
 
@@ -1049,9 +1053,8 @@
             const newCard = document.getElementById(`spot-card-${spotId}`);
             if (newCard) {
                 newCard.classList.add('highlight');
-                if (!isMobile()) { // Przewijanie tylko na desktopie, bo mobile używa przełączania
-                    newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
+                // Przewijanie do karty
+                newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 highlightedCardId = spotId;
             }
         }
@@ -1243,7 +1246,8 @@
 
                 marker.spotData = spot;
                 marker.on('click', (e) => {
-                    if (isMobile()) switchSidebarSection('spotsList'); // Przełącz na listę, żeby zobaczyć podświetloną kartę
+                    // === NOWA LOGIKA: Kliknięcie markera ===
+                    if (isMobile()) switchSidebarSection('spotsList'); // Przełącz na listę, jeśli mobile
                     map.flyTo(e.latlng, 17, { duration: 0.5 });
                     highlightCard(spot.id); // Podświetlanie karty po kliknięciu markera
                 });

@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKEJTY </title> <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>SKEJTY </title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> 
     
@@ -475,7 +477,8 @@
 
     <div id="loader">
         <div class="skate-wheel"></div>
-        <h2 style="margin-top: 20px; font-family: 'Orbitron'">SKEJTY ŁADOWANIE...</h2> </div>
+        <h2 style="margin-top: 20px; font-family: 'Orbitron'">SKEJTY ŁADOWANIE...</h2>
+    </div>
 
     <div id="notification-container"></div>
 
@@ -687,8 +690,14 @@
             setMode(isDark);
         });
         
-        // --- LOGIKA AUTORYZACJI (POMINIĘTA W POZOSTAŁYCH ZMIANACH, ALE ZOSTAWIONA W CAŁOŚCI) ---
+        // --- LOGIKA AUTORYZACJI ---
 
+        const showLoginBtn = document.getElementById('showLoginBtn');
+        const showRegisterBtn = document.getElementById('showRegisterBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const loginFormEl = document.getElementById('loginForm');
+        const registerFormEl = document.getElementById('registerForm');
+        
         // Funkcja logowania
         window.handleLogin = async () => {
             const email = document.getElementById('loginEmail').value;
@@ -745,7 +754,7 @@
         const map = L.map('map').setView([52.0693, 19.4803], 6);
         let markers = [];
         let tempMarker = null;
-        let isPlacingSpot = false; // NOWA ZMIENNA STANU
+        let isPlacingSpot = false; 
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap'
@@ -772,6 +781,8 @@
         const saveSpotBtn = document.getElementById('saveSpotBtn');
         const cancelEditBtn = document.getElementById('cancelEditBtn');
         const editModeLabel = document.getElementById('editModeLabel');
+        const addSpotFab = document.getElementById('addSpotFab');
+        const spotFormEl = document.getElementById('spot-form'); // NAPRAWA 2: Deklaracja na górze
 
         function resetForm() {
             spotNameEl.value = '';
@@ -786,8 +797,8 @@
             saveSpotBtn.innerText = 'ZAPISZ NA MAPIE';
             cancelEditBtn.style.display = 'none';
             spotTags.forEach(cb => cb.checked = false); 
-            // RESETOWANIE STANU FAB I PLACEMENT MODE
-            isPlacingSpot = false;
+            // RESETOWANIE STANU FAB I PLACEMENT MODE (NAPRAWA 1)
+            isPlacingSpot = false; 
             addSpotFab.innerHTML = '+';
             addSpotFab.classList.remove('form-active');
             if (tempMarker) {
@@ -819,7 +830,7 @@
                 if (isMobile()) switchSidebarSection('map');
             } else {
                 spotFormEl.style.display = 'none';
-                resetForm();
+                resetForm(); // ResetForm zawiera NAPRAWĘ 1: reset isPlacingSpot
             }
         }
 
@@ -842,7 +853,7 @@
             }
         });
 
-        cancelEditBtn.addEventListener('click', () => toggleForm(false)); // Używamy toggleForm(false) do resetowania i zamykania
+        cancelEditBtn.addEventListener('click', () => toggleForm(false)); 
 
         // ZMIANA LOGIKI KLIKNIĘCIA MAPY: Otwiera formularz tylko w trybie isPlacingSpot
         map.on('click', function(e) {
@@ -1006,10 +1017,12 @@
 
         function highlightCard(spotId) {
             if (activeCardId) {
-                document.getElementById(`card-${activeCardId}`).classList.remove('highlight');
+                const prevCard = document.getElementById(`card-${activeCardId}`);
+                if (prevCard) prevCard.classList.remove('highlight');
             }
             if (activeCardId !== spotId) {
-                document.getElementById(`card-${spotId}`).classList.add('highlight');
+                const newCard = document.getElementById(`card-${spotId}`);
+                if (newCard) newCard.classList.add('highlight');
                 activeCardId = spotId;
             } else {
                 activeCardId = null;
@@ -1249,15 +1262,22 @@
                     markers.push(marker);
                 });
             
-            // Po renderowaniu, upewnij się, że aktywna karta jest nadal podświetlona
+            // 4. Poprawa aktywnej karty po renderowaniu/filtrowaniu
             if (activeCardId) {
                 const activeCard = document.getElementById(`card-${activeCardId}`);
                 if (activeCard) {
                     activeCard.classList.add('highlight');
                     activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 } else {
-                    activeCardId = null; // Jeśli aktywna karta została usunięta przez filtr
+                    // Karta została usunięta przez filtr, resetujemy aktywne ID
+                    activeCardId = null; 
                 }
+            }
+            
+            // Po renderowaniu, upewnij się, że tymczasowy marker jest usunięty, jeśli jest.
+            if (tempMarker) {
+                map.removeLayer(tempMarker);
+                tempMarker = null;
             }
         }
 
@@ -1267,6 +1287,9 @@
         const mainSidebar = document.getElementById('mainSidebar');
         const mobileNav = document.getElementById('mobileNav');
         const navLogoutMobile = document.getElementById('navLogoutMobile');
+        const navKonto = document.getElementById('navKonto');
+        const navMapa = document.getElementById('navMapa');
+        const navSpoty = document.getElementById('navSpoty');
 
         function isMobile() {
             return window.innerWidth <= 768;
@@ -1285,18 +1308,24 @@
             // Przełączanie sekcji
             authContent.classList.remove('active');
             spotsListContent.classList.remove('active');
+            
+            // Usuń podświetlenie ze wszystkich ikon
             document.querySelectorAll('.mobile-nav .nav-item').forEach(item => item.classList.remove('active'));
 
             if (target === 'auth') {
                 authContent.classList.add('active');
-                document.getElementById('navKonto').classList.add('active');
-                // Jeśli zalogowany, podświetl wylogowanie na mobile
-                if(currentUser) navLogoutMobile.classList.add('active'); 
+                
+                // Jeśli zalogowany, podświetl Wyloguj, jeśli kliknięto w nie, inaczej Konto
+                if(currentUser && navLogoutMobile.style.display === 'flex' && event.target.closest('#navLogoutMobile')){ // NAPRAWA 3
+                    navLogoutMobile.classList.add('active'); 
+                } else {
+                    navKonto.classList.add('active');
+                }
             } else if (target === 'spotsList') {
                 spotsListContent.classList.add('active');
-                document.getElementById('navSpoty').classList.add('active');
+                navSpoty.classList.add('active');
             } else if (target === 'map') {
-                document.getElementById('navMapa').classList.add('active');
+                navMapa.classList.add('active');
             }
         }
 
@@ -1326,13 +1355,6 @@
 
         // --- LOGIKA AUTORYZACJI ---
         const authStatusEl = document.getElementById('authStatus');
-        const showLoginBtn = document.getElementById('showLoginBtn');
-        const showRegisterBtn = document.getElementById('showRegisterBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const loginFormEl = document.getElementById('loginForm');
-        const registerFormEl = document.getElementById('registerForm');
-        const addSpotFab = document.getElementById('addSpotFab');
-        const spotFormEl = document.getElementById('spot-form');
 
         auth.onAuthStateChanged(async user => {
             currentUser = user;
@@ -1343,6 +1365,7 @@
                 logoutBtn.style.display = 'inline-block';
                 addSpotFab.style.display = 'flex';
                 navLogoutMobile.style.display = 'flex'; // Pokaż wylogowanie na mobile
+                navKonto.style.display = 'none'; // Ukryj Konto na mobile, gdy zalogowany
             } else {
                 authStatusEl.innerHTML = 'Niezalogowany. Zaloguj się lub zarejestruj.';
                 showLoginBtn.style.display = 'inline-block';
@@ -1350,6 +1373,7 @@
                 logoutBtn.style.display = 'none';
                 addSpotFab.style.display = 'none';
                 navLogoutMobile.style.display = 'none'; // Ukryj wylogowanie na mobile
+                navKonto.style.display = 'flex'; // Pokaż Konto na mobile, gdy wylogowany
                 toggleForm(false);
             }
             loginFormEl.style.display = 'none';
@@ -1366,7 +1390,7 @@
                 
                 // === AUTOMATYCZNY PEŁNY EKRAN ===
                 // Próba włączenia pełnego ekranu (może być zablokowana przez przeglądarkę)
-                requestFullscreen();
+                // requestFullscreen(); // ZAKOMENTOWANE - może irytować użytkowników na starcie
                 // =================================
             }});
             

@@ -306,16 +306,11 @@
         @media (max-width: 768px) {
             .app-container { 
                 grid-template-columns: 1fr; 
-                grid-template-rows: 1fr; /* Uproszczona definicja wierszy (tylko 1) */
+                grid-template-rows: calc(100vh - 60px) 0; 
                 overflow: hidden;
-                padding-bottom: 60px; /* Dodaj odstęp na dole, aby uniknąć kolizji z nav (60px wysokości mobile-nav) */
-    }
+            }
 
-            .map-wrapper {
-                grid-row: 1 / 2; 
-                grid-column: 1 / 2; /* Dodajemy to, aby upewnić się, że mapa jest jedynym elementem w siatce */
-                height: 100%; 
-        }
+            .map-wrapper { grid-row: 1 / 2; height: 100%; }
 
             .sidebar { 
                 position: fixed; bottom: 60px; left: 0; 
@@ -629,13 +624,12 @@
         // --- KONFIGURACJA FIREBASE ---
         // TODO: Zmień na swoją konfigurację!
         const firebaseConfig = {
-            apiKey: "AIzaSyCCxW6X7MJlWPfxP_6I8FlLc7Vp2wiR69Q",
-            authDomain: "skejspoty.firebaseapp.com",
-            projectId: "skejspoty",
-            storageBucket: "skejspoty.firebasestorage.app",
-            messagingSenderId: "1067851773136",
-            appId: "1:1067851773136:web:39bdc7f7af34cbbf94dad5",
-            measurementId: "G-WH6DYL95DH"
+            apiKey: "YOUR_API_KEY", 
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
@@ -1142,7 +1136,7 @@
                 if (data && data.length > 0) {
                     const { lat, lon } = data[0];
                     // Zwiększenie poziomu przybliżenia z 14 na 16
-                    map.flyTo([lat, lon], 24, { duration: 1.5 }); 
+                    map.flyTo([lat, lon], 16, { duration: 1.5 }); 
                     showNotification(`Znaleziono: ${data[0].display_name.split(',')[0]}`, 'success');
                     searchBtn.innerText = "SZUKAJ";
                 } else {
@@ -1412,6 +1406,3 @@
     </script>
 </body>
 </html>
-
-
-

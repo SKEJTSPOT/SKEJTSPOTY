@@ -306,11 +306,16 @@
         @media (max-width: 768px) {
             .app-container { 
                 grid-template-columns: 1fr; 
-                grid-template-rows: calc(100vh - 60px) 0; 
+                grid-template-rows: 1fr; /* Uproszczona definicja wierszy (tylko 1) */
                 overflow: hidden;
-            }
+                padding-bottom: 60px; /* Dodaj odstęp na dole, aby uniknąć kolizji z nav (60px wysokości mobile-nav) */
+    }
 
-            .map-wrapper { grid-row: 1 / 2; height: 100%; }
+            .map-wrapper {
+                grid-row: 1 / 2; 
+                grid-column: 1 / 2; /* Dodajemy to, aby upewnić się, że mapa jest jedynym elementem w siatce */
+                height: 100%; 
+        }
 
             .sidebar { 
                 position: fixed; bottom: 60px; left: 0; 
@@ -1407,5 +1412,6 @@
     </script>
 </body>
 </html>
+
 
 

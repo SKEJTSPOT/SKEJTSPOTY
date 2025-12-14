@@ -19,891 +19,970 @@
     <style>
         /* --- ZMIENNE KOLORÓW --- */
         :root {
-            --neon-green: #39ff14;
-            --neon-pink: #ff00ff;
-            --neon-blue: #00f3ff;
-            --neon-red: #ff3131;
-            --neon-orange: #ffaa00;
-            --main-bg: #f0f0f0; 
-            --sidebar-bg: rgba(240, 240, 240, 0.95);
-            --text-color: #111;
-            --card-bg: white;
-            --form-bg: white;
-            --comment-bg: #f4f4f4;
-            --shadow-color: rgba(0,0,0,0.1);
+            --color-neon-blue: #00FFFF;
+            --color-dark-blue: #0000FF;
+            --color-dark: #121212;
+            --color-medium-dark: #1e1e1e;
+            --color-light-grey: #e0e0e0;
+            --color-white: #ffffff;
+            --color-accent-pink: #FF00FF;
         }
 
-        /* --- TRYB CIEMNY (Dark Mode) --- */
-        body.dark-mode {
-            --neon-green: #39ff14;
-            --neon-pink: #ff00ff;
-            --neon-blue: #00f3ff;
-            --neon-red: #ff3131;
-            --neon-orange: #ffaa00;
-            --main-bg: #1a1a2e;
-            --sidebar-bg: rgba(26, 26, 46, 0.98);
-            --text-color: #f0f0f0;
-            --card-bg: #2d2d4d;
-            --form-bg: #3e3e6e;
-            --comment-bg: #4a4a7d;
-            --shadow-color: rgba(0, 243, 255, 0.1);
-        }
-
-        /* --- OGÓLNE STYLI DLA OBU TRYBÓW --- */
-        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
-
-        body {
-            font-family: 'Orbitron', sans-serif; 
-            background-color: var(--main-bg);
-            color: var(--text-color);
-            overflow-x: hidden;
-            height: 100vh;
-            transition: background-color 0.5s;
+        /* --- GLOBALNE --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--color-light-grey);
+            cursor: none; /* Ukrywa standardowy kursor */
         }
         
-        /* --- CUSTOM CURSOR --- */
-        #cursor {
-            position: fixed; width: 20px; height: 20px;
-            border: 2px solid var(--neon-pink); border-radius: 50%;
-            pointer-events: none; z-index: 9999;
-            transform: translate(-50%, -50%);
-            transition: width 0.2s, height 0.2s, background 0.2s;
-            mix-blend-mode: difference;
-        }
-        #cursor.hovered {
-            width: 50px; height: 50px;
-            background: rgba(255, 0, 255, 0.2); border-color: var(--neon-green);
-            mix-blend-mode: normal;
+        body {
+            background-color: var(--color-dark);
+            overflow: hidden; /* Ukrywa paski przewijania, bo mapa jest pełnoekranowa */
+            height: 100vh;
         }
 
         /* --- LOADER --- */
         #loader {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--main-bg); display: flex; justify-content: center; align-items: center;
-            z-index: 10000; flex-direction: column;
-            transition: background-color 0.5s;
-        }
-        .skate-wheel {
-            width: 80px; height: 80px;
-            border: 8px solid var(--neon-green); border-top: 8px solid var(--neon-pink);
-            border-radius: 50%; animation: spin 0.5s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* --- UI LAYOUT (DESKTOP) --- */
-        .app-container {
-            display: grid; 
-            grid-template-columns: 400px 1fr;
-            height: 100vh; 
-            opacity: 0;
-        }
-
-        /* --- SIDEBAR --- */
-        .sidebar {
-            background: var(--sidebar-bg);
-            backdrop-filter: blur(10px);
-            border-right: 2px solid var(--neon-pink);
-            padding: 20px; overflow-y: auto; position: relative;
-            transform: translateX(0); 
-            display: flex; flex-direction: column;
-            transition: background 0.5s;
-        }
-        
-        /* --- MAP CONTAINER --- */
-        #map-container { position: relative; width: 100%; height: 100%; }
-        #map { width: 100%; height: 100%; z-index: 1; }
-        
-        /* --- POWIADOMIENIA --- */
-        #notification-container {
             position: fixed;
-            bottom: 20px; 
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9000; 
-            pointer-events: none; 
-            display: flex;
-            flex-direction: column-reverse; 
-            gap: 10px;
-            width: 90%; 
-            max-width: 450px;
-        }
-
-        .notification {
-            padding: 15px 20px;
-            border: 2px solid;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.9rem;
-            color: #fff; 
-            background: var(--text-color);
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
-            transform: translateY(100%); 
-            pointer-events: auto;
-        }
-
-        .notification.success { border-color: var(--neon-green); background: #1f3d24; }
-        .notification.error { border-color: var(--neon-red); background: #4d2d2d; }
-        .notification.info { border-color: var(--neon-blue); background: #2d3d4d; }
-
-        /* --- SIDEBAR SECTIONS --- */
-        .sidebar-section {
-            display: none; 
+            top: 0;
+            left: 0;
+            width: 100%;
             height: 100%;
-            overflow-y: auto;
-            padding-top: 20px;
-        }
-        .sidebar-section.active {
-            display: block;
-        }
-        
-        /* --- Floating Action Button (FAB) --- */
-        .fab {
-            position: fixed;
-            bottom: 80px; 
-            right: 20px;
-            width: 55px; height: 55px;
-            background: var(--neon-pink);
-            color: white;
-            border-radius: 50%;
+            background-color: var(--color-dark);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 28px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            z-index: 2000;
-            transition: transform 0.3s, background 0.3s;
+            flex-direction: column;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
         }
-        .fab:hover {
-            background: var(--neon-green);
+
+        #loader h1 {
+            font-size: 2.5rem;
+            color: var(--color-neon-blue);
+            text-shadow: 0 0 10px var(--color-neon-blue);
         }
-        .fab.form-active { 
-            background: var(--neon-red); 
-            transform: rotate(45deg); 
-            font-size: 24px; 
+
+        /* --- APP CONTAINER --- */
+        .app-container {
+            opacity: 0; /* Zaczynamy od ukrycia, by pokazać po załadowaniu */
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* --- MAPA --- */
+        #map {
+            flex-grow: 1;
+            height: 100%;
+            z-index: 10;
+        }
+
+        /* --- LEAFLET MODYFIKACJE --- */
+        .leaflet-container {
+            background-color: var(--color-medium-dark) !important;
         }
         
-        /* --- NEON BUTTON STYLES --- */
-        .btn-neon {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: bold;
-            padding: 10px 15px;
+        .leaflet-control-attribution a, .leaflet-control-zoom a, .leaflet-control-scale-line {
+            color: var(--color-neon-blue) !important;
+            background-color: var(--color-medium-dark) !important;
+            border: 1px solid var(--color-neon-blue) !important;
+            box-shadow: 0 0 5px var(--color-neon-blue) !important;
+        }
+        
+        .leaflet-control-zoom a:hover, .leaflet-control-zoom-in:hover, .leaflet-control-zoom-out:hover {
+            background-color: var(--color-dark-blue) !important;
+            color: var(--color-white) !important;
+        }
+
+        /* --- MARKER --- */
+        .spot-marker {
+            width: 24px;
+            height: 24px;
+            background-color: var(--color-accent-pink);
+            border-radius: 50%;
+            border: 2px solid var(--color-white);
+            box-shadow: 0 0 10px var(--color-accent-pink);
+            transform: translate(-50%, -50%);
+            display: block;
+        }
+
+        /* --- POPUP --- */
+        .leaflet-popup-content-wrapper {
+            background: var(--color-medium-dark) !important;
+            color: var(--color-light-grey) !important;
+            border: 2px solid var(--color-neon-blue) !important;
+            box-shadow: 0 0 15px var(--color-neon-blue) !important;
+            padding: 15px !important;
+            border-radius: 8px !important;
+        }
+
+        .leaflet-popup-tip {
+            background: var(--color-neon-blue) !important;
+            border: none !important;
+        }
+        
+        .leaflet-popup-content {
+            width: 300px !important;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Roboto Mono', monospace !important;
+        }
+
+        .popup-header {
+            color: var(--color-accent-pink);
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            text-shadow: 0 0 5px var(--color-accent-pink);
+        }
+        
+        .popup-tags, .popup-author {
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+        
+        .popup-tags span {
+            display: inline-block;
+            background-color: var(--color-dark-blue);
+            color: var(--color-white);
+            padding: 2px 5px;
+            margin: 2px;
+            border-radius: 3px;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .popup-image {
+            width: 100%;
+            height: auto;
+            max-height: 200px;
+            object-fit: cover;
             margin-top: 10px;
-            margin-bottom: 10px;
-            border: 2px solid;
-            border-radius: 5px;
-            cursor: pointer !important;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-            background: transparent;
-            width: 100%; 
-        }
-
-        .btn-neon.btn-green {
-            color: var(--neon-green);
-            border-color: var(--neon-green);
-            text-shadow: 0 0 5px var(--neon-green);
-        }
-
-        .btn-neon.btn-orange {
-            color: var(--neon-orange);
-            border-color: var(--neon-orange);
-            text-shadow: 0 0 5px var(--neon-orange);
-        }
-
-        .btn-neon.btn-red {
-            color: var(--neon-red);
-            border-color: var(--neon-red);
-            text-shadow: 0 0 5px var(--neon-red);
-        }
-
-        .btn-neon.btn-blue {
-            color: var(--neon-blue);
-            border-color: var(--neon-blue);
-            text-shadow: 0 0 5px var(--neon-blue);
+            border: 1px solid var(--color-light-grey);
+            border-radius: 4px;
         }
         
-        .btn-neon:hover {
-            box-shadow: 0 0 15px var(--neon-pink);
-            color: var(--text-color); 
-            text-shadow: none;
-            transform: translateY(-2px);
+        /* --- SIDEBAR --- */
+        #sidebar {
+            width: 350px;
+            min-width: 350px;
+            background-color: var(--color-dark);
+            border-left: 2px solid var(--color-neon-blue);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            z-index: 20;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        @media (max-width: 768px) {
+            #sidebar {
+                position: absolute;
+                top: 0;
+                right: 0;
+                height: 100%;
+                transform: translateX(100%);
+                transition: transform 0.3s ease-out;
+            }
+            #sidebar.open {
+                transform: translateX(0);
+            }
+        }
+        
+        /* --- KURSOR --- */
+        #cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--color-neon-blue);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s ease, height 0.3s ease, border-radius 0.3s ease;
+            mix-blend-mode: difference; /* Efekt "odwrócenia koloru" */
+            z-index: 10000;
         }
 
-        .btn-neon.btn-green:hover { background: var(--neon-green); }
-        .btn-neon.btn-orange:hover { background: var(--neon-orange); }
-        .btn-neon.btn-red:hover { background: var(--neon-red); }
-        .btn-neon.btn-blue:hover { background: var(--neon-blue); }
+        #cursor.hovered {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--color-accent-pink);
+            border: none;
+            opacity: 0.8;
+        }
+
+        /* --- FORMULARZ --- */
+        #spotForm, #authSection {
+            background-color: var(--color-medium-dark);
+            padding: 15px;
+            border: 1px solid var(--color-accent-pink);
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none; /* Domyślnie ukryty */
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        #spotForm.open, #authSection.open {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--color-neon-blue);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"], input[type="number"], input[type="file"], textarea {
+            width: 100%;
+            padding: 8px;
+            background-color: var(--color-dark);
+            border: 1px solid var(--color-neon-blue);
+            color: var(--color-light-grey);
+            border-radius: 4px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem;
+        }
         
-        .auth-actions {
+        textarea {
+            resize: vertical;
+        }
+
+        /* Sekcja Tagów */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .tag-checkbox {
+            display: none;
+        }
+
+        .tag-label {
+            padding: 5px 10px;
+            border: 1px solid var(--color-neon-blue);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.8rem;
+            color: var(--color-neon-blue);
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .tag-checkbox:checked + .tag-label {
+            background-color: var(--color-accent-pink);
+            border-color: var(--color-accent-pink);
+            color: var(--color-white);
+            box-shadow: 0 0 8px var(--color-accent-pink);
+        }
+
+        /* --- STYLIZACJA NAGŁÓWKA/NAVIGACJI --- */
+        #navHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px dashed var(--color-accent-pink);
+        }
+
+        #navHeader h1 {
+            font-size: 2.5rem;
+            color: var(--color-accent-pink);
+            text-shadow: 0 0 10px var(--color-accent-pink);
+            font-weight: 900;
+        }
+
+        .nav-buttons {
             display: flex;
             gap: 10px;
         }
-        .auth-actions .btn-neon {
-            flex: 1;
-        }
-        .auth-actions .btn-red {
-            width: auto;
-            flex: none;
-        }
-
-        /* --- STYLE WYSZUKIWANIA I GEOLOKALIZACJI --- */
-        .search-overlay {
-            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 10px; z-index: 1000; width: 90%; max-width: 350px; 
-        }
-        .search-overlay input {
-            flex-grow: 1; padding: 10px 15px;
-            background: rgba(17, 17, 17, 0.8); color: white;
-            border: 2px solid var(--neon-blue); border-radius: 5px;
-            font-family: 'Roboto Mono', monospace; font-size: 1rem;
-        }
-        .search-overlay .search-btn {
-            padding: 10px 15px;
-            background: var(--neon-blue); color: white;
-            border: none; border-radius: 5px;
-            font-family: 'Orbitron', sans-serif; font-size: 1rem;
-            cursor: pointer !important; transition: background 0.3s;
-        }
-        .search-overlay .search-btn:hover { background: var(--neon-pink); }
         
-        .geo-btn {
-            position: absolute; top: 80px; right: 20px;
-            width: 40px; height: 40px;
-            background: rgba(17, 17, 17, 0.7); color: var(--neon-green);
-            border: 2px solid var(--neon-green); border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 20px; cursor: pointer !important; z-index: 1000;
-            transition: background 0.3s, color 0.3s;
-        }
-        .geo-btn:hover {
-            background: var(--neon-green); color: black;
-            box-shadow: 0 0 10px var(--neon-green);
+        button {
+            padding: 8px 15px;
+            background-color: var(--color-neon-blue);
+            color: var(--color-dark);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
         }
 
-        /* --- MOBILE NAV BAR --- */
-        .mobile-nav { display: none; }
+        button:hover {
+            background-color: var(--color-dark-blue);
+            color: var(--color-white);
+            box-shadow: 0 0 10px var(--color-neon-blue);
+        }
 
-        /* --- STYL PRZYCISKU ZAMYKAJĄCEGO FORMULARZ --- */
-        .close-form-btn {
+        /* --- NOTYFIKACJE --- */
+        #notificationContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 50;
+        }
+
+        .notification {
+            background-color: var(--color-medium-dark);
+            color: var(--color-light-grey);
+            padding: 10px 20px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.5s, transform 0.5s;
+            transform: translateY(-20px);
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .notification.info {
+            border-left: 4px solid var(--color-neon-blue);
+        }
+        .notification.error {
+            border-left: 4px solid var(--color-accent-pink);
+            color: var(--color-accent-pink);
+        }
+        .notification.success {
+            border-left: 4px solid #00FF00;
+            color: #00FF00;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- Sekcja Autoryzacji --- */
+        #loginForm, #registerForm {
+            margin-top: 10px;
+            border-top: 1px dashed var(--color-neon-blue);
+            padding-top: 15px;
+        }
+        
+        .auth-toggle {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+            color: var(--color-neon-blue);
+            font-size: 0.8rem;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        
+        /* --- FILTRY --- */
+        #filterContainer {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed var(--color-neon-blue);
+        }
+        
+        .filter-tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        
+        .filter-checkbox {
+            display: none;
+        }
+        
+        .filter-label {
+            padding: 5px 10px;
+            border: 1px solid var(--color-accent-pink);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.8rem;
+            color: var(--color-accent-pink);
+            font-family: 'Roboto Mono', monospace;
+        }
+        
+        .filter-checkbox:checked + .filter-label {
+            background-color: var(--color-neon-blue);
+            border-color: var(--color-neon-blue);
+            color: var(--color-dark);
+            box-shadow: 0 0 8px var(--color-neon-blue);
+        }
+        
+        /* --- Sekcja Edycji/Usuwania --- */
+        .popup-actions button {
+            background-color: var(--color-accent-pink);
+            color: var(--color-white);
+            margin-top: 10px;
+            font-size: 0.8rem;
+            padding: 5px 10px;
+        }
+
+        .popup-actions button:hover {
+            background-color: var(--color-dark-blue);
+            box-shadow: 0 0 8px var(--color-accent-pink);
+        }
+        
+        /* --- Responsywność dla Sidebar'a --- */
+        #menuToggle {
+            display: none;
             position: absolute;
             top: 10px;
-            right: 15px;
-            font-size: 24px;
-            color: var(--neon-red);
-            cursor: pointer;
-            z-index: 2010;
-            transition: color 0.2s;
-            line-height: 1;
-        }
-        .close-form-btn:hover {
-            color: var(--neon-pink);
-        }
-
-        /* --- STYL DLA SLIDERA (SUWAKA) I INPUTÓW DODATKOWYCH --- */
-        input[type=range] {
-            -webkit-appearance: none; width: 100%; background: transparent; margin: 10px 0;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
-            background: var(--neon-green); cursor: pointer; margin-top: -6px;
-            box-shadow: 0 0 5px var(--neon-green);
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 4px; cursor: pointer; background: var(--neon-blue); border-radius: 2px;
-        }
-        /* Dla Firefox */
-        input[type=range]::-moz-range-thumb {
-            height: 16px; width: 16px; border-radius: 50%;
-            background: var(--neon-green); cursor: pointer; border: none;
-            box-shadow: 0 0 5px var(--neon-green);
-        }
-        input[type=range]::-moz-range-track {
-            width: 100%; height: 4px; cursor: pointer; background: var(--neon-blue); border-radius: 2px;
-        }
-
-        /* ----------------------------------------------- */
-
-        @media (max-width: 768px) {
-            .app-container { 
-                grid-template-columns: 1fr; 
-                grid-template-rows: calc(100vh - 60px) 0; 
-                overflow: hidden;
-            }
-
-            .map-wrapper { grid-row: 1 / 2; height: 100%; }
-
-            .sidebar { 
-                position: fixed; bottom: 60px; left: 0; 
-                width: 100%; height: calc(100vh - 60px); 
-                z-index: 5000; 
-                transform: translateY(100%); 
-                transition: transform 0.5s ease-out;
-                border-right: none;
-                border-top: 2px solid var(--neon-pink);
-                background: var(--sidebar-bg);
-                padding-bottom: 70px; 
-            }
-            .sidebar.active { transform: translateY(0); }
-
-            .search-overlay { width: 90%; top: 10px; max-width: 90%; }
-            .mobile-nav {
-                display: flex; position: fixed; bottom: 0; left: 0;
-                width: 100%; height: 60px;
-                background: rgba(17, 17, 17, 0.95);
-                border-top: 2px solid var(--neon-pink);
-                z-index: 6000; justify-content: space-around; align-items: center;
-            }
-
-            .nav-item {
-                display: flex; flex-direction: column;
-                align-items: center; justify-content: center;
-                color: #ccc; font-size: 0.65rem;
-                font-family: 'Orbitron'; padding: 5px; cursor: pointer !important; transition: color 0.2s;
-            }
-            .nav-item i {
-                font-size: 20px; margin-bottom: 3px;
-                text-shadow: 0 0 5px rgba(255, 255, 255, 0.5); 
-            }
-            .nav-item.active i {
-                color: var(--neon-green);
-                text-shadow: 0 0 10px var(--neon-green), 0 0 20px rgba(57, 255, 20, 0.5);
-            }
-            .nav-item.active span { color: var(--neon-green); }
-            
-            .fab { bottom: 80px; }
-            
-            #spot-form {
-                bottom: 60px !important; 
-                right: 0 !important;
-                left: 0 !important;
-                width: 100% !important;
-                max-width: none !important; 
-                max-height: calc(100vh - 70px) !important; 
-                overflow-y: auto !important; 
-                border-radius: 10px 10px 0 0 !important; 
-                border: 2px solid var(--neon-pink) !important;
-                border-bottom: none !important;
-                padding-bottom: 20px !important;
-                padding-top: 40px !important;
-            }
-        }
-        
-        /* --- STYLE KART SPOTÓW --- */
-        .spot-card {
-            background: var(--card-bg);
-            border: 2px solid var(--neon-pink);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 0 10px var(--shadow-color);
-            transition: all 0.3s;
-            cursor: pointer; 
-        }
-        .spot-card.highlight {
-            border-color: var(--neon-green);
-            box-shadow: 0 0 15px var(--neon-green);
-        }
-
-        .spot-img-container {
-            width: 100%; height: 200px; overflow: hidden;
-            border-radius: 5px; margin-bottom: 10px;
-            cursor: pointer;
-        }
-        .spot-img {
-            width: 100%; height: 100%; object-fit: cover;
-            transition: transform 0.5s;
-        }
-        .spot-img:hover { transform: scale(1.05); }
-
-        .bust-level {
-            font-family: 'Orbitron'; font-size: 0.8rem;
-            padding: 5px 8px; border-radius: 3px; font-weight: bold;
-        }
-        .bust-safe { background: var(--neon-green); color: black; }
-        .bust-medium { background: var(--neon-orange); color: black; }
-        .bust-high { background: var(--neon-red); color: white; }
-
-        .tags-container { margin: 8px 0; display: flex; flex-wrap: wrap; gap: 5px; }
-        .tag {
-            font-size: 0.7rem; padding: 3px 6px; border-radius: 3px;
-            border: 1px solid var(--neon-pink); color: var(--neon-pink);
-            font-family: 'Orbitron';
-        }
-
-        .card-actions { margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
-        .card-btn {
-            padding: 8px 12px; border: 1px solid var(--neon-blue);
-            background: transparent; color: var(--neon-blue);
-            cursor: pointer !important; border-radius: 5px;
-            font-size: 0.8rem; transition: all 0.2s;
-        }
-        .card-btn:hover { background: var(--neon-blue); color: white; }
-        .card-actions .hidden { display: none; }
-
-        .comments-section { 
-            margin-top: 15px; border-top: 1px dashed var(--neon-blue); 
-            padding-top: 10px; 
-        }
-        .comment {
-            background: var(--comment-bg); padding: 8px; border-radius: 5px;
-            font-size: 0.8rem; margin-bottom: 5px;
-        }
-
-        /* --- Lightbox --- */
-        #lightbox {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9); z-index: 9990; justify-content: center; align-items: center;
-            opacity: 0; transition: opacity 0.3s;
-        }
-        #lightbox-img {
-            max-width: 90%; max-height: 90%; border: 3px solid white;
-        }
-        
-        /* Styl dla inputów w formularzu */
-        #spot-form input[type=text], #spot-form textarea, #spot-form select {
-            width: 100%; padding: 10px; margin-bottom: 10px;
-            border: 1px solid var(--neon-blue); border-radius: 3px;
-            background: var(--form-bg); color: var(--text-color);
-            font-family: 'Roboto Mono', sans-serif;
-        }
-
-        /* Custom marker styling */
-        .custom-marker-icon {
-            background: var(--neon-pink);
-            color: white;
+            right: 10px;
+            z-index: 30;
+            background: var(--color-accent-pink);
+            color: var(--color-dark);
             border-radius: 50%;
-            border: 3px solid var(--neon-green);
-            text-align: center;
-            line-height: 24px;
-            font-weight: bold;
-            font-family: 'Orbitron', sans-serif;
-            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
-            transition: all 0.2s;
+            width: 40px;
+            height: 40px;
+            font-size: 1.5rem;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        @media (max-width: 768px) {
+            #menuToggle {
+                display: flex;
+            }
         }
         
     </style>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
 </head>
-<body class="dark-mode"> <div id="cursor"></div>
-
-    <div id="lightbox" onclick="closeLightbox()">
-        <img id="lightbox-img" src="" alt="Full Screen">
-    </div>
+<body>
 
     <div id="loader">
-        <div class="skate-wheel"></div>
-        <h2 style="margin-top: 20px; font-family: 'Orbitron'">SKEJTY ŁADOWANIE...</h2>
+        <h1>SKEJTY</h1>
     </div>
 
-    <div id="notification-container"></div>
+    <div id="cursor"></div>
+
+    <div id="notificationContainer"></div>
+
+    <button id="menuToggle" data-hover><i class="fas fa-bars"></i></button>
 
     <div class="app-container">
-        <div class="sidebar" id="mainSidebar">
-            <h1>SKEJ<span style="color:var(--neon-pink)">TY</span></h1>
-            
-            <div id="authContent" class="sidebar-section active">
-                 <h2 style="margin-bottom: 15px; color: var(--neon-blue);">Zarządzanie Kontem</h2>
-                 <div id="authSection">
-                     <div id="authStatus">Ładowanie...</div>
-                     <div class="auth-actions">
-                         <button class="btn-neon btn-green" id="showLoginBtn" data-hover>Zaloguj</button>
-                         <button class="btn-neon btn-orange" id="showRegisterBtn" data-hover>Rejestruj</button>
-                         <button class="btn-neon btn-red" id="logoutBtn" style="display:none;" data-hover>Wyloguj</button>
-                     </div>
-
-                     <div id="loginForm" style="display:none;">
-                         <input type="email" id="loginEmail" placeholder="Email" data-hover>
-                         <input type="password" id="loginPassword" placeholder="Hasło" data-hover>
-                         <button class="btn-neon btn-green" onclick="handleLogin()" data-hover>ZALOGUJ SIĘ</button>
-                     </div>
-
-                     <div id="registerForm" style="display:none;">
-                         <input type="text" id="registerNick" placeholder="Twój Nick/Ksywa" data-hover>
-                         <input type="email" id="registerEmail" placeholder="Email (np. skater@gmail.com)" data-hover>
-                         <input type="password" id="registerPassword" placeholder="Hasło (min. 6 znaków)" data-hover>
-                         <button class="btn-neon btn-orange" onclick="handleRegister()" data-hover>ZAREJESTRUJ</button>
-                     </div>
-                 </div>
-            </div>
-
-            <div id="spotsListContent" class="sidebar-section">
-                <h2 style="margin-bottom: 15px; color: var(--neon-pink);">Lista Spotów</h2>
-
-                 <div id="filterSection" style="margin-top: 0; padding: 15px 0; border-top: 1px dashed var(--neon-blue); border-bottom: 1px dashed var(--neon-blue); margin-bottom: 15px;">
-                    <h3 style="color: var(--neon-orange); margin-bottom: 10px;">🔍 Filtruj Spoty</h3>
-                    
-                    <label style="font-size: 0.9rem; font-weight: bold;">Poziom Przypału:</label>
-                    <select id="filterBust" style="width: 100%; padding: 8px; margin-bottom: 10px; font-family: 'Roboto Mono', monospace;" data-hover>
-                        <option value="all">Wszystkie</option>
-                        <option value="safe">Bezpiecznie (Chill)</option>
-                        <option value="medium">Średni (Wbijaj szybko)</option>
-                        <option value="high">Duży (Ochrona goni)</option>
-                    </select>
-
-                    <label style="font-size: 0.9rem; font-weight: bold;">Tagi/Elementy:</label>
-                    <div class="checkbox-group filter-tags-group" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;">
-                        <label class="checkbox-item"><input type="checkbox" class="filter-tag" value="Murki"> Murki</label>
-                        <label class="checkbox-item"><input type="checkbox" class="filter-tag" value="Rurki"> Rurki</label>
-                        <label class="checkbox-item"><input type="checkbox" value="Schody" class="filter-tag"> Schody</label>
-                        <label class="checkbox-item"><input type="checkbox" value="Bank" class="filter-tag"> Bank</label>
-                        <label class="checkbox-item"><input type="checkbox" value="Flat" class="filter-tag"> Flat</label>
-                        <label class="checkbox-item"><input type="checkbox" value="Bowl" class="filter-tag"> Bowl</label>
-                        <label class="checkbox-item"><input type="checkbox" value="Inne" class="filter-tag"> Inne</label>
-                    </div>
-                    <button class="btn-neon btn-blue" id="applyFilterBtn" style="margin-top: 15px;" data-hover>ZASTOSUJ FILTR</button>
-                </div>
-                <div style="font-family: 'Orbitron'; color: #666; margin: 10px 0; text-align: right;">
-                    Liczba spotów: <span id="spotCount" style="color: var(--neon-pink)">0</span>
-                </div>
-                <div class="spots-list" id="spotsList">
-                </div>
-            </div>
-        </div>
         
-        <div id="map-container" class="map-wrapper"> 
-            <div id="map" data-hover></div>
-            
-            <div class="search-overlay">
-                <input type="text" id="citySearchInput" placeholder="Wpisz miasto / wieś / ulicę..." data-hover>
-                <button class="search-btn" id="citySearchBtn" data-hover>SZUKAJ</button>
+        <div id="map"></div>
+
+        <div id="sidebar">
+            <div id="navHeader">
+                <h1>SKEJTY</h1>
+                <div class="nav-buttons">
+                    <button id="addSpotBtn" data-hover>DODAJ</button>
+                    <button id="navKonto" data-hover>KONTO</button>
+                    <button id="navLogout" data-hover style="display: none;">WYLOGUJ</button>
+                </div>
             </div>
-
-            <button class="geo-btn" id="locateUserBtn" title="Znajdź mnie (GPS)" data-hover>📍</button>
             
-            <div class="fab" id="addSpotFab" data-hover style="display:none;">+</div>
+            <div id="authSection" class="form-group">
+                <div id="loggedUser" style="display: none;">
+                    <p style="color: #00FF00; font-family: 'Roboto Mono', monospace;">Zalogowano jako: <span id="currentUserName"></span></p>
+                    <button id="logoutBtn" data-hover style="background-color: var(--color-accent-pink); margin-top: 10px;">WYLOGUJ</button>
+                </div>
+                
+                <div id="loginForm">
+                    <label for="loginEmail">Email:</label>
+                    <input type="text" id="loginEmail" placeholder="user@domain.com">
+                    
+                    <label for="loginPassword">Hasło:</label>
+                    <input type="password" id="loginPassword" placeholder="******">
+                    
+                    <button id="loginBtn" data-hover style="margin-top: 10px;">ZALOGUJ</button>
+                    <a class="auth-toggle" onclick="toggleAuth('register')">Nie masz konta? Zarejestruj się.</a>
+                </div>
+                
+                <div id="registerForm" style="display: none;">
+                    <label for="registerEmail">Email:</label>
+                    <input type="text" id="registerEmail" placeholder="user@domain.com">
+                    
+                    <label for="registerPassword">Hasło:</label>
+                    <input type="password" id="registerPassword" placeholder="******">
+                    
+                    <button id="registerBtn" data-hover style="margin-top: 10px;">ZAREJESTRUJ</button>
+                    <a class="auth-toggle" onclick="toggleAuth('login')">Masz już konto? Zaloguj się.</a>
+                </div>
+            </div>
             
-            <div id="spot-form" style="display:none; position: fixed; bottom: 150px; right: 20px; z-index: 2000; width: 90%; max-width: 350px; background: var(--form-bg); padding: 15px; border: 2px solid var(--neon-pink); box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);">
+            <form id="spotForm">
+                <input type="hidden" id="editingSpotId">
+                <div class="form-group">
+                    <label for="spotNameEl">Nazwa Spotu:</label>
+                    <input type="text" id="spotNameEl" required>
+                </div>
                 
-                <div class="close-form-btn" onclick="toggleForm(false)" data-hover>&times;</div>
-                <div style="font-size: 0.8rem; margin-bottom: 5px; color: var(--neon-orange); display: none;" id="editModeLabel">TRYB EDYCJI</div>
-                <input type="text" id="spotName" placeholder="Nazwa spota (np. Schody Kina)" data-hover>
-                <textarea id="spotDesc" rows="2" placeholder="Opis nawierzchni..." data-hover></textarea>
+                <div class="form-group">
+                    <label for="spotDescEl">Opis:</label>
+                    <textarea id="spotDescEl" rows="3"></textarea>
+                </div>
                 
-                <label style="font-size: 0.8rem; font-weight: bold;">Co tam jest?</label>
-                <div class="checkbox-group">
-                    <label class="checkbox-item"><input type="checkbox" value="Murki" class="spot-tag"> Murki</label>
-                    <label class="checkbox-item"><input type="checkbox" value="Rurki" class="spot-tag"> Rurki</label>
-                    
-                    <label class="checkbox-item"><input type="checkbox" value="Schody" class="spot-tag" id="tagSchody"> Schody</label>
-                    <div id="stairsCountContainer" style="display:none; margin-bottom: 10px; background: rgba(0,0,0,0.05); padding: 5px; border-radius: 5px;">
-                        <label style="font-size: 0.8rem; font-weight: bold;">Liczba schodów: <span id="stairsValue" style="color:var(--neon-pink)">8</span></label>
-                        <input type="range" id="stairsRange" min="1" max="16" value="8">
-                    </div>
-
-                    <label class="checkbox-item"><input type="checkbox" value="Bank" class="spot-tag"> Bank</label>
-                    <label class="checkbox-item"><input type="checkbox" value="Flat" class="spot-tag"> Flat</label>
-                    <label class="checkbox-item"><input type="checkbox" value="Bowl" class="spot-tag"> Bowl</label>
-                    
-                    <label class="checkbox-item"><input type="checkbox" value="Inne" class="spot-tag" id="tagInne"> Inne</label>
-                    <div id="otherInputContainer" style="display:none; margin-bottom: 10px;">
-                        <input type="text" id="otherInputValue" placeholder="Wpisz co to za element..." style="border-color: var(--neon-orange);">
-                    </div>
+                <div class="form-group">
+                    <label>Lokalizacja (kliknij na mapę):</label>
+                    <input type="text" id="spotLatEl" placeholder="Szerokość geograficzna" readonly required>
+                    <input type="text" id="spotLngEl" placeholder="Długość geograficzna" readonly required style="margin-top: 5px;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="spotBustEl">Poziom Bustu (0-5):</label>
+                    <input type="range" id="spotBustEl" min="0" max="5" value="0" oninput="document.getElementById('bustValue').innerText=this.value">
+                    <span id="bustValue" style="color: var(--color-accent-pink); font-family: 'Roboto Mono', monospace;">0</span>
                 </div>
 
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <div style="flex: 1;">
-                        <label style="font-size: 0.8rem; font-weight: bold;">Przypał:</label>
-                        <select id="spotBust" style="margin-bottom: 0;">
-                            <option value="safe">Bezpiecznie (Chill)</option>
-                            <option value="medium">Średni (Wbijaj szybko)</option>
-                            <option value="high">Duży (Ochrona goni)</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        <label class="checkbox-item" style="height: 42px; margin-top: 18px;">
-                            <input type="checkbox" id="spotLights"> 💡 Lampy?
-                        </label>
-                    </div>
+                <div class="form-group">
+                    <label>Zdjęcie Spotu (max 10MB):</label>
+                    <input type="file" id="spotImageUploadEl" accept="image/*">
+                </div>
+                
+                <div class="form-group">
+                    <label>Tagi:</label>
+                    <div class="tags-container" id="spotTagsContainer">
+                        </div>
+                </div>
+                
+                <div class="form-group" id="stairsCountGroup" style="display:none;">
+                    <label for="stairsRange">Ilość Schodów:</label>
+                    <input type="range" id="stairsRange" min="1" max="20" value="1" oninput="document.getElementById('stairsValue').innerText=this.value">
+                    <span id="stairsValue" style="color: var(--color-accent-pink); font-family: 'Roboto Mono', monospace;">1</span>
                 </div>
 
-                <input type="file" id="spotImageUpload" accept="image/*" data-hover>
-                <div style="font-size: 0.7rem; color: #888; margin-bottom: 10px;">*Kliknij na mapę aby zmienić lokalizację</div>
-                <input type="hidden" id="spotLat">
-                <input type="hidden" id="spotLng">
-                <button class="btn-neon btn-green" id="saveSpotBtn" data-hover>ZAPISZ NA MAPIE</button>
-                <button class="btn-neon btn-orange" id="cancelEditBtn" style="display:none;" data-hover>ANULUJ</button>
+                <div class="form-group" id="otherInputGroup" style="display:none;">
+                    <label for="otherInputValue">Opis Innego Elementu:</label>
+                    <input type="text" id="otherInputValue">
+                </div>
+
+                <div class="form-group">
+                    <input type="checkbox" id="spotLightsEl" style="width: auto;">
+                    <label for="spotLightsEl" style="display: inline; margin-left: 5px;">Oświetlony (Można jeździć w nocy)</label>
+                </div>
+
+                <button id="saveSpotBtn" type="button" data-hover>ZAPISZ NA MAPIE</button>
+            </form>
+            
+            <div id="filterContainer">
+                <label style="color: var(--color-accent-pink); font-size: 1rem;">FILTRY:</label>
+                <div class="filter-tags-container" id="filterTagsContainer">
+                    </div>
             </div>
+
+            <div style="flex-grow: 1;"></div>
+            <p style="font-size: 0.7rem; color: var(--color-neon-blue); text-align: center; margin-top: 20px; font-family: 'Roboto Mono', monospace;">
+                &copy; 2023 SKEJTY. Dane: Firebase Firestore, Hosting zdjęć: Uploadcare.
+            </p>
         </div>
-    </div>
-    
-    <div class="mobile-nav" id="mobileNav">
-        <div class="nav-item" id="navKonto" data-target="auth">
-            <i class="fas fa-user-circle"></i>
-            <span>Konto</span>
-        </div>
-        <div class="nav-item active" id="navMapa" data-target="map">
-            <i class="fas fa-map-marked-alt"></i>
-            <span>Mapa</span>
-        </div>
-        <div class="nav-item" id="navSpoty" data-target="spotsList">
-            <i class="fas fa-list-alt"></i>
-            <span>Spoty</span>
-        </div>
-        <div class="nav-item" id="navLogoutMobile" data-target="auth" style="display:none;">
-            <i class="fas fa-sign-out-alt"></i>
-            <span>Wyloguj</span>
-        </div>
+
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    
     <script>
-        // === KONFIGURACJA FIREBASE ===
-        // TODO: Zmień na swoją konfigurację!
+        // Inicjalizacja Firebase (WPISZ SWOJE DANE KONFIGURACYJNE TUTAJ)
         const firebaseConfig = {
-            apiKey: "AIzaSyCCxW6X7MJlWPfxP_6I8FlLc7Vp2wiR69Q",
-            authDomain: "skejspoty.firebaseapp.com",
-            projectId: "skejspoty",
-            storageBucket: "skejspoty.firebasestorage.app",
-            messagingSenderId: "1067851773136",
-            appId: "1:1067851773136:web:39bdc7f7af34cbbf94dad5",
-            measurementId: "G-WH6DYL95DH"
+            // apiKey: "",
+            // authDomain: "",
+            // projectId: "",
+            // storageBucket: "",
+            // messagingSenderId: "",
+            // appId: ""
         };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        const spotsCollection = db.collection('spots');
 
-        let currentUser = null; 
-
-        // --- OGÓLNE NARZĘDZIA UI ---
-        function showNotification(message, type = 'info', duration = 4000) {
-            const container = document.getElementById('notification-container');
-            const notif = document.createElement('div');
-            notif.className = `notification ${type}`;
-            notif.textContent = message;
-
-            container.prepend(notif); 
-
-            gsap.fromTo(notif, 
-                { y: '100%', opacity: 0, scale: 0.9 }, 
-                { y: '0%', opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.7)" }
-            );
-
-            setTimeout(() => {
-                gsap.to(notif, 
-                    { 
-                        opacity: 0, y: '-100%', duration: 0.5, ease: "power2.in",
-                        onComplete: () => {
-                            notif.remove();
-                        }
-                    }
-                );
-            }, duration);
+        if (firebaseConfig.projectId) {
+            firebase.initializeApp(firebaseConfig);
+            var db = firebase.firestore();
+            var auth = firebase.auth();
+            var spotsCollection = db.collection("spots");
+        } else {
+            // Wersja demo / mock, jeśli klucze nie są podane
+            console.error("Firebase nie skonfigurowane. Używam trybu demo.");
+            var auth = { onAuthStateChanged: (callback) => callback(null) };
+            var spotsCollection = { onSnapshot: (callback) => callback({ docs: [] }), add: () => Promise.reject("Demo Mode"), doc: () => ({ update: () => Promise.reject("Demo Mode"), delete: () => Promise.reject("Demo Mode") }) };
         }
-        
-        // --- LOGIKA AUTORYZACJI ---
 
-        const showLoginBtn = document.getElementById('showLoginBtn');
-        const showRegisterBtn = document.getElementById('showRegisterBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
+        let map, currentMarker, currentUser = null;
+        let spots = [];
+        let editingSpotId = null;
+
+        // --- ELEMENTY DOM ---
+        const sidebar = document.getElementById('sidebar');
+        const spotForm = document.getElementById('spotForm');
+        const addSpotBtn = document.getElementById('addSpotBtn');
+        const saveSpotBtn = document.getElementById('saveSpotBtn');
+        const navKonto = document.getElementById('navKonto');
+        const navLogout = document.getElementById('navLogout');
+        const authSection = document.getElementById('authSection');
         const loginFormEl = document.getElementById('loginForm');
         const registerFormEl = document.getElementById('registerForm');
+        const loggedUserEl = document.getElementById('loggedUser');
+        const menuToggle = document.getElementById('menuToggle');
         
-        window.handleLogin = async () => {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            try {
-                await auth.signInWithEmailAndPassword(email, password);
-                showNotification("Zalogowano pomyślnie!", 'success');
-                loginFormEl.style.display = 'none';
-            } catch (error) {
-                showNotification("Błąd logowania: " + error.message, 'error', 6000);
-            }
-        };
+        // Elementy formularza
+        const spotNameEl = document.getElementById('spotNameEl');
+        const spotDescEl = document.getElementById('spotDescEl');
+        const spotLatEl = document.getElementById('spotLatEl');
+        const spotLngEl = document.getElementById('spotLngEl');
+        const spotBustEl = document.getElementById('spotBustEl');
+        const spotImageUploadEl = document.getElementById('spotImageUploadEl');
+        const spotTagsContainer = document.getElementById('spotTagsContainer');
+        const stairsCountGroup = document.getElementById('stairsCountGroup');
+        const stairsRange = document.getElementById('stairsRange');
+        const otherInputGroup = document.getElementById('otherInputGroup');
+        const otherInputValue = document.getElementById('otherInputValue');
+        const spotLightsEl = document.getElementById('spotLightsEl');
+        
+        // --- TAGI I FILTRY ---
+        const availableTags = ['Schody', 'Poręcz', 'Ławka', 'Krzywa', 'Flatground', 'Manual', 'Woda', 'Cegła', 'Inne'];
 
-        window.handleRegister = async () => {
-            const nick = document.getElementById('registerNick').value;
+        function createTagCheckboxes(container, type, onChangeCallback = null) {
+            container.innerHTML = '';
+            availableTags.forEach(tag => {
+                const id = `${type}${tag}`;
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.id = id;
+                input.value = tag;
+                input.className = `${type}-checkbox`;
+                if (onChangeCallback) {
+                    input.addEventListener('change', onChangeCallback);
+                }
+
+                const label = document.createElement('label');
+                label.htmlFor = id;
+                label.innerText = tag;
+                label.className = `${type}-label`;
+                label.setAttribute('data-hover', true);
+                
+                container.appendChild(input);
+                container.appendChild(label);
+            });
+        }
+        
+        // Utwórz tagi dla formularza
+        createTagCheckboxes(spotTagsContainer, 'tag', handleTagChange);
+        const spotTags = document.querySelectorAll('.tag-checkbox');
+
+        // Utwórz tagi dla filtrów
+        const filterTagsContainer = document.getElementById('filterTagsContainer');
+        createTagCheckboxes(filterTagsContainer, 'filter', () => renderSpots(getActiveFilters()));
+        const filterTags = document.querySelectorAll('.filter-checkbox');
+
+        function handleTagChange(event) {
+            const isStairs = event.target.value === 'Schody';
+            const isOther = event.target.value === 'Inne';
+            
+            if (isStairs) {
+                stairsCountGroup.style.display = event.target.checked ? 'block' : 'none';
+            }
+            if (isOther) {
+                otherInputGroup.style.display = event.target.checked ? 'block' : 'none';
+            }
+        }
+        
+        // --- NOTYFIKACJE ---
+        function showNotification(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('notificationContainer');
+            const note = document.createElement('div');
+            note.className = `notification ${type}`;
+            note.innerText = message;
+            
+            container.appendChild(note);
+            
+            setTimeout(() => {
+                note.classList.add('show');
+            }, 10);
+
+            setTimeout(() => {
+                note.classList.remove('show');
+                note.addEventListener('transitionend', () => note.remove());
+            }, duration);
+        }
+
+        // --- MAPA ---
+        function initMap() {
+            map = L.map('map', {
+                maxZoom: 18,
+                minZoom: 2,
+                zoomControl: false 
+            }).setView([52.0, 19.0], 6); // Polska centralnie
+            
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            }).addTo(map);
+
+            L.control.zoom({
+                 position: 'bottomright' 
+            }).addTo(map);
+
+            map.on('click', onMapClick);
+        }
+        
+        function onMapClick(e) {
+            if (spotForm.style.display === 'block' && editingSpotId === null) {
+                // Jeśli formularz dodawania jest otwarty
+                if (currentMarker) {
+                    map.removeLayer(currentMarker);
+                }
+                
+                // Utwórz tymczasowy marker w miejscu kliknięcia
+                currentMarker = L.marker(e.latlng, {
+                    icon: L.divIcon({ className: 'spot-marker' })
+                }).addTo(map);
+
+                // Wypełnij pola formularza
+                spotLatEl.value = e.latlng.lat.toFixed(6);
+                spotLngEl.value = e.latlng.lng.toFixed(6);
+            }
+        }
+        
+        function getActiveFilters() {
+            const activeTags = Array.from(filterTags)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+            return { tags: activeTags };
+        }
+
+        function renderSpots(filters) {
+            // Usuń wszystkie istniejące markery (oprócz tymczasowego, jeśli jest)
+            map.eachLayer(layer => {
+                if (layer instanceof L.Marker && layer !== currentMarker) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            spots.forEach(spot => {
+                // Filtracja
+                if (filters.tags.length > 0) {
+                    const matches = filters.tags.every(filterTag => spot.tags.includes(filterTag));
+                    if (!matches) {
+                        return; // Pomiń, jeśli spot nie pasuje do wszystkich wybranych tagów
+                    }
+                }
+                
+                // Tworzenie markera
+                const marker = L.marker([spot.lat, spot.lng], {
+                    icon: L.divIcon({ className: 'spot-marker' })
+                }).addTo(map);
+                
+                // Zawartość popupu
+                marker.bindPopup(createPopupContent(spot)).openPopup();
+            });
+        }
+        
+        function createPopupContent(spot) {
+            const tagsHtml = spot.tags.map(tag => `<span>${tag}</span>`).join('');
+            const stairsCountHtml = spot.stairsCount ? `<p><strong>Ilość schodów:</strong> ${spot.stairsCount}</p>` : '';
+            const lightsHtml = spot.lights ? `<p style="color: #00FF00;">Oświetlenie: Tak (Nocna Jazda)</p>` : '<p style="color: var(--color-accent-pink);">Oświetlenie: Brak</p>';
+            const otherDescHtml = spot.otherDescription ? `<p><strong>Inne:</strong> ${spot.otherDescription}</p>` : '';
+            const imageHtml = spot.imageData ? `<img src="${spot.imageData}" class="popup-image" alt="Zdjęcie spotu">` : '<p style="font-style: italic;">Brak zdjęcia</p>';
+            
+            let actionsHtml = '';
+            if (currentUser && currentUser.uid === spot.authorId) {
+                actionsHtml = `
+                    <div class="popup-actions">
+                        <button onclick="editSpot('${spot.id}')" data-hover>EDYTUJ</button>
+                        <button onclick="deleteSpot('${spot.id}')" style="background-color: #FF4500;" data-hover>USUŃ</button>
+                    </div>
+                `;
+            }
+
+            return `
+                <div style="font-family: 'Roboto Mono', monospace;">
+                    <h3 class="popup-header">${spot.name}</h3>
+                    <p>${spot.description || 'Brak opisu.'}</p>
+                    ${imageHtml}
+                    <p class="popup-tags">${tagsHtml}</p>
+                    <p><strong>Bust:</strong> ${spot.bust}/5</p>
+                    ${stairsCountHtml}
+                    ${otherDescHtml}
+                    ${lightsHtml}
+                    <p class="popup-author">Dodano przez: ${spot.authorName || 'Anonim'} | ${spot.timestamp ? new Date(spot.timestamp.toDate()).toLocaleDateString() : 'N/A'}</p>
+                    ${actionsHtml}
+                </div>
+            `;
+        }
+
+        // --- AUTORYZACJA ---
+        function toggleAuth(formType) {
+            if (formType === 'login') {
+                loginFormEl.style.display = 'block';
+                registerFormEl.style.display = 'none';
+            } else {
+                loginFormEl.style.display = 'none';
+                registerFormEl.style.display = 'block';
+            }
+        }
+
+        document.getElementById('navKonto').addEventListener('click', () => {
+             authSection.style.display = (authSection.style.display === 'block') ? 'none' : 'block';
+             spotForm.style.display = 'none';
+        });
+
+        document.getElementById('registerBtn').addEventListener('click', async () => {
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
-            if (!nick) return showNotification("Wpisz swój nick!", 'error');
+            
             try {
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                await userCredential.user.updateProfile({
-                    displayName: nick
-                });
-                showNotification("Rejestracja pomyślna! Witaj " + nick, 'success');
-                registerFormEl.style.display = 'none';
+                await auth.createUserWithEmailAndPassword(email, password);
+                showNotification("Pomyślna rejestracja i logowanie!", 'success');
             } catch (error) {
                 showNotification("Błąd rejestracji: " + error.message, 'error', 6000);
             }
-        };
-
-        showLoginBtn.addEventListener('click', () => {
-            loginFormEl.style.display = 'block';
-            registerFormEl.style.display = 'none';
         });
 
-        showRegisterBtn.addEventListener('click', () => {
-            registerFormEl.style.display = 'block';
-            loginFormEl.style.display = 'none';
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                showNotification("Pomyślne logowanie!", 'success');
+            } catch (error) {
+                showNotification("Błąd logowania: " + error.message, 'error', 6000);
+            }
         });
 
-        logoutBtn.addEventListener('click', async () => {
+        const logoutHandler = async () => {
             try {
                 await auth.signOut();
                 showNotification("Wylogowano pomyślnie.", 'info');
             } catch (error) {
-                console.error("Błąd wylogowania:", error);
+                showNotification("Błąd wylogowania: " + error.message, 'error', 6000);
             }
-        });
+        };
 
-        // --- MAPA I ZMIENNE ---
-        let spots = [];
-        let editingSpotId = null;
-        const map = L.map('map').setView([52.0693, 19.4803], 6);
-        let markers = [];
-        let tempMarker = null;
-        let isPlacingSpot = false; 
+        document.getElementById('logoutBtn').addEventListener('click', logoutHandler);
+        navLogout.addEventListener('click', logoutHandler);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(map);
-
-        function createCustomMarkerIcon(number) {
-            return L.divIcon({
-                className: 'custom-marker-icon',
-                html: number,
-                iconSize: [30, 30],
-                iconAnchor: [15, 30]
-            });
-        }
-
-        // --- LOGIKA FORMULARZA ---
-        const spotNameEl = document.getElementById('spotName');
-        const spotDescEl = document.getElementById('spotDesc');
-        const spotBustEl = document.getElementById('spotBust');
-        const spotTags = document.querySelectorAll('.spot-tag');
-        const spotLightsEl = document.getElementById('spotLights');
-        const spotImageUploadEl = document.getElementById('spotImageUpload');
-        const spotLatEl = document.getElementById('spotLat');
-        const spotLngEl = document.getElementById('spotLng');
-        const saveSpotBtn = document.getElementById('saveSpotBtn');
-        const cancelEditBtn = document.getElementById('cancelEditBtn');
-        const editModeLabel = document.getElementById('editModeLabel');
-        const addSpotFab = document.getElementById('addSpotFab');
-        const spotFormEl = document.getElementById('spot-form'); 
-
-        // NOWE ELEMENTY FORMULARZA
-        const tagSchody = document.getElementById('tagSchody');
-        const stairsContainer = document.getElementById('stairsCountContainer');
-        const stairsRange = document.getElementById('stairsRange');
-        const stairsValue = document.getElementById('stairsValue');
-        
-        const tagInne = document.getElementById('tagInne');
-        const otherContainer = document.getElementById('otherInputContainer');
-        const otherInputValue = document.getElementById('otherInputValue');
-
-        // Obsługa pokazywania/ukrywania suwaka schodów
-        tagSchody.addEventListener('change', () => {
-            if (tagSchody.checked) {
-                stairsContainer.style.display = 'block';
-            } else {
-                stairsContainer.style.display = 'none';
-            }
-        });
-
-        stairsRange.addEventListener('input', () => {
-            stairsValue.innerText = stairsRange.value;
-        });
-
-        // Obsługa pokazywania/ukrywania inputa "Inne"
-        tagInne.addEventListener('change', () => {
-            if (tagInne.checked) {
-                otherContainer.style.display = 'block';
-            } else {
-                otherContainer.style.display = 'none';
-            }
-        });
-
-        function resetForm() {
+        // --- FORMULARZ ---
+        function resetForm(keepLocation = false) {
+            editingSpotId = null;
             spotNameEl.value = '';
             spotDescEl.value = '';
-            spotBustEl.value = 'safe';
-            spotLightsEl.checked = false;
+            spotBustEl.value = '0';
+            document.getElementById('bustValue').innerText = '0';
             spotImageUploadEl.value = '';
-            spotLatEl.value = '';
-            spotLngEl.value = '';
-            editingSpotId = null;
-            editModeLabel.style.display = 'none';
-            saveSpotBtn.innerText = 'ZAPISZ NA MAPIE';
-            cancelEditBtn.style.display = 'none';
+            spotLightsEl.checked = false;
             
-            // Reset tagów i pól dodatkowych
-            spotTags.forEach(cb => cb.checked = false); 
-            stairsContainer.style.display = 'none';
-            stairsRange.value = 8;
-            stairsValue.innerText = '8';
-            otherContainer.style.display = 'none';
-            otherInputValue.value = '';
-
-            isPlacingSpot = false; 
-            addSpotFab.innerHTML = '+';
-            addSpotFab.classList.remove('form-active');
-            if (tempMarker) {
-                map.removeLayer(tempMarker);
-                tempMarker = null;
-            }
-        }
-
-        function placeTempMarker(lat, lng) {
-            if (tempMarker) {
-                map.removeLayer(tempMarker);
-            }
-            tempMarker = L.marker([lat, lng]).addTo(map);
-            spotLatEl.value = lat;
-            spotLngEl.value = lng;
-        }
-
-        function toggleForm(show, lat = null, lng = null) {
-            if (show) {
-                spotFormEl.style.display = 'block';
-                addSpotFab.classList.add('form-active');
-                addSpotFab.innerHTML = '&times;'; 
-
-                if (lat && lng) {
-                    placeTempMarker(lat, lng);
+            // Odznaczenie tagów
+            spotTags.forEach(cb => { cb.checked = false; });
+            stairsCountGroup.style.display = 'none';
+            otherInputGroup.style.display = 'none';
+            
+            if (!keepLocation) {
+                spotLatEl.value = '';
+                spotLngEl.value = '';
+                if (currentMarker) {
+                    map.removeLayer(currentMarker);
+                    currentMarker = null;
                 }
-                if (isMobile()) switchSidebarSection('map');
+            }
+            saveSpotBtn.innerText = 'ZAPISZ NA MAPIE';
+        }
+        
+        function toggleForm(forceOpen = false) {
+            if (forceOpen) {
+                spotForm.style.display = 'block';
+                authSection.style.display = 'none';
             } else {
-                spotFormEl.style.display = 'none';
-                resetForm(); 
+                // Jeśli jest otwarty, zamknij, w przeciwnym razie pozostaw zamknięty
+                if (spotForm.style.display === 'block') {
+                    spotForm.style.display = 'none';
+                    resetForm();
+                }
             }
         }
+        
+        addSpotBtn.addEventListener('click', () => {
+            if (!currentUser) {
+                 showNotification("Musisz być zalogowany, aby dodać spot!", 'error');
+                 return;
+            }
+            toggleForm(true);
+            resetForm();
+        });
 
-        addSpotFab.addEventListener('click', () => {
-            if (spotFormEl.style.display === 'block') {
-                toggleForm(false);
-            } else if (isPlacingSpot) {
-                resetForm(); 
-                showNotification("Anulowano dodawanie spota.", 'info', 3000);
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+        
+        // --- FUNKCJE EDYCJI / USUWANIA Z GLOBALNEGO ZASIĘGU ---
+        window.editSpot = (id) => {
+            const spot = spots.find(s => s.id === id);
+            if (!spot) return;
+
+            // Zamykanie popupu
+            map.closePopup();
+
+            // Upewnienie się, że formularz jest otwarty i czysty
+            toggleForm(true);
+            resetForm(true); // Resetuj, ale zachowaj obecną lokalizację (której i tak nie dotykamy)
+            
+            // Ustaw flagę edycji
+            editingSpotId = id;
+            saveSpotBtn.innerText = 'ZAPISZ ZMIANY';
+            
+            // Wypełnianie formularza danymi spotu
+            spotNameEl.value = spot.name;
+            spotDescEl.value = spot.description;
+            spotLatEl.value = spot.lat.toFixed(6);
+            spotLngEl.value = spot.lng.toFixed(6);
+            spotBustEl.value = spot.bust;
+            document.getElementById('bustValue').innerText = spot.bust;
+            spotLightsEl.checked = spot.lights;
+            
+            // Tagi
+            spotTags.forEach(cb => {
+                cb.checked = spot.tags.includes(cb.value);
+            });
+
+            // Schody
+            if (spot.tags.includes('Schody')) {
+                stairsCountGroup.style.display = 'block';
+                stairsRange.value = spot.stairsCount || 1;
+                document.getElementById('stairsValue').innerText = spot.stairsCount || 1;
             } else {
-                resetForm();
-                isPlacingSpot = true;
-                addSpotFab.innerHTML = '<i class="fas fa-crosshairs"></i>'; 
-                addSpotFab.classList.add('form-active');
-                showNotification("Wybierz lokalizację na mapie (kliknij) lub anuluj klikając na ikonę.", 'info', 5000);
-                if (isMobile()) switchSidebarSection('map');
+                stairsCountGroup.style.display = 'none';
             }
-        });
 
-        cancelEditBtn.addEventListener('click', () => toggleForm(false)); 
-
-        map.on('click', function(e) {
-            if (isPlacingSpot) {
-                isPlacingSpot = false;
-                toggleForm(true, e.latlng.lat, e.latlng.lng); 
-            } else if (spotFormEl.style.display === 'block') {
-                placeTempMarker(e.latlng.lat, e.latlng.lng);
+            // Inne
+            if (spot.tags.includes('Inne')) {
+                otherInputGroup.style.display = 'block';
+                otherInputValue.value = spot.otherDescription || '';
+            } else {
+                otherInputGroup.style.display = 'none';
             }
-        });
 
-        // --- FUNKCJA ZAPISYWANIA SPOTA (Z UPLOADCARE STORAGE) ---
+            // Ustawienie markera w miejscu edytowanego spotu
+            if (currentMarker) map.removeLayer(currentMarker);
+            currentMarker = L.marker([spot.lat, spot.lng], {
+                icon: L.divIcon({ className: 'spot-marker' })
+            }).addTo(map);
+
+            showNotification(`Edytujesz spot: ${spot.name}`, 'info', 3000);
+        };
+
+        window.deleteSpot = async (id) => {
+            if (!confirm("Czy na pewno chcesz usunąć ten spot? Tego nie można cofnąć!")) return;
+            
+            map.closePopup();
+
+            try {
+                await spotsCollection.doc(id).delete();
+                showNotification("Spot usunięty pomyślnie!", 'success');
+            } catch (error) {
+                showNotification("Błąd usuwania spota: " + error.message, 'error', 6000);
+            }
+        };
+
+// --- FUNKCJA ZAPISYWANIA SPOTA (Z UPLOADCARE STORAGE) ---
 
 // TWÓJ KLUCZ PUBLICZNY Z UPLOADCARE
 const UPLOADCARE_PUBLIC_KEY = "d850143b4baca5f2b800"; 
@@ -1023,491 +1102,32 @@ const UPLOADCARE_PUBLIC_KEY = "d850143b4baca5f2b800";
                 saveSpotBtn.innerText = editingSpotId ? "ZAPISZ ZMIANY" : "ZAPISZ NA MAPIE";
             }
         });
-                // Pobranie danych dodatkowych
-                const stairsCount = selectedTags.includes('Schody') ? parseInt(stairsRange.value) : null;
-                const otherDescription = selectedTags.includes('Inne') ? otherInputValue.value : null;
-
-                const spotData = {
-                    name: spotNameEl.value,
-                    description: spotDescEl.value,
-                    lat: parseFloat(spotLatEl.value),
-                    lng: parseFloat(spotLngEl.value),
-                    bust: spotBustEl.value,
-                    tags: selectedTags,
-                    lights: spotLightsEl.checked,
-                    authorId: currentUser.uid,
-                    authorName: currentUser.displayName || currentUser.email.split('@')[0],
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    // Dodanie nowych pól do bazy
-                    stairsCount: stairsCount,
-                    otherDescription: otherDescription
-                };
-
-                if (imageData) {
-                    spotData.imageData = imageData;
-                } else if (editingSpotId) {
-                    const oldSpot = spots.find(s => s.id === editingSpotId);
-                    if (oldSpot.imageData) {
-                        spotData.imageData = oldSpot.imageData;
-                    } else {
-                        spotData.imageData = firebase.firestore.FieldValue.delete();
-                    }
-                }
-
-                if (editingSpotId) {
-                    await spotsCollection.doc(editingSpotId).update(spotData);
-                    showNotification(`Spot "${spotData.name}" zaktualizowany!`, 'success');
-                } else {
-                    await spotsCollection.add(spotData);
-                    showNotification(`Nowy spot "${spotData.name}" dodany!`, 'success');
-                }
-
-                toggleForm(false);
-
-            } catch (error) {
-                showNotification("Błąd zapisu spota: " + error.message, 'error', 6000);
-                console.error("Błąd zapisu:", error);
-                saveSpotBtn.innerText = editingSpotId ? "ZAPISZ ZMIANY" : "ZAPISZ NA MAPIE";
-            }
-        });
-
-        // --- FUNKCJE DODATKOWE DLA KART ---
-        function createCommentSection(spotId, comments) {
-            const section = document.createElement('div');
-            section.className = 'comments-section';
-            section.innerHTML = `<h4>Komentarze (${comments.length}):</h4>`;
-
-            const commentsList = document.createElement('div');
-            commentsList.id = `comments-list-${spotId}`;
-            comments.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate()).slice(0, 3).forEach(c => {
-                const commentEl = document.createElement('div');
-                commentEl.className = 'comment';
-                const dateStr = c.timestamp ? new Date(c.timestamp.seconds * 1000).toLocaleDateString() : 'Brak daty';
-                commentEl.innerHTML = `<strong>${c.authorName}:</strong> ${c.text} <span style="font-size: 0.7rem; float: right; color: #888;">${dateStr}</span>`;
-                commentsList.appendChild(commentEl);
-            });
-            section.appendChild(commentsList);
-
-            if (currentUser) {
-                const commentForm = document.createElement('div');
-                commentForm.innerHTML = `
-                    <textarea id="comment-text-${spotId}" rows="1" placeholder="Dodaj komentarz..." style="width:100%; margin-top: 10px;"></textarea>
-                    <button class="card-btn" style="width: 100%; margin-top: 5px;" onclick="addComment('${spotId}')">Wyślij Komentarz</button>
-                `;
-                section.appendChild(commentForm);
-            }
-            
-            return section;
-        }
-
-        window.addComment = async (spotId) => {
-            const commentTextarea = document.getElementById(`comment-text-${spotId}`);
-            const text = commentTextarea.value.trim();
-
-            if (!text) return showNotification("Wpisz treść komentarza.", 'error');
-
-            try {
-                const spotRef = spotsCollection.doc(spotId);
-                const doc = await spotRef.get();
-                if (!doc.exists) return showNotification("Błąd: Spot nie istnieje.", 'error');
-
-                const currentSpot = doc.data();
-                const newComment = {
-                    text: text,
-                    authorId: currentUser.uid,
-                    authorName: currentUser.displayName || currentUser.email.split('@')[0],
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                const updatedComments = [...(currentSpot.comments || []), newComment];
-                
-                await spotRef.update({ comments: updatedComments });
-
-                commentTextarea.value = '';
-                showNotification("Komentarz dodany!", 'success');
-            } catch (error) {
-                showNotification("Błąd dodawania komentarza: " + error.message, 'error', 6000);
-                console.error("Błąd dodawania komentarza:", error);
-            }
-        };
-
-        let activeCardId = null;
-
-        function highlightCard(spotId) {
-            if (activeCardId) {
-                const prevCard = document.getElementById(`card-${activeCardId}`);
-                if (prevCard) prevCard.classList.remove('highlight');
-            }
-            if (activeCardId !== spotId) {
-                const newCard = document.getElementById(`card-${spotId}`);
-                if (newCard) {
-                    newCard.classList.add('highlight');
-                    newCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
-                activeCardId = spotId;
-            } else {
-                activeCardId = null;
-            }
-        }
-
-        function createSpotCard(spot, index) {
-            const card = document.createElement('div');
-            card.className = 'spot-card';
-            card.id = `card-${spot.id}`;
-            card.setAttribute('data-hover', '');
-            
-            card.addEventListener('click', () => {
-                if (isMobile() && mainSidebar.classList.contains('active')) {
-                } else if (!isMobile()) {
-                    map.flyTo([spot.lat, spot.lng], 17, { duration: 0.8 });
-                }
-                highlightCard(spot.id);
-            });
-
-            const bustClass = spot.bust === 'safe' ? 'bust-safe' : (spot.bust === 'medium' ? 'bust-medium' : 'bust-high');
-            const bustText = spot.bust === 'safe' ? 'Chill' : (spot.bust === 'medium' ? 'Średni Przypał' : 'DUŻY PRZYPAŁ');
-            
-            // Generowanie tagów z dodatkowymi info
-            const tagsHtml = (spot.tags || []).map(tag => {
-                let tagLabel = tag;
-                if (tag === 'Schody' && spot.stairsCount) {
-                    tagLabel += ` (${spot.stairsCount})`;
-                }
-                if (tag === 'Inne' && spot.otherDescription) {
-                    tagLabel += `: ${spot.otherDescription}`;
-                }
-                return `<span class="tag">${tagLabel}</span>`;
-            }).join('');
-
-            card.innerHTML = `
-                <h3 style="color: var(--neon-blue); margin-bottom: 5px;">${index}. ${spot.name}</h3>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <span class="${bustClass} bust-level">${bustText}</span>
-                    <span style="font-size: 0.8rem; color: #888;">Autor: ${spot.authorName || 'Anonim'}</span>
-                </div>
-                ${spot.imageData ? `<div class="spot-img-container" onclick="openLightbox('${spot.imageData}')"><img src="${spot.imageData}" alt="${spot.name}" class="spot-img"></div>` : ''}
-                <p style="font-size: 0.9rem; margin-bottom: 10px;">${spot.description}</p>
-                <p style="font-size: 0.8rem; color: var(--neon-green);">${spot.lights ? '💡 SPOT OŚWIETLONY W NOCY' : '🌚 BRAK LAMP'}</p>
-                <div class="tags-container">${tagsHtml}</div>
-                <div class="card-actions">
-                    <button class="card-btn" onclick="locateSpotOnMap('${spot.lat}', '${spot.lng}', '${spot.id}')">LOKALIZUJ NA MAPIE</button>
-                    ${currentUser && currentUser.uid === spot.authorId ? `<button class="card-btn" onclick="openEditForm('${spot.id}')">EDYTUJ</button> <button class="card-btn btn-red" onclick="deleteSpot('${spot.id}')">USUŃ</button>` : ''}
-                </div>
-            `;
-
-            card.appendChild(createCommentSection(spot.id, spot.comments || []));
-
-            return card;
-        }
-
-        window.locateSpotOnMap = (lat, lng, spotId) => {
-            map.flyTo([lat, lng], 17, { duration: 1.0 });
-            if (isMobile()) switchSidebarSection('map');
-            highlightCard(spotId);
-        };
         
-        window.openEditForm = (spotId) => {
-            if (!currentUser) return showNotification("Musisz być zalogowany, aby edytować.", 'error');
-
-            const spot = spots.find(s => s.id === spotId);
-            if (!spot) return showNotification("Spot nie znaleziony.", 'error');
-            if (spot.authorId !== currentUser.uid) return showNotification("Brak uprawnień do edycji.", 'error');
-
-            editingSpotId = spotId;
-
-            spotNameEl.value = spot.name;
-            spotDescEl.value = spot.description;
-            spotBustEl.value = spot.bust;
-            spotLightsEl.checked = spot.lights || false;
-            spotLatEl.value = spot.lat;
-            spotLngEl.value = spot.lng;
-
-            spotTags.forEach(cb => {
-                cb.checked = (spot.tags || []).includes(cb.value);
-            });
-
-            // Obsługa pól dodatkowych przy edycji
-            if ((spot.tags || []).includes('Schody')) {
-                stairsContainer.style.display = 'block';
-                stairsRange.value = spot.stairsCount || 8;
-                stairsValue.innerText = stairsRange.value;
-            } else {
-                stairsContainer.style.display = 'none';
-            }
-
-            if ((spot.tags || []).includes('Inne')) {
-                otherContainer.style.display = 'block';
-                otherInputValue.value = spot.otherDescription || '';
-            } else {
-                otherContainer.style.display = 'none';
-                otherInputValue.value = '';
-            }
-
-            editModeLabel.style.display = 'block';
-            saveSpotBtn.innerText = 'ZAPISZ ZMIANY';
-            cancelEditBtn.style.display = 'inline-block';
-
-            toggleForm(true, spot.lat, spot.lng);
-            map.setView([spot.lat, spot.lng], 17);
-        }
-
-        window.deleteSpot = async (spotId) => {
-            const spot = spots.find(s => s.id === spotId);
-            if (!spot || spot.authorId !== currentUser.uid) return showNotification("Brak uprawnień do usunięcia.", 'error');
-
-            if (confirm(`Czy na pewno chcesz usunąć spot: "${spot.name}"?`)) {
-                try {
-                    await spotsCollection.doc(spotId).delete();
-                    showNotification(`Spot "${spot.name}" usunięty.`, 'info');
-                } catch (error) {
-                    showNotification("Błąd usuwania spota: " + error.message, 'error', 5000);
-                    console.error("Błąd usuwania:", error);
-                }
-            }
-        }
-
-        // --- LIGHTBOX ---
-        const lightbox = document.getElementById('lightbox');
-        const lightboxImg = document.getElementById('lightbox-img');
-
-        window.openLightbox = (src) => {
-            lightboxImg.src = src;
-            lightbox.style.display = 'flex';
-            setTimeout(() => lightbox.style.opacity = 1, 10);
-        };
-
-        window.closeLightbox = () => {
-            lightbox.style.opacity = 0;
-            setTimeout(() => lightbox.style.display = 'none', 300);
-        };
-
-        // --- LOGIKA WYSZUKIWANIA I GEOLOKALIZACJI ---
-        const searchInput = document.getElementById('citySearchInput');
-        const searchBtn = document.getElementById('citySearchBtn');
-        const locateUserBtn = document.getElementById('locateUserBtn');
-
-        async function searchLocation() {
-            const query = searchInput.value.trim();
-            if (query.length < 3) return showNotification("Wpisz co najmniej 3 znaki.", 'info');
-
-            searchBtn.innerText = "⏳";
-            try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
-                const data = await response.json();
-
-                if (data && data.length > 0) {
-                    const { lat, lon } = data[0];
-                    map.flyTo([lat, lon], 18, { duration: 1.5 }); 
-                    showNotification(`Znaleziono: ${data[0].display_name.split(',')[0]}`, 'success');
-                    searchBtn.innerText = "SZUKAJ";
-                } else {
-                    showNotification("Nie znaleziono takiego miejsca. Spróbuj inaczej.", 'error', 4000);
-                    searchBtn.innerText = "SZUKAJ";
-                }
-            } catch (error) {
-                console.error(error);
-                showNotification("Błąd połączenia z mapą.", 'error');
-                searchBtn.innerText = "SZUKAJ";
-            }
-        }
-
-        searchBtn.addEventListener('click', searchLocation);
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') searchLocation();
-        });
-
-        locateUserBtn.addEventListener('click', () => {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        map.flyTo([lat, lng], 16, { duration: 1.5 });
-                        showNotification("Twoja lokalizacja została znaleziona.", 'success', 3000);
-                    },
-                    (error) => {
-                        console.error(error);
-                        showNotification("Nie udało się pobrać lokalizacji. Upewnij się, że masz włączony GPS.", 'error', 5000);
-                    },
-                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-                );
-            } else {
-                showNotification("Twoja przeglądarka nie wspiera geolokalizacji.", 'error');
-            }
-        });
-
-        // --- LOGIKA FILTROWANIA ---
-        const filterBustEl = document.getElementById('filterBust');
-        const applyFilterBtn = document.getElementById('applyFilterBtn');
-        const filterTagEls = document.querySelectorAll('.filter-tag');
-
-        function getActiveFilters() {
-            const selectedBust = filterBustEl ? filterBustEl.value : 'all';
-            const selectedTags = Array.from(filterTagEls)
-                .filter(cb => cb.checked)
-                .map(cb => cb.value);
-            return { selectedBust, selectedTags };
-        }
-
-        function applyFilter() {
-            renderSpots(getActiveFilters());
-        }
-
-        if (applyFilterBtn) applyFilterBtn.addEventListener('click', applyFilter);
-        if (filterBustEl) filterBustEl.addEventListener('change', applyFilter);
-        filterTagEls.forEach(el => el.addEventListener('change', applyFilter));
-
-        // --- GŁÓWNA FUNKCJA RENDERUJĄCA SPOTY I STOSUJĄCA FILTRY ---
-        function renderSpots(filters = { selectedBust: 'all', selectedTags: [] }) {
-            const spotsListEl = document.getElementById('spotsList');
-            spotsListEl.innerHTML = '';
-            markers.forEach(marker => map.removeLayer(marker));
-            markers = [];
-            let filteredSpots = spots;
-
-            if (filters.selectedBust !== 'all') {
-                filteredSpots = filteredSpots.filter(spot => spot.bust === filters.selectedBust);
-            }
-
-            if (filters.selectedTags.length > 0) {
-                filteredSpots = filteredSpots.filter(spot => 
-                    filters.selectedTags.every(tag => (spot.tags || []).includes(tag))
-                );
-            }
-
-            document.getElementById('spotCount').textContent = filteredSpots.length;
-
-            filteredSpots
-                .sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate()) 
-                .forEach((spot, index) => {
-                    spotsListEl.appendChild(createSpotCard(spot, index + 1));
-
-                    const marker = L.marker([spot.lat, spot.lng], {
-                        icon: createCustomMarkerIcon(index + 1),
-                        title: spot.name
-                    }).addTo(map);
-
-                    marker.on('click', () => {
-                        map.setView([spot.lat, spot.lng], 17);
-                        switchSidebarSection('spotsList');
-                        setTimeout(() => {
-                            highlightCard(spot.id);
-                        }, 100);
-                    });
-
-                    markers.push(marker);
-                });
-            
-            if (activeCardId) {
-                const activeCard = document.getElementById(`card-${activeCardId}`);
-                if (activeCard) {
-                    activeCard.classList.add('highlight');
-                    activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                } else {
-                    activeCardId = null; 
-                }
-            }
-            
-            if (tempMarker) {
-                map.removeLayer(tempMarker);
-                tempMarker = null;
-            }
-        }
-
-        // --- PRZEŁĄCZANIE SEKCEJI SIDEBAR NA MOBILE ---
-        const authContent = document.getElementById('authContent');
-        const spotsListContent = document.getElementById('spotsListContent');
-        const mainSidebar = document.getElementById('mainSidebar');
-        const mobileNav = document.getElementById('mobileNav');
-        const navLogoutMobile = document.getElementById('navLogoutMobile');
-        const navKonto = document.getElementById('navKonto');
-        const navMapa = document.getElementById('navMapa');
-        const navSpoty = document.getElementById('navSpoty');
-
-        function isMobile() {
-            return window.innerWidth <= 768;
-        }
-
-        function switchSidebarSection(target) {
-            if (isMobile()) {
-                if (target === 'map') {
-                    mainSidebar.classList.remove('active');
-                } else {
-                    mainSidebar.classList.add('active');
-                }
-            }
-
-            authContent.classList.remove('active');
-            spotsListContent.classList.remove('active');
-            
-            document.querySelectorAll('.mobile-nav .nav-item').forEach(item => item.classList.remove('active'));
-
-            if (target === 'auth') {
-                authContent.classList.add('active');
-                if(currentUser && navLogoutMobile.style.display === 'flex' && event.target.closest('#navLogoutMobile')){
-                    navLogoutMobile.classList.add('active'); 
-                } else {
-                    navKonto.classList.add('active');
-                }
-            } else if (target === 'spotsList') {
-                spotsListContent.classList.add('active');
-                navSpoty.classList.add('active');
-            } else if (target === 'map') {
-                navMapa.classList.add('active');
-            }
-        }
-
-        mobileNav.addEventListener('click', (e) => {
-            const targetEl = e.target.closest('.nav-item');
-            if (targetEl && targetEl.dataset.target) {
-                if(targetEl.id === 'navLogoutMobile' && currentUser){
-                    auth.signOut().then(() => {
-                         showNotification("Wylogowano pomyślnie.", 'info');
-                    }).catch(error => {
-                        console.error("Błąd wylogowania:", error);
-                    });
-                } else {
-                    switchSidebarSection(targetEl.dataset.target);
-                }
-            }
-        });
-
-        if (isMobile()) {
-            switchSidebarSection('map');
-        } else {
-            switchSidebarSection('spotsList');
-        }
-
-        // --- LOGIKA AUTORYZACJI ---
-        const authStatusEl = document.getElementById('authStatus');
-
-        auth.onAuthStateChanged(async user => {
+        // --- OBSŁUGA AUTH ZMIANY STANU ---
+        auth.onAuthStateChanged(user => {
             currentUser = user;
             if (user) {
-                authStatusEl.innerHTML = `Zalogowano jako: <b>${user.displayName || user.email}</b>`;
-                showLoginBtn.style.display = 'none';
-                showRegisterBtn.style.display = 'none';
-                logoutBtn.style.display = 'inline-block';
-                addSpotFab.style.display = 'flex';
-                navLogoutMobile.style.display = 'flex'; 
-                navKonto.style.display = 'none'; 
+                // Zalogowany
+                loggedUserEl.style.display = 'block';
+                document.getElementById('currentUserName').innerText = user.displayName || user.email;
+                navKonto.style.display = 'none';
+                navLogout.style.display = 'block';
+                loginFormEl.style.display = 'none';
+                registerFormEl.style.display = 'none';
             } else {
-                authStatusEl.innerHTML = 'Niezalogowany. Zaloguj się lub zarejestruj.';
-                showLoginBtn.style.display = 'inline-block';
-                showRegisterBtn.style.display = 'inline-block';
-                logoutBtn.style.display = 'none';
-                addSpotFab.style.display = 'none';
-                navLogoutMobile.style.display = 'none'; 
+                // Wylogowany
+                loggedUserEl.style.display = 'none';
+                navLogout.style.display = 'none'; 
                 navKonto.style.display = 'flex'; 
                 toggleForm(false);
             }
-            loginFormEl.style.display = 'none';
-            registerFormEl.style.display = 'none';
+            authSection.style.display = 'none';
             renderSpots(getActiveFilters());
         });
 
         // --- START APLIKACJI ---
         document.addEventListener('DOMContentLoaded', () => {
+            initMap();
             gsap.to('#loader', { opacity: 0, duration: 0.8, delay: 1, onComplete: () => {
                 document.getElementById('loader').style.display = 'none';
                 gsap.to('.app-container', { opacity: 1, duration: 0.5 });
@@ -1531,7 +1151,20 @@ const UPLOADCARE_PUBLIC_KEY = "d850143b4baca5f2b800";
             el.addEventListener('mouseout', () => customCursor.classList.remove('hovered'));
         });
         
+        // --- FUNKCJA FULLSCREEN ---
+        function requestFullscreen() {
+            const element = document.documentElement;
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.mozRequestFullScreen) { // Firefox
+                element.mozRequestFullScreen();
+            } else if (element.webkitRequestFullscreen) { // Chrome, Safari and Opera
+                element.webkitRequestFullscreen();
+            } else if (element.msRequestFullscreen) { // IE/Edge
+                element.msRequestFullscreen();
+            }
+        }
+        
     </script>
 </body>
 </html>
-

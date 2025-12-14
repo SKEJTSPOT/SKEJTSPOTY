@@ -53,7 +53,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
 
         body {
-            font-family: 'Orbitron', sans-serif; /* <--- Zmienione na Orbitron */
+            font-family: 'Orbitron', sans-serif; 
             background-color: var(--main-bg);
             color: var(--text-color);
             overflow-x: hidden;
@@ -445,7 +445,7 @@
             width: 100%; padding: 10px; margin-bottom: 10px;
             border: 1px solid var(--neon-blue); border-radius: 3px;
             background: var(--form-bg); color: var(--text-color);
-            font-family: 'Orbitron', sans-serif;
+            font-family: 'Roboto Mono', sans-serif;
         }
 
         /* Custom marker styling */
@@ -621,7 +621,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     
     <script>
-        // --- KONFIGURACJA FIREBASE ---
+        // === KONFIGURACJA FIREBASE ===
         // TODO: Zmień na swoją konfigurację!
         const firebaseConfig = {
             apiKey: "AIzaSyCCxW6X7MJlWPfxP_6I8FlLc7Vp2wiR69Q",
@@ -999,7 +999,10 @@
             }
             if (activeCardId !== spotId) {
                 const newCard = document.getElementById(`card-${spotId}`);
-                if (newCard) newCard.classList.add('highlight');
+                if (newCard) {
+                    newCard.classList.add('highlight');
+                    newCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
                 activeCardId = spotId;
             } else {
                 activeCardId = null;
@@ -1233,8 +1236,16 @@
                     }).addTo(map);
 
                     marker.on('click', () => {
+                        // 1. Przybliż do lokalizacji
                         map.setView([spot.lat, spot.lng], 17);
-                        highlightCard(spot.id);
+                        
+                        // 2. Przełącz widok na listę spotów (WAŻNE dla mobile)
+                        switchSidebarSection('spotsList');
+
+                        // 3. Podświetl i przewiń do karty (z małym opóźnieniem, żeby widok zdążył się przełączyć)
+                        setTimeout(() => {
+                            highlightCard(spot.id);
+                        }, 100);
                     });
 
                     markers.push(marker);
@@ -1407,6 +1418,3 @@
     </script>
 </body>
 </html>
-
-
-

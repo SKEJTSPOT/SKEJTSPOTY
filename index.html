@@ -350,10 +350,7 @@
             }
             .nav-item.active span { color: var(--neon-green); }
             
-            #toggleModeBtn { display: none; }
-            
             .fab { bottom: 80px; }
-            /* Zostawiamy fab.form-active dla mobilnej rotacji/koloru X - jest już zaimplementowane */
             
             /* --- POPRAWKA: FORMULARZ DODAWANIA SPOTÓW NA MOBILNYCH (z nowym stylem dla zamknięcia) --- */
             #spot-form {
@@ -467,9 +464,7 @@
         
     </style>
 </head>
-<body>
-
-    <div id="cursor"></div>
+<body class="dark-mode"> <div id="cursor"></div>
 
     <div id="lightbox" onclick="closeLightbox()">
         <img id="lightbox-img" src="" alt="Full Screen">
@@ -485,8 +480,6 @@
     <div class="app-container">
         <div class="sidebar" id="mainSidebar">
             <h1>SKEJ<span style="color:var(--neon-pink)">TY</span></h1>
-            
-            <button id="toggleModeBtn" class="btn-neon btn-green" style="width: auto;" data-hover>🌑 Zmień Tryb</button> 
             
             <div id="authContent" class="sidebar-section active">
                  <h2 style="margin-bottom: 15px; color: var(--neon-blue);">Zarządzanie Kontem</h2>
@@ -673,22 +666,6 @@
                 );
             }, duration);
         }
-
-        // --- TRYB CIEMNY/JASNY ---
-        const toggleModeBtn = document.getElementById('toggleModeBtn');
-        function setMode(isDark) {
-            document.body.classList.toggle('dark-mode', isDark);
-            localStorage.setItem('darkMode', isDark ? 'true' : 'false');
-            toggleModeBtn.innerHTML = isDark ? '💡 Zmień Tryb' : '🌑 Zmień Tryb';
-        }
-        function loadMode() {
-            const isDark = localStorage.getItem('darkMode') === 'true';
-            setMode(isDark);
-        }
-        toggleModeBtn.addEventListener('click', () => {
-            const isDark = !document.body.classList.contains('dark-mode');
-            setMode(isDark);
-        });
         
         // --- LOGIKA AUTORYZACJI ---
 
@@ -782,7 +759,7 @@
         const cancelEditBtn = document.getElementById('cancelEditBtn');
         const editModeLabel = document.getElementById('editModeLabel');
         const addSpotFab = document.getElementById('addSpotFab');
-        const spotFormEl = document.getElementById('spot-form'); // NAPRAWA 2: Deklaracja na górze
+        const spotFormEl = document.getElementById('spot-form'); 
 
         function resetForm() {
             spotNameEl.value = '';
@@ -797,7 +774,7 @@
             saveSpotBtn.innerText = 'ZAPISZ NA MAPIE';
             cancelEditBtn.style.display = 'none';
             spotTags.forEach(cb => cb.checked = false); 
-            // RESETOWANIE STANU FAB I PLACEMENT MODE (NAPRAWA 1)
+            // RESETOWANIE STANU FAB I PLACEMENT MODE
             isPlacingSpot = false; 
             addSpotFab.innerHTML = '+';
             addSpotFab.classList.remove('form-active');
@@ -830,7 +807,7 @@
                 if (isMobile()) switchSidebarSection('map');
             } else {
                 spotFormEl.style.display = 'none';
-                resetForm(); // ResetForm zawiera NAPRAWĘ 1: reset isPlacingSpot
+                resetForm(); // ResetForm zawiera reset isPlacingSpot
             }
         }
 
@@ -1316,7 +1293,7 @@
                 authContent.classList.add('active');
                 
                 // Jeśli zalogowany, podświetl Wyloguj, jeśli kliknięto w nie, inaczej Konto
-                if(currentUser && navLogoutMobile.style.display === 'flex' && event.target.closest('#navLogoutMobile')){ // NAPRAWA 3
+                if(currentUser && navLogoutMobile.style.display === 'flex' && event.target.closest('#navLogoutMobile')){
                     navLogoutMobile.classList.add('active'); 
                 } else {
                     navKonto.classList.add('active');
@@ -1383,7 +1360,7 @@
 
         // --- START APLIKACJI ---
         document.addEventListener('DOMContentLoaded', () => {
-            loadMode();
+            // USUNIĘTO: loadMode();
             gsap.to('#loader', { opacity: 0, duration: 0.8, delay: 1, onComplete: () => {
                 document.getElementById('loader').style.display = 'none';
                 gsap.to('.app-container', { opacity: 1, duration: 0.5 });
@@ -1430,4 +1407,3 @@
     </script>
 </body>
 </html>
-

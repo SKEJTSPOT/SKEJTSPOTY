@@ -1137,7 +1137,7 @@
                 if (data && data.length > 0) {
                     const { lat, lon } = data[0];
                     // Zwiększenie poziomu przybliżenia z 14 na 16
-                    map.flyTo([lat, lon], 16, { duration: 1.5 }); 
+                    map.flyTo([lat, lon], 24, { duration: 1.5 }); 
                     showNotification(`Znaleziono: ${data[0].display_name.split(',')[0]}`, 'success');
                     searchBtn.innerText = "SZUKAJ";
                 } else {
@@ -1407,4 +1407,5 @@
     </script>
 </body>
 </html>
+
 

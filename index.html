@@ -615,8 +615,17 @@
                         </label>
                     </div>
                 </div>
-
                 <input type="file" id="spotImageUpload" accept="image/*" data-hover>
+                <div id="imageRotationControls" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--neon-blue); padding: 8px; border-radius: 5px;">
+                    <label style="font-size: 0.8rem; font-weight: bold;">Obrót zdjęcia (90°):</label>
+                    <button type="button" class="card-btn" id="rotateImageBtn" style="width: auto; margin: 0; padding: 5px 10px;" data-hover>
+                        <i class="fas fa-redo-alt"></i> Obróć
+                    </button>
+                </div>
+                <div id="imagePreviewContainer" style="height: 150px; overflow: hidden; margin-bottom: 10px; border: 1px solid var(--neon-pink); display: none; justify-content: center; align-items: center;">
+                    <img id="imagePreview" style="max-width: 100%; max-height: 100%; object-fit: cover; transition: transform 0.3s;" />
+                </div>
+                <input type="hidden" id="spotRotation" value="0">
                 <div style="font-size: 0.7rem; color: #888; margin-bottom: 10px;">*Kliknij na mapę aby zmienić lokalizację</div>
                 <input type="hidden" id="spotLat">
                 <input type="hidden" id="spotLng">
@@ -724,7 +733,7 @@
             if (!nick) return showNotification("Wpisz swój nick!", 'error');
             try {
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                await userCredential.user.updateProfile({
+                await userCredential.user.updatePro({
                     displayName: nick
                 });
                 showNotification("Rejestracja pomyślna! Witaj " + nick, 'success');
@@ -917,8 +926,8 @@
             saveSpotBtn.innerText = editingSpotId ? "ZAPISYWANIE..." : "DODAWANIE...";
 
             try {
-                const imageFile = spotImageUploadEl.files[0];
-                if (imageFile) {
+                const image = spotImageUploadEl.s[0];
+                if (image) {
                     if (imageFile.size > 800000) {
                         showNotification("Plik jest za duży! Max ok. 800KB. Wybierz mniejszy plik.", 'error', 6000);
                         return;
@@ -1449,4 +1458,5 @@
     </script>
 </body>
 </html>
+
 

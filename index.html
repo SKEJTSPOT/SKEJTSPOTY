@@ -1012,35 +1012,39 @@
         }
 
         window.addComment = async (spotId) => {
-            const commentTextarea = document.getElementById(`comment-text-${spotId}`);
-            const text = commentTextarea.value.trim();
-
-            if (!text) return showNotification("Wpisz treść komentarza.", 'error');
-
-            try {
-                const spotRef = spotsCollection.doc(spotId);
-                const doc = await spotRef.get();
-                if (!doc.exists) return showNotification("Błąd: Spot nie istnieje.", 'error');
-
-                const currentSpot = doc.data();
-                const newComment = {
-                    text: text,
-                    authorId: currentUser.uid,
-                    authorName: currentUser.displayName || currentUser.email.split('@')[0],
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    const commentTextarea = document.getElementById(`comment-text-${spotId}`);
+                    const text = commentTextarea.value.trim();
+        
+                    if (!text) return showNotification("Wpisz treść komentarza.", 'error');
+        
+                    try {
+                        const spotRef = spotsCollection.doc(spotId);
+                        const doc = await spotRef.get();
+                        if (!doc.exists) return showNotification("Błąd: Spot nie istnieje.", 'error');
+        
+                        const currentSpot = doc.data();
+                        
+                        // --- NAPRAWA PONIŻEJ ---
+                        const newComment = {
+                            text: text,
+                            authorId: currentUser.uid,
+                            authorName: currentUser.displayName || currentUser.email.split('@')[0],
+                            // ZMIANA: Zamiast serverTimestamp() używamy new Date()
+                            timestamp: new Date() 
+                        };
+                        // -----------------------
+        
+                        const updatedComments = [...(currentSpot.comments || []), newComment];
+                        
+                        await spotRef.update({ comments: updatedComments });
+        
+                        commentTextarea.value = '';
+                        showNotification("Komentarz dodany!", 'success');
+                    } catch (error) {
+                        showNotification("Błąd dodawania komentarza: " + error.message, 'error', 6000);
+                        console.error("Błąd dodawania komentarza:", error);
+                    }
                 };
-
-                const updatedComments = [...(currentSpot.comments || []), newComment];
-                
-                await spotRef.update({ comments: updatedComments });
-
-                commentTextarea.value = '';
-                showNotification("Komentarz dodany!", 'success');
-            } catch (error) {
-                showNotification("Błąd dodawania komentarza: " + error.message, 'error', 6000);
-                console.error("Błąd dodawania komentarza:", error);
-            }
-        };
 
         let activeCardId = null;
 
@@ -1445,3 +1449,4 @@
     </script>
 </body>
 </html>
+

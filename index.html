@@ -802,13 +802,15 @@
         L.control.zoom({ position: 'bottomright' }).addTo(map);
         
         // 3. Dodanie przełącznika warstw (Prawy górny róg)
+        // 3. Dodanie przełącznika warstw (LEWY DOLNY RÓG)
         const baseMaps = {
             "Google Mapa": googleStreets,
             "Google Satelita": googleHybrid,
             "OpenStreetMap": openStreetMap
         };
         
-        L.control.layers(baseMaps).addTo(map);
+        // Zmiana jest tutaj: dodajemy 'null' i konfigurację pozycji
+        L.control.layers(baseMaps, null, { position: 'bottomleft' }).addTo(map);
 
         function createCustomMarkerIcon(number) {
             return L.divIcon({
@@ -1570,4 +1572,5 @@
     </script>
 </body>
 </html>
+
 

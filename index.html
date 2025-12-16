@@ -768,16 +768,47 @@
         });
 
         // --- MAPA I ZMIENNE ---
+        // --- MAPA I ZMIENNE ---
         let spots = [];
         let editingSpotId = null;
-        const map = L.map('map').setView([52.0693, 19.4803], 6);
         let markers = [];
         let tempMarker = null;
         let isPlacingSpot = false; 
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        
+        // 1. Definicja warstw mapy (Wyglądów)
+        const openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap'
-        }).addTo(map);
+        });
+        
+        const googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{
+            maxZoom: 20,
+            subdomains:['mt0','mt1','mt2','mt3']
+        });
+        
+        const googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
+            maxZoom: 20,
+            subdomains:['mt0','mt1','mt2','mt3']
+        });
+        
+        // 2. Inicjalizacja mapy (Domyślnie ustawiamy Google Streets)
+        const map = L.map('map', {
+            center: [52.0693, 19.4803],
+            zoom: 6,
+            layers: [googleStreets], // To jest mapa startowa
+            zoomControl: false // Wyłączamy domyślny zoom, żeby nie zasłaniał (opcjonalne)
+        });
+        
+        // Dodajemy przyciski zoomu w lepszym miejscu (opcjonalne, jeśli chcesz standardowe to usuń tę linię i usuń zoomControl: false powyżej)
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+        
+        // 3. Dodanie przełącznika warstw (Prawy górny róg)
+        const baseMaps = {
+            "Google Mapa": googleStreets,
+            "Google Satelita": googleHybrid,
+            "OpenStreetMap": openStreetMap
+        };
+        
+        L.control.layers(baseMaps).addTo(map);
 
         function createCustomMarkerIcon(number) {
             return L.divIcon({
@@ -1539,3 +1570,4 @@
     </script>
 </body>
 </html>
+

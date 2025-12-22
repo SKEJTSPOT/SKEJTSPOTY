@@ -640,20 +640,16 @@
     
     <div class="mobile-nav" id="mobileNav">
         <div class="nav-item" id="navKonto" data-target="auth">
-            <i class="fas fa-user-circle"></i>
+            <i class="fas fa-user"></i>
             <span>Konto</span>
         </div>
         <div class="nav-item active" id="navMapa" data-target="map">
-            <i class="fas fa-map-marked-alt"></i>
+            <i class="fas fa-map-location-dot"></i>
             <span>Mapa</span>
         </div>
         <div class="nav-item" id="navSpoty" data-target="spotsList">
-            <i class="fas fa-list-alt"></i>
+            <i class="fas fa-layer-group"></i>
             <span>Spoty</span>
-        </div>
-        <div class="nav-item" id="navLogoutMobile" data-target="auth" style="display:none;">
-            <i class="fas fa-sign-out-alt"></i>
-            <span>Wyloguj</span>
         </div>
     </div>
 
@@ -1586,7 +1582,6 @@
         const spotsListContent = document.getElementById('spotsListContent');
         const mainSidebar = document.getElementById('mainSidebar');
         const mobileNav = document.getElementById('mobileNav');
-        const navLogoutMobile = document.getElementById('navLogoutMobile');
         const navKonto = document.getElementById('navKonto');
         const navMapa = document.getElementById('navMapa');
         const navSpoty = document.getElementById('navSpoty');
@@ -1611,11 +1606,7 @@
 
             if (target === 'auth') {
                 authContent.classList.add('active');
-                if(currentUser && navLogoutMobile.style.display === 'flex' && event.target.closest('#navLogoutMobile')){
-                    navLogoutMobile.classList.add('active'); 
-                } else {
-                    navKonto.classList.add('active');
-                }
+                navKonto.classList.add('active');
             } else if (target === 'spotsList') {
                 spotsListContent.classList.add('active');
                 navSpoty.classList.add('active');
@@ -1627,15 +1618,7 @@
         mobileNav.addEventListener('click', (e) => {
             const targetEl = e.target.closest('.nav-item');
             if (targetEl && targetEl.dataset.target) {
-                if(targetEl.id === 'navLogoutMobile' && currentUser){
-                    auth.signOut().then(() => {
-                         showNotification("Wylogowano pomyślnie.", 'info');
-                    }).catch(error => {
-                        console.error("Błąd wylogowania:", error);
-                    });
-                } else {
-                    switchSidebarSection(targetEl.dataset.target);
-                }
+                switchSidebarSection(targetEl.dataset.target);
             }
         });
 
@@ -1656,16 +1639,12 @@
                 showRegisterBtn.style.display = 'none';
                 logoutBtn.style.display = 'inline-block';
                 addSpotFab.style.display = 'flex';
-                navLogoutMobile.style.display = 'flex'; 
-                navKonto.style.display = 'none'; 
             } else {
                 authStatusEl.innerHTML = 'Niezalogowany. Zaloguj się lub zarejestruj.';
                 showLoginBtn.style.display = 'inline-block';
                 showRegisterBtn.style.display = 'inline-block';
                 logoutBtn.style.display = 'none';
                 addSpotFab.style.display = 'none';
-                navLogoutMobile.style.display = 'none'; 
-                navKonto.style.display = 'flex'; 
                 toggleForm(false);
             }
             loginFormEl.style.display = 'none';

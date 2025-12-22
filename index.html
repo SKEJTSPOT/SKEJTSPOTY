@@ -621,20 +621,8 @@
                     </div>
                 </div>
 
-                <input type="file" id="spotImageUpload" accept="image/*" data-hover>
-                <div id="imageRotationControls" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--neon-blue); padding: 8px; border-radius: 5px;">
-                    <label style="font-size: 0.8rem; font-weight: bold;">Obrót zdjęcia (90°):</label>
-                    <button type="button" class="card-btn" id="rotateImageBtn" style="width: auto; margin: 0; padding: 5px 10px;" data-hover>
-                        <i class="fas fa-redo-alt"></i> Obróć
-                    </button>
-                </div>
-                <div id="imagePreviewContainer" style="height: 150px; overflow: hidden; margin-bottom: 10px; border: 1px solid var(--neon-pink); display: none; justify-content: center; align-items: center;">
-                    <img id="imagePreview" style="max-width: 100%; max-height: 100%; object-fit: cover; transition: transform 0.3s;" />
-                </div>
-                <input type="hidden" id="spotRotation" value="0">
-
-                <label style="font-size: 0.8rem; font-weight: bold; margin-top: 10px; display: block; color: var(--neon-blue);">Dodatkowe zdjęcia (ImgBB):</label>
-                <div style="font-size: 0.7rem; color: #aaa; margin-bottom: 5px;">Wybierz wiele zdjęć naraz. Zostaną przesłane na serwer.</div>
+                <label style="font-size: 0.8rem; font-weight: bold; margin-top: 10px; display: block; color: var(--neon-blue);">Zdjęcia spotu (Galeria):</label>
+                <div style="font-size: 0.7rem; color: #aaa; margin-bottom: 5px;">Dodaj wiele zdjęć naraz. Przesuwaj palcem aby zobaczyć wszystkie.</div>
                 <input type="file" id="galleryUpload" multiple accept="image/*" data-hover>
                 <div id="galleryPreviewContainer" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;"></div>
                 <div style="font-size: 0.7rem; color: #888; margin-bottom: 10px;">*Kliknij na mapę aby zmienić lokalizację</div>
@@ -855,7 +843,7 @@
         const spotBustEl = document.getElementById('spotBust');
         const spotTags = document.querySelectorAll('.spot-tag');
         const spotLightsEl = document.getElementById('spotLights');
-        const spotImageUploadEl = document.getElementById('spotImageUpload');
+        // USUNIĘTE: spotImageUploadEl
         const spotLatEl = document.getElementById('spotLat');
         const spotLngEl = document.getElementById('spotLng');
         const saveSpotBtn = document.getElementById('saveSpotBtn');
@@ -877,11 +865,7 @@
         const galleryUploadEl = document.getElementById('galleryUpload');
         const galleryPreviewContainer = document.getElementById('galleryPreviewContainer');
         
-        // NOWE ELEMENTY DO ROTACJI
-        const spotRotationEl = document.getElementById('spotRotation');
-        const rotateImageBtn = document.getElementById('rotateImageBtn');
-        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
-        const imagePreview = document.getElementById('imagePreview');
+        let currentEditGallery = []; // Tablica przechowująca aktualne URL-e w edycji
 
         // Obsługa pokazywania/ukrywania suwaka schodów
         tagSchody.addEventListener('change', () => {
@@ -905,49 +889,78 @@
             }
         });
 
-        // Obsługa podglądu zdjęcia i obracania
-        rotateImageBtn.addEventListener('click', () => {
-            let currentRotation = parseInt(spotRotationEl.value);
-            currentRotation = (currentRotation + 90) % 360;
-            spotRotationEl.value = currentRotation;
-            imagePreview.style.transform = `rotate(${currentRotation}deg)`;
-        });
-
-        spotImageUploadEl.addEventListener('change', (e) => {
-            if (e.target.files && e.target.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(r) {
-                    imagePreview.src = r.target.result;
-                    imagePreviewContainer.style.display = 'flex';
-                }
-                reader.readAsDataURL(e.target.files[0]);
-            } else {
-                imagePreviewContainer.style.display = 'none';
-                imagePreview.src = '';
-            }
-            // Reset rotacji na 0 przy nowym pliku
-            spotRotationEl.value = 0;
-            imagePreview.style.transform = 'rotate(0deg)';
-        });
-
-        galleryUploadEl.addEventListener('change', (e) => {
+        function updateGalleryVisuals() {
             galleryPreviewContainer.innerHTML = '';
-            if (e.target.files) {
-                Array.from(e.target.files).forEach(file => {
+            
+            // 1. Render existing images (from server)
+            currentEditGallery.forEach((url, index) => {
+                const wrap = document.createElement('div');
+                wrap.style.position = 'relative';
+                wrap.style.display = 'inline-block';
+                wrap.style.margin = '5px';
+                
+                const img = document.createElement('img');
+                img.src = url;
+                img.style.width = '60px';
+                img.style.height = '60px';
+                img.style.objectFit = 'cover';
+                img.style.border = '1px solid var(--neon-blue)';
+                img.style.borderRadius = '3px';
+                
+                const removeBtn = document.createElement('div');
+                removeBtn.innerHTML = '&times;';
+                removeBtn.style.position = 'absolute';
+                removeBtn.style.top = '-8px';
+                removeBtn.style.right = '-8px';
+                removeBtn.style.background = 'var(--neon-red)';
+                removeBtn.style.color = 'white';
+                removeBtn.style.borderRadius = '50%';
+                removeBtn.style.width = '20px';
+                removeBtn.style.height = '20px';
+                removeBtn.style.fontSize = '14px';
+                removeBtn.style.display = 'flex';
+                removeBtn.style.justifyContent = 'center';
+                removeBtn.style.alignItems = 'center';
+                removeBtn.style.cursor = 'pointer';
+                removeBtn.style.boxShadow = '0 0 5px rgba(0,0,0,0.5)';
+                removeBtn.onclick = () => {
+                    currentEditGallery.splice(index, 1);
+                    updateGalleryVisuals();
+                };
+                
+                wrap.appendChild(img);
+                wrap.appendChild(removeBtn);
+                galleryPreviewContainer.appendChild(wrap);
+            });
+
+            // 2. Render new files (preview)
+            if (galleryUploadEl.files) {
+                Array.from(galleryUploadEl.files).forEach(file => {
                     const reader = new FileReader();
                     reader.onload = function(r) {
+                        const wrap = document.createElement('div');
+                        wrap.style.position = 'relative';
+                        wrap.style.display = 'inline-block';
+                        wrap.style.margin = '5px';
+
                         const img = document.createElement('img');
                         img.src = r.target.result;
                         img.style.width = '60px';
                         img.style.height = '60px';
                         img.style.objectFit = 'cover';
-                        img.style.border = '1px solid var(--neon-blue)';
+                        img.style.border = '2px dashed var(--neon-green)'; // Green dashed for new
                         img.style.borderRadius = '3px';
-                        galleryPreviewContainer.appendChild(img);
+                        
+                        wrap.appendChild(img);
+                        galleryPreviewContainer.appendChild(wrap);
                     }
                     reader.readAsDataURL(file);
                 });
             }
+        }
+
+        galleryUploadEl.addEventListener('change', (e) => {
+            updateGalleryVisuals();
         });
 
 
@@ -956,7 +969,7 @@
             spotDescEl.value = '';
             spotBustEl.value = 'safe';
             spotLightsEl.checked = false;
-            spotImageUploadEl.value = '';
+            // USUNIĘTE: spotImageUploadEl.value = '';
             spotLatEl.value = '';
             spotLngEl.value = '';
             editingSpotId = null;
@@ -972,15 +985,10 @@
             otherContainer.style.display = 'none';
             otherInputValue.value = '';
             
-            // --- Reset rotacji ---
-            spotRotationEl.value = 0;
-            imagePreviewContainer.style.display = 'none';
-            imagePreview.src = '';
-            imagePreview.style.transform = 'rotate(0deg)';
-            
             // --- Reset galerii ---
             galleryUploadEl.value = '';
             galleryPreviewContainer.innerHTML = '';
+            currentEditGallery = [];
             // -----------------------
 
             isPlacingSpot = false; 
@@ -1058,18 +1066,7 @@
             saveSpotBtn.innerText = editingSpotId ? "ZAPISYWANIE..." : "DODAWANIE...";
 
             try {
-                const imageFile = spotImageUploadEl.files[0];
-                if (imageFile) {
-                    if (imageFile.size > 800000) {
-                        showNotification("Plik jest za duży! Max ok. 800KB. Wybierz mniejszy plik.", 'error', 6000);
-                        return;
-                    }
-                    imageData = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.readAsDataURL(imageFile);
-                    });
-                }
+                // USUNIĘTE: Obsługa spotImageUploadEl (imageData)
                 
                 // --- UPLOAD GALERII ImgBB ---
                 let galleryUrls = [];
@@ -1111,31 +1108,16 @@
                     // Dodanie nowych pól do bazy
                     stairsCount: stairsCount,
                     otherDescription: otherDescription,
-                    // DODANA ROTACJA
-                    rotation: parseInt(spotRotationEl.value) 
+                    // USUNIĘTE: rotation
                 };
 
                 // --- OBSŁUGA GALERII ---
-                if (editingSpotId) {
-                    const oldSpot = spots.find(s => s.id === editingSpotId);
-                    const existingGallery = oldSpot.galleryImages || [];
-                    spotData.galleryImages = [...existingGallery, ...galleryUrls];
-                } else {
-                    spotData.galleryImages = galleryUrls;
-                }
+                // Łączymy stare zdjęcia (które zostały w edycji) z nowymi
+                spotData.galleryImages = [...currentEditGallery, ...galleryUrls];
                 // -----------------------
 
-                if (imageData) {
-                    spotData.imageData = imageData;
-                } else if (editingSpotId) {
-                    const oldSpot = spots.find(s => s.id === editingSpotId);
-                    if (oldSpot.imageData) {
-                        spotData.imageData = oldSpot.imageData;
-                    } else {
-                        // Jeśli nie ma nowego pliku i nie ma starego, usuń pole
-                        spotData.imageData = firebase.firestore.FieldValue.delete();
-                    }
-                }
+                // USUNIĘTE: Obsługa starego imageData - nie dodajemy/aktualizujemy go już
+                // (Opcjonalnie: można czyścić imageData jeśli chcemy się go pozbyć z bazy przy edycji)
 
                 if (editingSpotId) {
                     await spotsCollection.doc(editingSpotId).update(spotData);
@@ -1277,18 +1259,25 @@
                 return `<span class="tag">${tagLabel}</span>`;
             }).join('');
             
-            // LOGIKA ROTACJI W WIDOKU KARTY
-            const rotationAngle = spot.rotation || 0;
-            const rotationStyle = `transform: rotate(${rotationAngle}deg);`;
-
-            // --- GALERIA ZDJĘĆ ---
-            let galleryHtml = '';
+            // --- GALERIA ZDJĘĆ (SLIDESHOW) ---
+            let allImages = [];
+            if (spot.imageData) allImages.push(spot.imageData);
             if (spot.galleryImages && spot.galleryImages.length > 0) {
-                galleryHtml = '<div style="display: flex; gap: 5px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 5px;">';
-                spot.galleryImages.forEach(url => {
-                    galleryHtml += `<img src="${url}" onclick="openLightbox('${url}')" style="height: 60px; width: 60px; object-fit: cover; border-radius: 4px; border: 1px solid var(--neon-blue); cursor: pointer; flex-shrink: 0;">`;
+                allImages = [...allImages, ...spot.galleryImages];
+            }
+
+            let galleryHtml = '';
+            if (allImages.length > 0) {
+                galleryHtml = '<div style="display: flex; gap: 10px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; scroll-snap-type: x mandatory;">';
+                allImages.forEach(url => {
+                    galleryHtml += `<div style="flex: 0 0 80%; scroll-snap-align: center; border-radius: 8px; overflow: hidden; border: 2px solid var(--neon-pink);">
+                        <img src="${url}" onclick="openLightbox('${url}')" style="width: 100%; height: 200px; object-fit: cover; cursor: pointer; display: block;">
+                    </div>`;
                 });
                 galleryHtml += '</div>';
+            } else {
+                // Placeholder jeśli brak zdjęć?
+                galleryHtml = '<div style="font-size: 0.8rem; color: #666; font-style: italic; margin-bottom: 10px;">Brak zdjęć spotu.</div>';
             }
             // ---------------------
 
@@ -1298,7 +1287,6 @@
                     <span class="${bustClass} bust-level">${bustText}</span>
                     <span style="font-size: 0.8rem; color: #888;">Autor: ${spot.authorName || 'Anonim'}</span>
                 </div>
-                ${spot.imageData ? `<div class="spot-img-container" onclick="openLightbox('${spot.imageData}')"><img src="${spot.imageData}" alt="${spot.name}" class="spot-img" style="${rotationStyle}"></div>` : ''}
                 ${galleryHtml}
                 <p style="font-size: 0.9rem; margin-bottom: 10px;">${spot.description}</p>
                 <p style="font-size: 0.8rem; color: var(--neon-green);">${spot.lights ? '💡 SPOT OŚWIETLONY W NOCY' : '🌚 BRAK LAMP'}</p>
@@ -1336,34 +1324,15 @@
             spotLatEl.value = spot.lat;
             spotLngEl.value = spot.lng;
             
-            // Wczytanie rotacji i podglądu
-            const rotation = spot.rotation || 0;
-            spotRotationEl.value = rotation;
-            
+            // Wczytanie galerii
+            currentEditGallery = [];
             if (spot.imageData) {
-                imagePreview.src = spot.imageData;
-                imagePreviewContainer.style.display = 'flex';
-                imagePreview.style.transform = `rotate(${rotation}deg)`;
-            } else {
-                imagePreviewContainer.style.display = 'none';
-                imagePreview.src = '';
-                imagePreview.style.transform = 'rotate(0deg)';
+                currentEditGallery.push(spot.imageData);
             }
-            
-            // --- Wczytanie galerii (podgląd) ---
-            galleryPreviewContainer.innerHTML = '';
             if (spot.galleryImages && spot.galleryImages.length > 0) {
-                spot.galleryImages.forEach(url => {
-                    const img = document.createElement('img');
-                    img.src = url;
-                    img.style.width = '60px';
-                    img.style.height = '60px';
-                    img.style.objectFit = 'cover';
-                    img.style.border = '1px solid var(--neon-blue)';
-                    img.style.borderRadius = '3px';
-                    galleryPreviewContainer.appendChild(img);
-                });
+                currentEditGallery = [...currentEditGallery, ...spot.galleryImages];
             }
+            updateGalleryVisuals();
             // ------------------------------------
 
             spotTags.forEach(cb => {

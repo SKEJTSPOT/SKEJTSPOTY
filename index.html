@@ -9,12 +9,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> 
     
-    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="shortcut icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="shortcut icon" href="favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="Skejty" />
-    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="manifest" href="site.webmanifest" />
     
     <style>
         /* --- ZMIENNE KOLORÓW --- */
@@ -901,11 +901,11 @@
             if (!tags || tags.length === 0) return 'fa-skating';
             
             if (tags.includes('Schody')) return 'fa-stairs';
-            if (tags.includes('Rurki')) return 'fa-grip-lines';
+            if (tags.includes('Rurki')) return 'fa-slash'; // Zmienione z grip-lines
             if (tags.includes('Murki')) return 'fa-cube';
-            if (tags.includes('Bowl')) return 'fa-dot-circle';
-            if (tags.includes('Bank')) return 'fa-caret-up';
-            if (tags.includes('Flat')) return 'fa-square';
+            if (tags.includes('Bowl')) return 'fa-bullseye'; // Zmienione z dot-circle
+            if (tags.includes('Bank')) return 'fa-eject'; // Zmienione z caret-up
+            if (tags.includes('Flat')) return 'fa-expand'; // Zmienione z square
             if (tags.includes('Inne')) return 'fa-map-pin';
             
             return 'fa-skating';
@@ -1678,7 +1678,7 @@
                 logoutBtn.style.display = 'inline-block';
                 addSpotFab.style.display = 'flex';
             } else {
-                authStatusEl.innerHTML = a'Niezalogowany. Zaloguj się lub zarejestruj.';
+                authStatusEl.innerHTML = 'Niezalogowany. Zaloguj się lub zarejestruj.';
                 showLoginBtn.style.display = 'inline-block';
                 showRegisterBtn.style.display = 'inline-block';
                 logoutBtn.style.display = 'none';

@@ -409,15 +409,10 @@
             width: 100%; height: 200px; overflow: hidden;
             border-radius: 5px; margin-bottom: 10px;
             cursor: pointer;
-            /* Dodajemy flex dla centrowania, na wypadek gdy obrót zmieni proporcje */
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
         .spot-img {
             width: 100%; height: 100%; object-fit: cover;
             transition: transform 0.5s;
-            /* Zapewniamy, że obrót jest poprawnie wyświetlany */
         }
         .spot-img:hover { transform: scale(1.05); }
 
@@ -622,16 +617,6 @@
                 </div>
 
                 <input type="file" id="spotImageUpload" accept="image/*" data-hover>
-                <div id="imageRotationControls" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--neon-blue); padding: 8px; border-radius: 5px;">
-                    <label style="font-size: 0.8rem; font-weight: bold;">Obrót zdjęcia (90°):</label>
-                    <button type="button" class="card-btn" id="rotateImageBtn" style="width: auto; margin: 0; padding: 5px 10px;" data-hover>
-                        <i class="fas fa-redo-alt"></i> Obróć
-                    </button>
-                </div>
-                <div id="imagePreviewContainer" style="height: 150px; overflow: hidden; margin-bottom: 10px; border: 1px solid var(--neon-pink); display: none; justify-content: center; align-items: center;">
-                    <img id="imagePreview" style="max-width: 100%; max-height: 100%; object-fit: cover; transition: transform 0.3s;" />
-                </div>
-                <input type="hidden" id="spotRotation" value="0">
                 <div style="font-size: 0.7rem; color: #888; margin-bottom: 10px;">*Kliknij na mapę aby zmienić lokalizację</div>
                 <input type="hidden" id="spotLat">
                 <input type="hidden" id="spotLng">
@@ -662,6 +647,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
@@ -812,12 +798,6 @@
         const tagInne = document.getElementById('tagInne');
         const otherContainer = document.getElementById('otherInputContainer');
         const otherInputValue = document.getElementById('otherInputValue');
-        
-        // NOWE ELEMENTY DO ROTACJI
-        const spotRotationEl = document.getElementById('spotRotation');
-        const rotateImageBtn = document.getElementById('rotateImageBtn');
-        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
-        const imagePreview = document.getElementById('imagePreview');
 
         // Obsługa pokazywania/ukrywania suwaka schodów
         tagSchody.addEventListener('change', () => {
@@ -841,32 +821,6 @@
             }
         });
 
-        // Obsługa podglądu zdjęcia i obracania
-        rotateImageBtn.addEventListener('click', () => {
-            let currentRotation = parseInt(spotRotationEl.value);
-            currentRotation = (currentRotation + 90) % 360;
-            spotRotationEl.value = currentRotation;
-            imagePreview.style.transform = `rotate(${currentRotation}deg)`;
-        });
-
-        spotImageUploadEl.addEventListener('change', (e) => {
-            if (e.target.files && e.target.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(r) {
-                    imagePreview.src = r.target.result;
-                    imagePreviewContainer.style.display = 'flex';
-                }
-                reader.readAsDataURL(e.target.files[0]);
-            } else {
-                imagePreviewContainer.style.display = 'none';
-                imagePreview.src = '';
-            }
-            // Reset rotacji na 0 przy nowym pliku
-            spotRotationEl.value = 0;
-            imagePreview.style.transform = 'rotate(0deg)';
-        });
-
-
         function resetForm() {
             spotNameEl.value = '';
             spotDescEl.value = '';
@@ -887,13 +841,6 @@
             stairsValue.innerText = '8';
             otherContainer.style.display = 'none';
             otherInputValue.value = '';
-            
-            // --- Reset rotacji ---
-            spotRotationEl.value = 0;
-            imagePreviewContainer.style.display = 'none';
-            imagePreview.src = '';
-            imagePreview.style.transform = 'rotate(0deg)';
-            // -----------------------
 
             isPlacingSpot = false; 
             addSpotFab.innerHTML = '+';
@@ -1004,9 +951,7 @@
                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                     // Dodanie nowych pól do bazy
                     stairsCount: stairsCount,
-                    otherDescription: otherDescription,
-                    // DODANA ROTACJA
-                    rotation: parseInt(spotRotationEl.value) 
+                    otherDescription: otherDescription
                 };
 
                 if (imageData) {
@@ -1016,7 +961,6 @@
                     if (oldSpot.imageData) {
                         spotData.imageData = oldSpot.imageData;
                     } else {
-                        // Jeśli nie ma nowego pliku i nie ma starego, usuń pole
                         spotData.imageData = firebase.firestore.FieldValue.delete();
                     }
                 }
@@ -1046,24 +990,10 @@
 
             const commentsList = document.createElement('div');
             commentsList.id = `comments-list-${spotId}`;
-            // Upewniamy się, że timestamp to obiekt Firebase Timestamp lub Data, aby móc sortować
-            comments.sort((a, b) => {
-                const timeA = a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-                const timeB = b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
-                return timeB - timeA;
-            }).slice(0, 3).forEach(c => {
+            comments.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate()).slice(0, 3).forEach(c => {
                 const commentEl = document.createElement('div');
                 commentEl.className = 'comment';
-                
-                let dateStr;
-                if (c.timestamp && c.timestamp.seconds) {
-                    dateStr = new Date(c.timestamp.seconds * 1000).toLocaleDateString();
-                } else if (c.timestamp) {
-                     dateStr = new Date(c.timestamp).toLocaleDateString();
-                } else {
-                    dateStr = 'Brak daty';
-                }
-
+                const dateStr = c.timestamp ? new Date(c.timestamp.seconds * 1000).toLocaleDateString() : 'Brak daty';
                 commentEl.innerHTML = `<strong>${c.authorName}:</strong> ${c.text} <span style="font-size: 0.7rem; float: right; color: #888;">${dateStr}</span>`;
                 commentsList.appendChild(commentEl);
             });
@@ -1097,8 +1027,7 @@
                     text: text,
                     authorId: currentUser.uid,
                     authorName: currentUser.displayName || currentUser.email.split('@')[0],
-                    // NAPRAWIONA LINIA: używamy new Date()
-                    timestamp: new Date() 
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
                 const updatedComments = [...(currentSpot.comments || []), newComment];
@@ -1160,10 +1089,6 @@
                 }
                 return `<span class="tag">${tagLabel}</span>`;
             }).join('');
-            
-            // LOGIKA ROTACJI W WIDOKU KARTY
-            const rotationAngle = spot.rotation || 0;
-            const rotationStyle = `transform: rotate(${rotationAngle}deg);`;
 
             card.innerHTML = `
                 <h3 style="color: var(--neon-blue); margin-bottom: 5px;">${index}. ${spot.name}</h3>
@@ -1171,7 +1096,7 @@
                     <span class="${bustClass} bust-level">${bustText}</span>
                     <span style="font-size: 0.8rem; color: #888;">Autor: ${spot.authorName || 'Anonim'}</span>
                 </div>
-                ${spot.imageData ? `<div class="spot-img-container" onclick="openLightbox('${spot.imageData}')"><img src="${spot.imageData}" alt="${spot.name}" class="spot-img" style="${rotationStyle}"></div>` : ''}
+                ${spot.imageData ? `<div class="spot-img-container" onclick="openLightbox('${spot.imageData}')"><img src="${spot.imageData}" alt="${spot.name}" class="spot-img"></div>` : ''}
                 <p style="font-size: 0.9rem; margin-bottom: 10px;">${spot.description}</p>
                 <p style="font-size: 0.8rem; color: var(--neon-green);">${spot.lights ? '💡 SPOT OŚWIETLONY W NOCY' : '🌚 BRAK LAMP'}</p>
                 <div class="tags-container">${tagsHtml}</div>
@@ -1207,21 +1132,6 @@
             spotLightsEl.checked = spot.lights || false;
             spotLatEl.value = spot.lat;
             spotLngEl.value = spot.lng;
-            
-            // Wczytanie rotacji i podglądu
-            const rotation = spot.rotation || 0;
-            spotRotationEl.value = rotation;
-            
-            if (spot.imageData) {
-                imagePreview.src = spot.imageData;
-                imagePreviewContainer.style.display = 'flex';
-                imagePreview.style.transform = `rotate(${rotation}deg)`;
-            } else {
-                imagePreviewContainer.style.display = 'none';
-                imagePreview.src = '';
-                imagePreview.style.transform = 'rotate(0deg)';
-            }
-            // ------------------------------------
 
             spotTags.forEach(cb => {
                 cb.checked = (spot.tags || []).includes(cb.value);
@@ -1379,11 +1289,7 @@
             document.getElementById('spotCount').textContent = filteredSpots.length;
 
             filteredSpots
-                .sort((a, b) => {
-                    const timeA = a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-                    const timeB = b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
-                    return timeB - timeA;
-                }) 
+                .sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate()) 
                 .forEach((spot, index) => {
                     spotsListEl.appendChild(createSpotCard(spot, index + 1));
 

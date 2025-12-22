@@ -479,10 +479,10 @@
             color: white;
             border-radius: 50%;
             border: 3px solid var(--neon-green);
-            text-align: center;
-            line-height: 24px;
-            font-weight: bold;
-            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
             box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
             transition: all 0.2s;
         }
@@ -828,10 +828,25 @@
         // Zmiana jest tutaj: dodajemy 'null' i konfigurację pozycji
         L.control.layers(baseMaps, null, { position: 'bottomleft' }).addTo(map);
 
-        function createCustomMarkerIcon(number) {
+        function getSpotIconClass(tags) {
+            if (!tags || tags.length === 0) return 'fa-skating';
+            
+            if (tags.includes('Schody')) return 'fa-stairs';
+            if (tags.includes('Rurki')) return 'fa-grip-lines';
+            if (tags.includes('Murki')) return 'fa-cube';
+            if (tags.includes('Bowl')) return 'fa-dot-circle';
+            if (tags.includes('Bank')) return 'fa-caret-up';
+            if (tags.includes('Flat')) return 'fa-square';
+            if (tags.includes('Inne')) return 'fa-map-pin';
+            
+            return 'fa-skating';
+        }
+
+        function createCustomMarkerIcon(spot) {
+            const iconClass = getSpotIconClass(spot.tags);
             return L.divIcon({
                 className: 'custom-marker-icon',
-                html: number,
+                html: `<i class="fas ${iconClass}"></i>`,
                 iconSize: [30, 30],
                 iconAnchor: [15, 30]
             });
@@ -1500,7 +1515,7 @@
                     spotsListEl.appendChild(createSpotCard(spot, index + 1));
 
                     const marker = L.marker([spot.lat, spot.lng], {
-                        icon: createCustomMarkerIcon(index + 1),
+                        icon: createCustomMarkerIcon(spot),
                         title: spot.name
                     }).addTo(map);
 

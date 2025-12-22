@@ -483,15 +483,46 @@
             max-width: 90%; max-height: 90%; border: 3px solid white;
         }
         
-        /* Styl dla inputów w formularzu */
-        #spot-form input[type=text], #spot-form textarea, #spot-form select {
+        .input-cyber, .textarea-cyber, .select-cyber {
             width: 100%; padding: 10px; margin-bottom: 10px;
-            border: 1px solid var(--neon-blue); border-radius: 3px;
-            background: var(--form-bg); color: var(--text-color);
+            background: #0c0f13; color: var(--text-color);
+            border-radius: 6px;
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            outline: none;
             font-family: 'Roboto Mono', sans-serif;
+            transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
+            caret-color: var(--neon-pink);
         }
+        .input-cyber::placeholder, .textarea-cyber::placeholder {
+            color: #889; letter-spacing: 0.5px;
+        }
+        .input-cyber:focus, .textarea-cyber:focus, .select-cyber:focus {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 6px var(--neon-blue), 0 0 10px rgba(0, 243, 255, 0.25);
+            background: #0e1116;
+        }
+        .select-cyber {
+            appearance: none;
+            background-image: linear-gradient(90deg, rgba(255,0,255,0.12), rgba(0,243,255,0.12));
+        }
+        .search-overlay .input-cyber {
+            border-color: rgba(255, 0, 255, 0.25);
+        }
+        .search-overlay .input-cyber:focus {
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 6px var(--neon-pink), 0 0 10px rgba(255, 0, 255, 0.25);
+        }
+        .logo {
+            display: flex; align-items: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+            user-select: none;
+            filter: drop-shadow(0 0 4px var(--neon-blue));
+            transition: filter 0.2s, transform 0.2s;
+        }
+        .logo:hover { filter: drop-shadow(0 0 8px var(--neon-pink)); transform: translateY(-2px); }
+        .logo img { max-width: 180px; height: auto; display: block; }
 
-        /* Custom marker styling (cyberpunk neon) */
         .custom-marker-icon {
             width: 30px; height: 30px;
             background: rgba(10, 10, 12, 0.6);
@@ -540,7 +571,9 @@
 
     <div class="app-container">
         <div class="sidebar" id="mainSidebar">
-            <h1 style="cursor: pointer; transition: text-shadow 0.3s;" onclick="resetMap()" title="Wróć do widoku mapy">SKEJ<span style="color:var(--neon-pink)">TY</span></h1>
+            <div class="logo" onclick="resetMap()" title="Wróć do widoku mapy">
+                <img src="skejty-logo.png" alt="SKEJTY">
+            </div>
             
             <div id="authContent" class="sidebar-section active">
                  <h2 style="margin-bottom: 15px; color: var(--neon-blue);">Zarządzanie Kontem</h2>
@@ -553,17 +586,17 @@
                      </div>
                      
                      <div id="loginForm" style="display:none;">
-                         <input type="email" id="loginEmail" placeholder="Email" data-hover>
-                         <input type="password" id="loginPassword" placeholder="Hasło" data-hover>
-                         <button class="btn-neon btn-green" onclick="handleLogin()" data-hover>ZALOGUJ SIĘ</button>
-                     </div>
+                        <input type="email" id="loginEmail" class="input-cyber" placeholder="Email" data-hover>
+                        <input type="password" id="loginPassword" class="input-cyber" placeholder="Hasło" data-hover>
+                        <button class="btn-neon btn-green" onclick="handleLogin()" data-hover>ZALOGUJ SIĘ</button>
+                    </div>
 
                      <div id="registerForm" style="display:none;">
-                         <input type="text" id="registerNick" placeholder="Twój Nick/Ksywa" data-hover>
-                         <input type="email" id="registerEmail" placeholder="Email (np. skater@gmail.com)" data-hover>
-                         <input type="password" id="registerPassword" placeholder="Hasło (min. 6 znaków)" data-hover>
-                         <button class="btn-neon btn-orange" onclick="handleRegister()" data-hover>ZAREJESTRUJ</button>
-                     </div>
+                        <input type="text" id="registerNick" class="input-cyber" placeholder="Twój Nick/Ksywa" data-hover>
+                        <input type="email" id="registerEmail" class="input-cyber" placeholder="Email (np. skater@gmail.com)" data-hover>
+                        <input type="password" id="registerPassword" class="input-cyber" placeholder="Hasło (min. 6 znaków)" data-hover>
+                        <button class="btn-neon btn-orange" onclick="handleRegister()" data-hover>ZAREJESTRUJ</button>
+                    </div>
                  </div>
             </div>
 
@@ -605,7 +638,7 @@
             <div id="map" data-hover></div>
             
             <div class="search-overlay">
-                <input type="text" id="citySearchInput" placeholder="Wpisz miasto / wieś / ulicę..." data-hover>
+                <input type="text" id="citySearchInput" class="input-cyber" placeholder="Wpisz miasto / wieś / ulicę..." data-hover>
                 <button class="search-btn" id="citySearchBtn" data-hover>SZUKAJ</button>
             </div>
 
@@ -617,8 +650,8 @@
                 
                 <div class="close-form-btn" onclick="toggleForm(false)" data-hover>&times;</div>
                 <div style="font-size: 0.8rem; margin-bottom: 5px; color: var(--neon-orange); display: none;" id="editModeLabel">TRYB EDYCJI</div>
-                <input type="text" id="spotName" placeholder="Nazwa spota (np. Schody Kina)" data-hover>
-                <textarea id="spotDesc" rows="2" placeholder="Opis nawierzchni..." data-hover></textarea>
+                <input type="text" id="spotName" class="input-cyber" placeholder="Nazwa spota (np. Schody Kina)" data-hover>
+                <textarea id="spotDesc" class="textarea-cyber" rows="2" placeholder="Opis nawierzchni..." data-hover></textarea>
                 
                 <label style="font-size: 0.8rem; font-weight: bold;">Co tam jest?</label>
                 <div class="checkbox-group">
@@ -637,14 +670,14 @@
                     
                     <label class="checkbox-item"><input type="checkbox" value="Inne" class="spot-tag" id="tagInne"> Inne</label>
                     <div id="otherInputContainer" style="display:none; margin-bottom: 10px;">
-                        <input type="text" id="otherInputValue" placeholder="Wpisz co to za element..." style="border-color: var(--neon-orange);">
+                        <input type="text" id="otherInputValue" class="input-cyber" placeholder="Wpisz co to za element...">
                     </div>
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                     <div style="flex: 1;">
                         <label style="font-size: 0.8rem; font-weight: bold;">Przypał:</label>
-                        <select id="spotBust" style="margin-bottom: 0;">
+                        <select id="spotBust" class="select-cyber" style="margin-bottom: 0;">
                             <option value="safe">Bezpiecznie (Chill)</option>
                             <option value="medium">Średni (Wbijaj szybko)</option>
                             <option value="high">Duży (Ochrona goni)</option>
@@ -889,7 +922,6 @@
             return 'fa-skating';
         }
 
-        // Typ spotu do neonowej ikonki SVG
         function getSpotType(tags) {
             if (!tags || tags.length === 0) return 'inne';
             if (tags.includes('Schody')) return 'schody';
@@ -901,7 +933,6 @@
             return 'inne';
         }
 
-        // Neonowe SVG dopasowane do typów (inspirowane Twoimi kształtami)
         function getSpotIconSVG(type) {
             switch (type) {
                 case 'bank':

@@ -572,7 +572,7 @@
     <div class="app-container">
         <div class="sidebar" id="mainSidebar">
             <div class="logo" onclick="resetMap()" title="Wróć do widoku mapy">
-                <img src="skejty-logo.png" alt="SKEJTY">
+                <img id="appLogo" src="skejty-logo.png" alt="SKEJTY">
             </div>
             
             <div id="authContent" class="sidebar-section active">
@@ -1750,6 +1750,20 @@
 
         // --- START APLIKACJI ---
         document.addEventListener('DOMContentLoaded', () => {
+            const applyBranding = async () => {
+                try {
+                    const doc = await db.collection('config').doc('branding').get();
+                    if (doc.exists) {
+                        const data = doc.data();
+                        const url = data && data.logoUrl;
+                        if (url) {
+                            const img = document.getElementById('appLogo');
+                            if (img) img.src = url;
+                        }
+                    }
+                } catch (e) {}
+            };
+            applyBranding();
             
             gsap.to('#loader', { opacity: 0, duration: 0.8, delay: 1, onComplete: () => {
                 document.getElementById('loader').style.display = 'none';

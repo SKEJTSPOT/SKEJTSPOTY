@@ -1081,10 +1081,10 @@
             commentsList.id = `comments-list-${spotId}`;
             // Upewniamy się, że timestamp to obiekt Firebase Timestamp lub Data, aby móc sortować
             comments.sort((a, b) => {
-                const timeA = (a.timestamp && a.timestamp.toDate) ? a.timestamp.toDate() : new Date(a.timestamp || 0);
-                const timeB = (b.timestamp && b.timestamp.toDate) ? b.timestamp.toDate() : new Date(b.timestamp || 0);
+                const timeA = a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+                const timeB = b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
                 return timeB - timeA;
-            })slice(0, 3).forEach(c => {
+            }).slice(0, 3).forEach(c => {
                 const commentEl = document.createElement('div');
                 commentEl.className = 'comment';
                 
@@ -1587,6 +1587,4 @@ function renderSpots(filters = { selectedBust: 'all', selectedTags: [] }) {
     </script>
 </body>
 </html>
-
-
 

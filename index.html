@@ -1392,18 +1392,24 @@
         filterTagEls.forEach(el => el.addEventListener('change', applyFilter));
 
         // --- GŁÓWNA FUNKCJA RENDERUJĄCA SPOTY I STOSUJĄCA FILTRY ---
-        function renderSpots(filters = { selectedBust: 'all', selectedTags: [] }) {
+function renderSpots(filters = { selectedBust: 'all', selectedTags: [] }) {
             const spotsListEl = document.getElementById('spotsList');
+            if (!spotsListEl) return; // Zabezpieczenie przed brakiem elementu
+
             spotsListEl.innerHTML = '';
             markers.forEach(marker => map.removeLayer(marker));
             markers = [];
-            let filteredSpots = spots;
+            
+            // Tworzymy kopię tablicy, żeby nie psuć oryginału
+            let filteredSpots = [...spots];
 
+            // 1. Filtrowanie po przypale
             if (filters.selectedBust !== 'all') {
                 filteredSpots = filteredSpots.filter(spot => spot.bust === filters.selectedBust);
             }
 
-            if (filters.selectedTags.length > 0) {
+            // 2. Filtrowanie po tagach
+            if (filters.selectedTags && filters.selectedTags.length > 0) {
                 filteredSpots = filteredSpots.filter(spot => 
                     filters.selectedTags.every(tag => (spot.tags || []).includes(tag))
                 );
@@ -1411,47 +1417,56 @@
 
             document.getElementById('spotCount').textContent = filteredSpots.length;
 
-            filteredSpots
-                .sort((a, b) => {
-                    const timeA = a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-                    const timeB = b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
-                    return timeB - timeA;
-                }) 
-                .forEach((spot, index) => {
-                    spotsListEl.appendChild(createSpotCard(spot, index + 1));
+            // 3. BEZPIECZNE SORTOWANIE (Tutaj był błąd!)
+            filteredSpots.sort((a, b) => {
+                // Sprawdzamy czy timestamp istnieje i czy ma metodę toDate
+                const timeA = (a.timestamp && typeof a.timestamp.toDate === 'function') 
+                              ? a.timestamp.toDate() 
+                              : (a.timestamp ? new Date(a.timestamp) : new Date(0));
+                
+                const timeB = (b.timestamp && typeof b.timestamp.toDate === 'function') 
+                              ? b.timestamp.toDate() 
+                              : (b.timestamp ? new Date(b.timestamp) : new Date(0));
+                
+                return timeB - timeA; // Od najnowszych
+            });
 
-                    const marker = L.marker([spot.lat, spot.lng], {
-                        icon: createCustomMarkerIcon(index + 1),
-                        title: spot.name
-                    }).addTo(map);
+            // 4. Renderowanie markerów i kart
+            filteredSpots.forEach((spot, index) => {
+                const displayIndex = index + 1;
+                
+                // Upewniamy się, że współrzędne są poprawne
+                const lat = parseFloat(spot.lat);
+                const lng = parseFloat(spot.lng);
+                if (isNaN(lat) || isNaN(lng)) return;
 
-                    marker.on('click', () => {
-                        map.setView([spot.lat, spot.lng], 17);
-                        switchSidebarSection('spotsList');
-                        setTimeout(() => {
-                            highlightCard(spot.id);
-                        }, 100);
-                    });
+                spotsListEl.appendChild(createSpotCard(spot, displayIndex));
 
-                    markers.push(marker);
+                const marker = L.marker([lat, lng], {
+                    icon: createCustomMarkerIcon(displayIndex),
+                    title: spot.name
+                }).addTo(map);
+
+                marker.on('click', () => {
+                    map.setView([lat, lng], 17);
+                    switchSidebarSection('spotsList');
+                    setTimeout(() => {
+                        highlightCard(spot.id);
+                    }, 100);
                 });
+
+                markers.push(marker);
+            });
             
+            // Przywracanie zaznaczenia jeśli istniało
             if (activeCardId) {
                 const activeCard = document.getElementById(`card-${activeCardId}`);
                 if (activeCard) {
                     activeCard.classList.add('highlight');
                     activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                } else {
-                    activeCardId = null; 
                 }
             }
-            
-            if (tempMarker) {
-                map.removeLayer(tempMarker);
-                tempMarker = null;
-            }
         }
-
         // --- PRZEŁĄCZANIE SEKCEJI SIDEBAR NA MOBILE ---
         const authContent = document.getElementById('authContent');
         const spotsListContent = document.getElementById('spotsListContent');
@@ -1572,4 +1587,5 @@
     </script>
 </body>
 </html>
+
 

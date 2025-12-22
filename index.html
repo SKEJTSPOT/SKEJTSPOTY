@@ -621,13 +621,23 @@
                     </div>
                 </div>
 
-                <input type="file" id="spotImageUpload" accept="image/*" data-hover>
-                <div id="imageRotationControls" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--neon-blue); padding: 8px; border-radius: 5px;">
-                    <label style="font-size: 0.8rem; font-weight: bold;">Obrót zdjęcia (90°):</label>
-                    <button type="button" class="card-btn" id="rotateImageBtn" style="width: auto; margin: 0; padding: 5px 10px;" data-hover>
-                        <i class="fas fa-redo-alt"></i> Obróć
+                <!-- NOWA SEKCJA ZDJĘĆ ImgBB -->
+                <div style="margin-bottom: 15px; border: 1px dashed var(--neon-blue); padding: 10px; border-radius: 5px;">
+                    <label style="font-size: 0.8rem; font-weight: bold; color: var(--neon-blue);">ZDJĘCIE 1 (Główne):</label>
+                    <input type="file" id="spotImageUpload1" accept="image/*" style="margin-bottom: 5px;">
+                    <button type="button" class="card-btn" onclick="rotateImg(1)" style="width: auto; margin-bottom: 10px;">
+                        <i class="fas fa-redo"></i> Obróć 1
                     </button>
+                    <input type="hidden" id="spotRotation1" value="0">
+                
+                    <label style="font-size: 0.8rem; font-weight: bold; color: var(--neon-blue); display: block; margin-top: 10px;">ZDJĘCIE 2 (Dodatkowe):</label>
+                    <input type="file" id="spotImageUpload2" accept="image/*" style="margin-bottom: 5px;">
+                    <button type="button" class="card-btn" onclick="rotateImg(2)" style="width: auto;">
+                        <i class="fas fa-redo"></i> Obróć 2
+                    </button>
+                    <input type="hidden" id="spotRotation2" value="0">
                 </div>
+                <!-- KONIEC NOWEJ SEKCJI -->
                 <div id="imagePreviewContainer" style="height: 150px; overflow: hidden; margin-bottom: 10px; border: 1px solid var(--neon-pink); display: none; justify-content: center; align-items: center;">
                     <img id="imagePreview" style="max-width: 100%; max-height: 100%; object-fit: cover; transition: transform 0.3s;" />
                 </div>
@@ -710,7 +720,37 @@
                 );
             }, duration);
         }
+
+    //---ImgBB----\\
+        // FUNKCJA WYSYŁAJĄCA DO ImgBB
+        async function uploadToImgBB(file) {
+            if (!file) return null;
+            const formData = new FormData();
+            formData.append("image", file);
+            
+            // TUTAJ WKLEJ SWÓJ KLUCZ Z api.imgbb.com
+            const apiKey = "8fd076f6d9cc935b3dcf18f88af1ed67"; // <-- ZMIEŃ TO NA KLUCZ Z IMGBB!
         
+            try {
+                const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+                    method: "POST",
+                    body: formData
+                });
+                const data = await response.json();
+                return data.data.url;
+            } catch (error) {
+                console.error("Błąd ImgBB:", error);
+                return null;
+            }
+        }
+        
+        // FUNKCJA OBRACANIA W FORMULARZU
+        window.rotateImg = (num) => {
+            const rotEl = document.getElementById('spotRotation' + num);
+            let current = parseInt(rotEl.value) || 0;
+            rotEl.value = (current + 90) % 360;
+            showNotification(`Obrócono zdjęcie ${num} o 90°`, 'info');
+        };
         // --- LOGIKA AUTORYZACJI ---
 
         const showLoginBtn = document.getElementById('showLoginBtn');
@@ -999,27 +1039,66 @@
                 return;
             }
             
-            let imageData = ''; 
-            saveSpotBtn.innerText = editingSpotId ? "ZAPISYWANIE..." : "DODAWANIE...";
-
+            saveSpotBtn.innerText = "WYSYŁANIE ZDJĘĆ...";
+            saveSpotBtn.disabled = true;
+        
             try {
-                const imageFile = spotImageUploadEl.files[0];
-                if (imageFile) {
-                    if (imageFile.size > 800000) {
-                        showNotification("Plik jest za duży! Max ok. 800KB. Wybierz mniejszy plik.", 'error', 6000);
-                        return;
-                    }
-                    imageData = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.readAsDataURL(imageFile);
-                    });
-                }
-                
+                const file1 = document.getElementById('spotImageUpload1').files[0];
+                const file2 = document.getElementById('spotImageUpload2').files[0];
+        
+                // Wysyłamy pliki do ImgBB (równolegle dla szybkości)
+                const [url1, url2] = await Promise.all([
+                    uploadToImgBB(file1),
+                    uploadToImgBB(file2)
+                ]);
+        
                 const selectedTags = Array.from(spotTags)
                     .filter(cb => cb.checked)
                     .map(cb => cb.value);
                 
+                const stairsCount = selectedTags.includes('Schody') ? parseInt(stairsRange.value) : null;
+                const otherDescription = selectedTags.includes('Inne') ? otherInputValue.value : null;
+        
+                const spotData = {
+                    name: spotNameEl.value,
+                    description: spotDescEl.value,
+                    lat: parseFloat(spotLatEl.value),
+                    lng: parseFloat(spotLngEl.value),
+                    bust: spotBustEl.value,
+                    tags: selectedTags,
+                    lights: spotLightsEl.checked,
+                    authorId: currentUser.uid,
+                    authorName: currentUser.displayName || currentUser.email.split('@')[0],
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    stairsCount: stairsCount,
+                    otherDescription: otherDescription,
+                    // Zapisujemy linki z ImgBB i rotacje
+                    imageUrl1: url1 || (editingSpotId ? (spots.find(s=>s.id===editingSpotId).imageUrl1 || "") : ""),
+                    imageUrl2: url2 || (editingSpotId ? (spots.find(s=>s.id===editingSpotId).imageUrl2 || "") : ""),
+                    rotation1: parseInt(document.getElementById('spotRotation1').value) || 0,
+                    rotation2: parseInt(document.getElementById('spotRotation2').value) || 0
+                };
+        
+                if (editingSpotId) {
+                    await spotsCollection.doc(editingSpotId).update(spotData);
+                    showNotification(`Spot zaktualizowany!`, 'success');
+                } else {
+                    await spotsCollection.add(spotData);
+                    showNotification(`Nowy spot dodany!`, 'success');
+                }
+        
+                toggleForm(false);
+                // Resetowanie pól plików po zapisie
+                document.getElementById('spotImageUpload1').value = "";
+                document.getElementById('spotImageUpload2').value = "";
+            } catch (error) {
+                showNotification("Błąd zapisu: " + error.message, 'error');
+                console.error(error);
+            } finally {
+                saveSpotBtn.innerText = "ZAPISZ NA MAPIE";
+                saveSpotBtn.disabled = false;
+            }
+        });
                 // Pobranie danych dodatkowych
                 const stairsCount = selectedTags.includes('Schody') ? parseInt(stairsRange.value) : null;
                 const otherDescription = selectedTags.includes('Inne') ? otherInputValue.value : null;
@@ -1197,14 +1276,33 @@
             // LOGIKA ROTACJI W WIDOKU KARTY
             const rotationAngle = spot.rotation || 0;
             const rotationStyle = `transform: rotate(${rotationAngle}deg);`;
-
+        // Logika generowania HTML dla dwóch zdjęć ImgBB
+            let imagesHtml = '';
+            if (spot.imageUrl1 || spot.imageUrl2) {
+                imagesHtml = `<div style="display: flex; gap: 8px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 5px;">`;
+                
+                if (spot.imageUrl1) {
+                    imagesHtml += `
+                        <div class="spot-img-container" style="flex: 1; height: 160px; min-width: 140px;" onclick="openLightbox('${spot.imageUrl1}')">
+                            <img src="${spot.imageUrl1}" class="spot-img" style="transform: rotate(${spot.rotation1 || 0}deg); width: 100%; height: 100%; object-fit: cover;">
+                        </div>`;
+                }
+                
+                if (spot.imageUrl2) {
+                    imagesHtml += `
+                        <div class="spot-img-container" style="flex: 1; height: 160px; min-width: 140px;" onclick="openLightbox('${spot.imageUrl2}')">
+                            <img src="${spot.imageUrl2}" class="spot-img" style="transform: rotate(${spot.rotation2 || 0}deg); width: 100%; height: 100%; object-fit: cover;">
+                        </div>`;
+                }
+                imagesHtml += `</div>`;
+            }
             card.innerHTML = `
                 <h3 style="color: var(--neon-blue); margin-bottom: 5px;">${index}. ${spot.name}</h3>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <span class="${bustClass} bust-level">${bustText}</span>
                     <span style="font-size: 0.8rem; color: #888;">Autor: ${spot.authorName || 'Anonim'}</span>
                 </div>
-                ${spot.imageData ? `<div class="spot-img-container" onclick="openLightbox('${spot.imageData}')"><img src="${spot.imageData}" alt="${spot.name}" class="spot-img" style="${rotationStyle}"></div>` : ''}
+                ${imagesHtml}
                 <p style="font-size: 0.9rem; margin-bottom: 10px;">${spot.description}</p>
                 <p style="font-size: 0.8rem; color: var(--neon-green);">${spot.lights ? '💡 SPOT OŚWIETLONY W NOCY' : '🌚 BRAK LAMP'}</p>
                 <div class="tags-container">${tagsHtml}</div>
@@ -1587,4 +1685,5 @@ function renderSpots(filters = { selectedBust: 'all', selectedTags: [] }) {
     </script>
 </body>
 </html>
+
 

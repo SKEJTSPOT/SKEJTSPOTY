@@ -478,11 +478,11 @@
             background: var(--neon-pink);
             color: white;
             border-radius: 50%;
-            border: 3px solid var(--neon-green);
+            border: 2px solid var(--neon-green);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 14px;
+            font-size: 16px;
             box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
             transition: all 0.2s;
         }
@@ -1051,7 +1051,7 @@
                 isPlacingSpot = true;
                 addSpotFab.innerHTML = '<i class="fas fa-crosshairs"></i>'; 
                 addSpotFab.classList.add('form-active');
-                showNotification("Wybierz lokalizację na mapie (kliknij) lub anuluj klikając na ikonę.", 'info', 5000);
+                showNotification("Kliknij na mapie", 'info', 3000);
                 if (isMobile()) switchSidebarSection('map');
             }
         });
@@ -1069,11 +1069,11 @@
 
         saveSpotBtn.addEventListener('click', async () => {
             if (!currentUser) {
-                showNotification("Musisz być zalogowany!", 'error');
+                showNotification("Zaloguj się!", 'error');
                 return;
             }
             if (!spotNameEl.value || !spotLatEl.value) {
-                showNotification("Wypełnij nazwę i wybierz miejsce na mapie.", 'error');
+                showNotification("Nazwa i mapa!", 'error');
                 return;
             }
             
@@ -1087,8 +1087,8 @@
                 let galleryUrls = [];
                 const galleryFiles = galleryUploadEl.files;
                 if (galleryFiles && galleryFiles.length > 0) {
-                    saveSpotBtn.innerText = "WYSYŁANIE ZDJĘĆ...";
-                    showNotification("Wysyłanie zdjęć do chmury ImgBB...", 'info', 4000);
+                    saveSpotBtn.innerText = "TWORZENIE SPOTU...";
+                    showNotification("Tworzenie spotu (daj chwilę)...", 'info', 4000);
                     
                     for (let i = 0; i < galleryFiles.length; i++) {
                         try {

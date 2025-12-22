@@ -3,706 +3,509 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKEJTY </title>
+    <title>SKEJTY - Mapa Spotów</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> 
     
-    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="shortcut icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-title" content="Skejty" />
-    <link rel="manifest" href="/site.webmanifest" />
-    
     <style>
-        /* --- ZMIENNE KOLORÓW --- */
         :root {
-            --neon-green: #39ff14;
-            --neon-pink: #ff00ff;
-            --neon-blue: #00f3ff;
-            --neon-red: #ff3131;
-            --neon-orange: #ffaa00;
-            --main-bg: #f0f0f0; 
-            --sidebar-bg: rgba(240, 240, 240, 0.95);
-            --text-color: #111;
-            --card-bg: white;
-            --form-bg: white;
-            --comment-bg: #f4f4f4;
-            --shadow-color: rgba(0,0,0,0.1);
-        }
-
-        /* --- TRYB CIEMNY (Dark Mode) --- */
-        body.dark-mode {
-            --neon-green: #39ff14;
-            --neon-pink: #ff00ff;
-            --neon-blue: #00f3ff;
-            --neon-red: #ff3131;
-            --neon-orange: #ffaa00;
-            --main-bg: #1a1a2e;
-            --sidebar-bg: rgba(26, 26, 46, 0.98);
-            --text-color: #f0f0f0;
-            --card-bg: #2d2d4d;
-            --form-bg: #3e3e6e;
-            --comment-bg: #4a4a7d;
+            --neon-green: #39ff14; --neon-pink: #ff00ff; --neon-blue: #00f3ff;
+            --neon-red: #ff3131; --neon-orange: #ffaa00; --main-bg: #1a1a2e;
+            --sidebar-bg: rgba(26, 26, 46, 0.98); --text-color: #f0f0f0;
+            --card-bg: #2d2d4d; --form-bg: #3e3e6e; --comment-bg: #4a4a7d;
             --shadow-color: rgba(0, 243, 255, 0.1);
         }
 
-        /* --- OGÓLNE STYLI DLA OBU TRYBÓW --- */
         * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
-
         body {
-            font-family: 'Orbitron', sans-serif; 
-            background-color: var(--main-bg);
-            color: var(--text-color);
-            overflow-x: hidden;
-            height: 100vh;
-            transition: background-color 0.5s;
+            font-family: 'Orbitron', sans-serif; background-color: var(--main-bg);
+            color: var(--text-color); overflow-x: hidden; height: 100vh;
         }
         
-        /* --- CUSTOM CURSOR --- */
         #cursor {
-            position: fixed; width: 20px; height: 20px;
-            border: 2px solid var(--neon-pink); border-radius: 50%;
-            pointer-events: none; z-index: 9999;
-            transform: translate(-50%, -50%);
-            transition: width 0.2s, height 0.2s, background 0.2s;
-            mix-blend-mode: difference;
+            position: fixed; width: 20px; height: 20px; border: 2px solid var(--neon-pink);
+            border-radius: 50%; pointer-events: none; z-index: 9999;
+            transform: translate(-50%, -50%); transition: width 0.2s, height 0.2s; mix-blend-mode: difference;
         }
-        #cursor.hovered {
-            width: 50px; height: 50px;
-            background: rgba(255, 0, 255, 0.2); border-color: var(--neon-green);
-            mix-blend-mode: normal;
-        }
+        #cursor.hovered { width: 50px; height: 50px; background: rgba(255, 0, 255, 0.2); }
 
-        /* --- LOADER --- */
         #loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--main-bg); display: flex; justify-content: center; align-items: center;
             z-index: 10000; flex-direction: column;
-            transition: background-color 0.5s;
         }
         .skate-wheel {
-            width: 80px; height: 80px;
-            border: 8px solid var(--neon-green); border-top: 8px solid var(--neon-pink);
-            border-radius: 50%; animation: spin 0.5s linear infinite;
+            width: 80px; height: 80px; border: 8px solid var(--neon-green);
+            border-top: 8px solid var(--neon-pink); border-radius: 50%; animation: spin 0.5s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* --- UI LAYOUT (DESKTOP) --- */
-        .app-container {
-            display: grid; 
-            grid-template-columns: 400px 1fr;
-            height: 100vh; 
-            opacity: 0;
-        }
+        .app-container { display: grid; grid-template-columns: 400px 1fr; height: 100vh; opacity: 0; }
 
-        /* --- SIDEBAR --- */
         .sidebar {
-            background: var(--sidebar-bg);
-            backdrop-filter: blur(10px);
-            border-right: 2px solid var(--neon-pink);
-            padding: 20px; overflow-y: auto; position: relative;
-            transform: translateX(0); 
-            display: flex; flex-direction: column;
-            transition: background 0.5s;
+            background: var(--sidebar-bg); border-right: 2px solid var(--neon-pink);
+            padding: 20px; overflow-y: auto; display: flex; flex-direction: column;
         }
         
-        /* --- MAP CONTAINER --- */
         #map-container { position: relative; width: 100%; height: 100%; }
         #map { width: 100%; height: 100%; z-index: 1; }
         
-        /* --- POWIADOMIENIA --- */
         #notification-container {
-            position: fixed;
-            bottom: 20px; 
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9000; 
-            pointer-events: none; 
-            display: flex;
-            flex-direction: column-reverse; 
-            gap: 10px;
-            width: 90%; 
-            max-width: 450px;
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 9000; display: flex; flex-direction: column-reverse; gap: 10px; width: 90%; max-width: 450px;
         }
+        .notification { padding: 15px 20px; border: 2px solid; color: #fff; background: #111; font-size: 0.9rem; }
+        .notification.success { border-color: var(--neon-green); }
+        .notification.error { border-color: var(--neon-red); }
 
-        .notification {
-            padding: 15px 20px;
-            border: 2px solid;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.9rem;
-            color: #fff; 
-            background: var(--text-color);
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
-            transform: translateY(100%); 
-            pointer-events: auto;
-        }
-
-        .notification.success { border-color: var(--neon-green); background: #1f3d24; }
-        .notification.error { border-color: var(--neon-red); background: #4d2d2d; }
-        .notification.info { border-color: var(--neon-blue); background: #2d3d4d; }
-
-        /* --- SIDEBAR SECTIONS --- */
-        .sidebar-section {
-            display: none; 
-            height: 100%;
-            overflow-y: auto;
-            padding-top: 20px;
-        }
-        .sidebar-section.active {
-            display: block;
-        }
+        .sidebar-section { display: none; height: 100%; padding-top: 20px; }
+        .sidebar-section.active { display: block; }
         
-        /* --- Floating Action Button (FAB) --- */
         .fab {
-            position: fixed;
-            bottom: 80px; 
-            right: 20px;
-            width: 55px; height: 55px;
-            background: var(--neon-pink);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 28px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            z-index: 2000;
-            transition: transform 0.3s, background 0.3s;
+            position: fixed; bottom: 80px; right: 20px; width: 55px; height: 55px;
+            background: var(--neon-pink); color: white; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; font-size: 28px;
+            cursor: pointer; z-index: 2000; transition: transform 0.3s;
         }
-        .fab:hover {
-            background: var(--neon-green);
-        }
-        .fab.form-active { 
-            background: var(--neon-red); 
-            transform: rotate(45deg); 
-            font-size: 24px; 
-        }
+        .fab.form-active { background: var(--neon-red); transform: rotate(45deg); }
         
-        /* --- NEON BUTTON STYLES --- */
         .btn-neon {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: bold;
-            padding: 10px 15px;
-            margin-top: 10px;
-            margin-bottom: 10px;
-            border: 2px solid;
-            border-radius: 5px;
-            cursor: pointer !important;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-            background: transparent;
-            width: 100%; 
+            font-family: 'Orbitron'; font-weight: bold; padding: 10px; margin: 5px 0;
+            border: 2px solid; border-radius: 5px; cursor: pointer !important; width: 100%; background: transparent;
         }
+        .btn-green { color: var(--neon-green); border-color: var(--neon-green); }
+        .btn-orange { color: var(--neon-orange); border-color: var(--neon-orange); }
+        .btn-red { color: var(--neon-red); border-color: var(--neon-red); }
+        .btn-blue { color: var(--neon-blue); border-color: var(--neon-blue); }
 
-        .btn-neon.btn-green { color: var(--neon-green); border-color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green); }
-        .btn-neon.btn-orange { color: var(--neon-orange); border-color: var(--neon-orange); text-shadow: 0 0 5px var(--neon-orange); }
-        .btn-neon.btn-red { color: var(--neon-red); border-color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red); }
-        .btn-neon.btn-blue { color: var(--neon-blue); border-color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue); }
-        
-        .btn-neon:hover {
-            box-shadow: 0 0 15px var(--neon-pink);
-            color: var(--text-color); 
-            text-shadow: none;
-            transform: translateY(-2px);
-        }
-
-        .btn-neon.btn-green:hover { background: var(--neon-green); }
-        .btn-neon.btn-orange:hover { background: var(--neon-orange); }
-        .btn-neon.btn-red:hover { background: var(--neon-red); }
-        .btn-neon.btn-blue:hover { background: var(--neon-blue); }
-        
-        .auth-actions { display: flex; gap: 10px; }
-        .auth-actions .btn-neon { flex: 1; }
-        .auth-actions .btn-red { width: auto; flex: none; }
-
-        /* --- STYLE WYSZUKIWANIA I GEOLOKALIZACJI --- */
         .search-overlay {
             position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
             display: flex; gap: 10px; z-index: 1000; width: 90%; max-width: 350px; 
         }
-        .search-overlay input {
-            flex-grow: 1; padding: 10px 15px;
-            background: rgba(17, 17, 17, 0.8); color: white;
-            border: 2px solid var(--neon-blue); border-radius: 5px;
-            font-family: 'Roboto Mono', monospace; font-size: 1rem;
-        }
-        .search-overlay .search-btn {
-            padding: 10px 15px;
-            background: var(--neon-blue); color: white;
-            border: none; border-radius: 5px;
-            font-family: 'Orbitron', sans-serif; font-size: 1rem;
-            cursor: pointer !important; transition: background 0.3s;
-        }
-        .search-overlay .search-btn:hover { background: var(--neon-pink); }
+        .search-overlay input { flex: 1; padding: 10px; background: #111; color: #fff; border: 2px solid var(--neon-blue); }
         
         .geo-btn {
-            position: absolute; top: 80px; right: 20px;
-            width: 40px; height: 40px;
-            background: rgba(17, 17, 17, 0.7); color: var(--neon-green);
-            border: 2px solid var(--neon-green); border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 20px; cursor: pointer !important; z-index: 1000;
-            transition: background 0.3s, color 0.3s;
-        }
-        .geo-btn:hover {
-            background: var(--neon-green); color: black;
-            box-shadow: 0 0 10px var(--neon-green);
+            position: absolute; top: 80px; right: 20px; width: 40px; height: 40px;
+            background: #111; color: var(--neon-green); border: 2px solid var(--neon-green);
+            border-radius: 50%; z-index: 1000; display: flex; justify-content: center; align-items: center;
         }
 
-        /* --- MOBILE NAV BAR --- */
-        .mobile-nav { display: none; }
+        .spot-card { background: var(--card-bg); border: 2px solid var(--neon-pink); padding: 15px; margin-bottom: 20px; border-radius: 10px; }
+        .spot-img-container { width: 100%; height: 200px; overflow: hidden; border-radius: 5px; margin-bottom: 5px; flex: 0 0 100%; }
+        .spot-img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* --- NOWE STYLE DLA ZDJĘĆ I GALERII --- */
-        .images-preview-list {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            padding: 10px 0;
-            margin-bottom: 10px;
-        }
-        .preview-item {
-            position: relative;
-            width: 80px;
-            height: 80px;
-            flex-shrink: 0;
-            border: 2px solid var(--neon-pink);
-            border-radius: 5px;
-            overflow: hidden;
-            background: #000;
-        }
-        .preview-item img {
-            width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s;
-        }
-        .preview-item .remove-img {
-            position: absolute; top: 2px; right: 2px;
-            background: var(--neon-red); color: white;
-            width: 18px; height: 18px; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 10px; cursor: pointer; z-index: 5;
-        }
-        .preview-item .rotate-img-btn {
-            position: absolute; bottom: 2px; right: 2px;
-            background: var(--neon-blue); color: white;
-            width: 18px; height: 18px; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 10px; cursor: pointer; z-index: 5;
-        }
+        .gallery-wrapper { display: flex; overflow-x: auto; gap: 10px; scroll-snap-type: x mandatory; margin-bottom: 10px; }
+        .gallery-wrapper::-webkit-scrollbar { height: 4px; }
+        .gallery-wrapper::-webkit-scrollbar-thumb { background: var(--neon-pink); }
 
-        /* Galeria w karcie spotu */
-        .spot-gallery {
-            position: relative;
-            width: 100%;
-            height: 200px;
-            background: #000;
-            overflow: hidden;
-            border-radius: 8px;
-            margin-bottom: 10px;
+        #spot-form input, #spot-form textarea, #spot-form select {
+            width: 100%; padding: 8px; margin-bottom: 10px; background: #111; color: #fff; border: 1px solid var(--neon-blue);
         }
-        .gallery-slide {
-            position: absolute; width: 100%; height: 100%;
-            display: none; justify-content: center; align-items: center;
-        }
-        .gallery-slide.active { display: flex; }
-        .gallery-slide img {
-            max-width: 100%; max-height: 100%; object-fit: cover;
-        }
-        .gallery-nav {
-            position: absolute; top: 50%; width: 100%;
-            display: flex; justify-content: space-between; transform: translateY(-50%);
-            padding: 0 10px; pointer-events: none;
-        }
-        .gallery-nav i {
-            background: rgba(0,0,0,0.5); color: white; padding: 10px;
-            border-radius: 50%; cursor: pointer; pointer-events: auto;
-        }
-        .gallery-dots {
-            position: absolute; bottom: 10px; width: 100%;
-            display: flex; justify-content: center; gap: 5px;
-        }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.5); cursor: pointer; }
-        .dot.active { background: var(--neon-green); }
-
-        #lightbox {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 9999;
-            display: none; justify-content: center; align-items: center;
-        }
-        #lightbox img { max-width: 90%; max-height: 90%; border: 3px solid var(--neon-pink); }
 
         @media (max-width: 768px) {
-            .app-container { grid-template-columns: 1fr; grid-template-rows: calc(100vh - 60px) 0; }
-            .sidebar { position: fixed; bottom: 60px; left: 0; width: 100%; height: calc(100vh - 60px); z-index: 5000; transform: translateY(100%); transition: transform 0.5s; border-top: 2px solid var(--neon-pink); }
+            .app-container { grid-template-columns: 1fr; }
+            .sidebar { position: fixed; bottom: 60px; left: 0; width: 100%; height: 70vh; z-index: 5000; transform: translateY(100%); transition: 0.5s; }
             .sidebar.active { transform: translateY(0); }
-            .mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; width: 100%; height: 60px; background: rgba(17,17,17,0.95); border-top: 2px solid var(--neon-pink); z-index: 6000; justify-content: space-around; align-items: center; }
-            .nav-item { color: #ccc; font-size: 0.65rem; font-family: 'Orbitron'; display: flex; flex-direction: column; align-items: center; }
-            .nav-item.active i { color: var(--neon-green); }
+            .mobile-nav { display: flex !important; position: fixed; bottom: 0; width: 100%; height: 60px; background: #111; z-index: 6000; justify-content: space-around; align-items: center; border-top: 2px solid var(--neon-pink); }
         }
+        .mobile-nav { display: none; }
+        .nav-item { color: #ccc; text-align: center; font-size: 0.7rem; }
+        .nav-item.active { color: var(--neon-green); }
+
+        #imagesPreviewList { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .preview-box { position: relative; width: 80px; height: 80px; border: 1px solid var(--neon-blue); }
+        .remove-img { position: absolute; top: -5px; right: -5px; background: var(--neon-red); color: white; width: 20px; height: 20px; border-radius: 50%; text-align: center; cursor: pointer; font-size: 14px; line-height: 20px; }
+
+        .custom-marker-icon { background: var(--neon-pink); color: white; border-radius: 50%; border: 2px solid white; text-align: center; line-height: 25px; font-weight: bold; }
     </style>
 </head>
-<body>
+<body class="dark-mode">
     <div id="cursor"></div>
-    <div id="loader">
-        <div class="skate-wheel"></div>
-        <p style="margin-top: 20px; color: var(--neon-green); font-size: 1.2rem; letter-spacing: 5px;">LOADING SKEJTY...</p>
-    </div>
+    <div id="loader"><div class="skate-wheel"></div><h2 style="margin-top:20px;">SKEJTY ŁADOWANIE...</h2></div>
+    <div id="notification-container"></div>
 
     <div class="app-container">
-        <aside class="sidebar" id="mainSidebar">
-            <h1 style="color: var(--neon-pink); margin-bottom: 20px; text-shadow: 0 0 10px var(--neon-pink); text-align: center;">SKEJTY.PRO</h1>
+        <div class="sidebar" id="mainSidebar">
+            <h1>SKEJ<span style="color:var(--neon-pink)">TY</span></h1>
             
+            <!-- SEKCJA KONTA -->
             <div id="authContent" class="sidebar-section active">
-                <div id="loginSection">
-                    <div class="auth-actions">
-                        <button class="btn-neon btn-green" id="showLoginBtn">LOGOWANIE</button>
-                        <button class="btn-neon btn-orange" id="showRegisterBtn">REJESTRACJA</button>
-                    </div>
-                </div>
-                <div id="userSection" style="display: none;">
-                    <p id="userEmailDisplay" style="margin-bottom: 10px; color: var(--neon-blue);"></p>
-                    <button class="btn-neon btn-red" id="logoutBtn">WYLOGUJ</button>
-                </div>
-                <hr style="border: 0.5px solid var(--neon-pink); margin: 20px 0;">
-                <div id="filters">
-                    <h3 style="color: var(--neon-blue); margin-bottom: 10px;">FILTRY</h3>
-                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                        <span class="spot-tag filter-tag active" data-tag="all">Wszystkie</span>
-                        <span class="spot-tag filter-tag" data-tag="Skatepark">Skatepark</span>
-                        <span class="spot-tag filter-tag" data-tag="Street">Street</span>
-                        <span class="spot-tag filter-tag" data-tag="DIY">DIY</span>
-                        <span class="spot-tag filter-tag" data-tag="Indoor">Indoor</span>
-                    </div>
-                </div>
-                <div id="spotsListContent" style="margin-top: 20px;"></div>
-            </div>
-
-            <div id="spotFormSection" class="sidebar-section">
-                <h2 id="editModeLabel" style="color: var(--neon-green); margin-bottom: 20px;">DODAJ SPOT</h2>
-                <div id="spot-form">
-                    <input type="text" id="spotName" placeholder="Nazwa spotu..." style="width: 100%; padding: 10px; margin-bottom: 10px; background: var(--main-bg); color: var(--text-color); border: 1px solid var(--neon-blue);">
-                    <textarea id="spotDesc" placeholder="Opis..." style="width: 100%; padding: 10px; height: 80px; margin-bottom: 10px; background: var(--main-bg); color: var(--text-color); border: 1px solid var(--neon-blue);"></textarea>
-                    
-                    <div style="margin-bottom: 10px;">
-                        <p style="font-size: 0.8rem; margin-bottom: 5px;">Oświetlenie:</p>
-                        <select id="spotLights" style="width: 100%; padding: 10px; background: var(--main-bg); color: var(--text-color); border: 1px solid var(--neon-blue);">
-                            <option value="false">Brak oświetlenia</option>
-                            <option value="true">Jest oświetlenie</option>
-                        </select>
-                    </div>
-
-                    <div id="imagesPreviewList" class="images-preview-list"></div>
-                    <label class="btn-neon btn-orange" style="display: block; text-align: center;">
-                        <i class="fas fa-camera"></i> DODAJ ZDJĘCIA (MAX 3)
-                        <input type="file" id="spotImageUpload" multiple accept="image/*" style="display: none;">
-                    </label>
-
-                    <div id="tagSelection" style="margin: 10px 0;">
-                        <p style="font-size: 0.8rem; margin-bottom: 5px;">Tagi:</p>
-                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                            <span class="spot-tag tag-selectable" data-val="Skatepark">Skatepark</span>
-                            <span class="spot-tag tag-selectable" data-val="Street">Street</span>
-                            <span class="spot-tag tag-selectable" data-val="DIY">DIY</span>
-                        </div>
-                    </div>
-
-                    <input type="hidden" id="spotLat">
-                    <input type="hidden" id="spotLng">
-                    <button class="btn-neon btn-green" id="saveSpotBtn">ZAPISZ SPOT</button>
-                    <button class="btn-neon btn-red" id="cancelEditBtn" style="display: none;">ANULUJ</button>
+                 <h2 style="color: var(--neon-blue);">Konto</h2>
+                 <div id="authStatus">Ładowanie...</div>
+                 <div id="authActions">
+                     <button class="btn-neon btn-green" id="showLoginBtn">Zaloguj</button>
+                     <button class="btn-neon btn-orange" id="showRegisterBtn">Rejestruj</button>
+                     <button class="btn-neon btn-red" id="logoutBtn" style="display:none;">Wyloguj</button>
+                 </div>
+                 <div id="loginForm" style="display:none; margin-top:10px;">
+                     <input type="email" id="loginEmail" placeholder="Email">
+                     <input type="password" id="loginPassword" placeholder="Hasło">
+                     <button class="btn-neon btn-green" onclick="handleLogin()">WEJDŹ</button>
+                 </div>
+                 <div id="registerForm" style="display:none; margin-top:10px;">
+                    <input type="text" id="registerNick" placeholder="Nick">
+                    <input type="email" id="registerEmail" placeholder="Email">
+                    <input type="password" id="registerPassword" placeholder="Hasło">
+                    <button class="btn-neon btn-orange" onclick="handleRegister()">DOŁĄCZ</button>
                 </div>
             </div>
-        </aside>
 
-        <main class="map-wrapper" id="map-container">
-            <div class="search-overlay">
-                <input type="text" id="searchInput" placeholder="Szukaj miasta/spotu...">
-                <button class="search-btn" id="searchBtn">SZUKAJ</button>
+            <!-- SEKCJA SPOTÓW -->
+            <div id="spotsListContent" class="sidebar-section">
+                <h2 style="color: var(--neon-pink); margin-bottom:10px;">Lista Spotów</h2>
+                <div id="spotsList"></div>
             </div>
+        </div>
+        
+        <div id="map-container"> 
             <div id="map"></div>
-            <button class="geo-btn" id="geoBtn" title="Moja lokalizacja"><i class="fas fa-crosshairs"></i></button>
-        </main>
+            <div class="search-overlay">
+                <input type="text" id="citySearchInput" placeholder="Szukaj miasta...">
+                <button class="btn-neon btn-blue" id="citySearchBtn" style="width:auto; margin:0;">OK</button>
+            </div>
+            <button class="geo-btn" id="locateUserBtn">📍</button>
+            <div class="fab" id="addSpotFab" style="display:none;">+</div>
+            
+            <!-- FORMULARZ DODAWANIA -->
+            <div id="spot-form" style="display:none; position: fixed; bottom: 150px; right: 20px; z-index: 2000; width: 90%; max-width: 350px; background: var(--form-bg); padding: 15px; border: 2px solid var(--neon-pink);">
+                <h3 id="formTitle">Dodaj Spot</h3>
+                <input type="text" id="spotName" placeholder="Nazwa spota">
+                <textarea id="spotDesc" rows="2" placeholder="Opis (nawierzchnia, przeszkody...)"></textarea>
+                
+                <label style="font-size:0.8rem;">Przypał:</label>
+                <select id="spotBust">
+                    <option value="safe">Bezpiecznie (Chill)</option>
+                    <option value="medium">Średnio</option>
+                    <option value="high">Duży (Ochrona/Gonią)</option>
+                </select>
+
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:0.7rem; color:var(--neon-blue)">ZDJĘCIA (MAX 3):</label>
+                    <input type="file" id="spotImageUpload" accept="image/*" multiple style="margin-top:5px;">
+                    <div id="imagesPreviewList"></div>
+                </div>
+
+                <input type="hidden" id="spotLat"><input type="hidden" id="spotLng">
+                <button class="btn-neon btn-green" id="saveSpotBtn">ZAPISZ SPOT</button>
+                <button class="btn-neon btn-red" onclick="toggleForm(false)">ANULUJ</button>
+            </div>
+        </div>
     </div>
 
     <div class="mobile-nav" id="mobileNav">
-        <div class="nav-item active" onclick="switchSidebarSection('auth')"><i class="fas fa-user"></i>KONTO</div>
-        <div class="nav-item" onclick="switchSidebarSection('map')"><i class="fas fa-map-marked-alt"></i>MAPA</div>
-        <div class="nav-item" id="navAddSpotMobile" onclick="toggleForm(true)"><i class="fas fa-plus-circle"></i>DODAJ</div>
+        <div class="nav-item" data-target="auth"><i class="fas fa-user"></i><br>Konto</div>
+        <div class="nav-item active" data-target="map"><i class="fas fa-map"></i><br>Mapa</div>
+        <div class="nav-item" data-target="spotsList"><i class="fas fa-list"></i><br>Spoty</div>
     </div>
 
-    <div id="notification-container"></div>
-    <div id="lightbox" onclick="this.style.display='none'"><img id="lightbox-img" src=""></div>
-
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-
+    
     <script>
+        // FIREBASE CONFIG
         const firebaseConfig = {
-            apiKey: "AIzaSyC...",
-            authDomain: "skejty-df772.firebaseapp.com",
-            projectId: "skejty-df772",
-            storageBucket: "skejty-df772.appspot.com",
-            messagingSenderId: "1098418931182",
-            appId: "1:1098418931182:web:75865e808e06f52e271a39"
+            apiKey: "AIzaSyCCxW6X7MJlWPfxP_6I8FlLc7Vp2wiR69Q",
+            authDomain: "skejspoty.firebaseapp.com",
+            projectId: "skejspoty",
+            storageBucket: "skejspoty.firebasestorage.app",
+            messagingSenderId: "1067851773136",
+            appId: "1:1067851773136:web:39bdc7f7af34cbbf94dad5"
         };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        const storage = firebase.storage();
         const spotsCollection = db.collection('spots');
 
-        let map, userMarker, spots = [], currentUser = null, editingSpotId = null;
-        let selectedImages = []; // Tablica obiektów { file, rotation, blob }
+        let currentUser = null;
+        let spots = [];
+        let markers = [];
+        let selectedImages = []; // Tu trzymamy skompresowane Base64
+        let editingSpotId = null;
+        let isPlacingSpot = false;
+        let tempMarker = null;
 
-        // --- POWIADOMIENIA ---
-        function showNotification(msg, type = 'info', duration = 3000) {
-            const container = document.getElementById('notification-container');
-            const note = document.createElement('div');
-            note.className = `notification ${type}`;
-            note.innerText = msg;
-            container.appendChild(note);
-            gsap.to(note, { translateY: 0, duration: 0.5 });
-            setTimeout(() => {
-                gsap.to(note, { opacity: 0, duration: 0.5, onComplete: () => note.remove() });
-            }, duration);
-        }
+        // MAPA
+        const map = L.map('map').setView([52.2297, 21.0122], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // --- KOMPRESJA I ROTACJA ZDJĘĆ ---
-        async function processImage(file) {
+        // FUNKCJA KOMPRESUJĄCA
+        async function compressImage(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
                     const img = new Image();
+                    img.src = event.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 1200;
+                        const MAX_SIZE = 800; 
                         let width = img.width;
                         let height = img.height;
-                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                        if (width > height) {
+                            if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+                        } else {
+                            if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+                        }
                         canvas.width = width; canvas.height = height;
                         const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, width, height);
                         ctx.drawImage(img, 0, 0, width, height);
-                        canvas.toBlob((blob) => resolve({ blob, url: URL.createObjectURL(blob) }), 'image/jpeg', 0.8);
+                        resolve(canvas.toDataURL('image/jpeg', 0.5)); // JPEG, 50% jakości
                     };
-                    img.src = e.target.result;
                 };
-                reader.readAsDataURL(file);
             });
         }
 
+        // OBSŁUGA ZDJĘĆ
         document.getElementById('spotImageUpload').addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
             if (selectedImages.length + files.length > 3) {
-                return showNotification("Maksymalnie 3 zdjęcia!", "error");
+                showNotification("Max 3 zdjęcia!", "error");
+                return;
             }
+            showNotification("Kompresowanie...", "info");
             for (const file of files) {
-                const processed = await processImage(file);
-                selectedImages.push({ blob: processed.blob, previewUrl: processed.url, rotation: 0 });
+                const compressed = await compressImage(file);
+                selectedImages.push(compressed);
             }
             renderPreviews();
+            e.target.value = "";
         });
 
         function renderPreviews() {
-            const container = document.getElementById('imagesPreviewList');
-            container.innerHTML = '';
-            selectedImages.forEach((img, idx) => {
+            const list = document.getElementById('imagesPreviewList');
+            list.innerHTML = "";
+            selectedImages.forEach((base64, idx) => {
                 const div = document.createElement('div');
-                div.className = 'preview-item';
-                div.innerHTML = `
-                    <img src="${img.previewUrl}" style="transform: rotate(${img.rotation}deg)">
-                    <div class="remove-img" onclick="removeSelectedImage(${idx})">×</div>
-                    <div class="rotate-img-btn" onclick="rotateSelectedImage(${idx})"><i class="fas fa-redo"></i></div>
-                `;
-                container.appendChild(div);
+                div.className = "preview-box";
+                div.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
+                                 <div class="remove-img" onclick="removeImage(${idx})">&times;</div>`;
+                list.appendChild(div);
             });
         }
 
-        window.removeSelectedImage = (idx) => { selectedImages.splice(idx, 1); renderPreviews(); };
-        window.rotateSelectedImage = (idx) => { selectedImages[idx].rotation = (selectedImages[idx].rotation + 90) % 360; renderPreviews(); };
-
-        // --- MAPA ---
-        function initMap() {
-            map = L.map('map', { zoomControl: false }).setView([52.2297, 21.0122], 6);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-            map.on('click', (e) => {
-                if (document.getElementById('spotFormSection').classList.contains('active')) {
-                    document.getElementById('spotLat').value = e.latlng.lat;
-                    document.getElementById('spotLng').value = e.latlng.lng;
-                    showNotification("Lokalizacja ustawiona!", "success");
-                }
-            });
-        }
-
-        // --- ZAPISYWANIE SPOTU ---
-        document.getElementById('saveSpotBtn').addEventListener('click', async () => {
-            if (!currentUser) return showNotification("Zaloguj się!", "error");
-            const name = document.getElementById('spotName').value;
-            const lat = document.getElementById('spotLat').value;
-            const lng = document.getElementById('spotLng').value;
-            
-            if (!name || !lat || !lng) return showNotification("Uzupełnij nazwę i zaznacz miejsce na mapie!", "error");
-
-            showNotification("Zapisywanie...", "info");
-            
-            const uploadedUrls = [];
-            for (const img of selectedImages) {
-                const ref = storage.ref(`spots/${Date.now()}_${Math.random().toString(36).substr(2, 5)}.jpg`);
-                await ref.put(img.blob);
-                const url = await ref.getDownloadURL();
-                uploadedUrls.push({ url, rotation: img.rotation });
-            }
-
-            const spotData = {
-                name,
-                description: document.getElementById('spotDesc').value,
-                lights: document.getElementById('spotLights').value === 'true',
-                images: uploadedUrls,
-                lat: parseFloat(lat),
-                lng: parseFloat(lng),
-                authorId: currentUser.uid,
-                tags: Array.from(document.querySelectorAll('.tag-selectable.active')).map(t => t.dataset.val)
-            };
-
-            if (editingSpotId) {
-                await spotsCollection.doc(editingSpotId).update(spotData);
-            } else {
-                await spotsCollection.add(spotData);
-            }
-            
-            toggleForm(false);
-            selectedImages = [];
+        window.removeImage = (idx) => {
+            selectedImages.splice(idx, 1);
             renderPreviews();
-            showNotification("Spot zapisany!", "success");
+        };
+
+        // NOTYFIKACJE
+        function showNotification(msg, type = 'info') {
+            const container = document.getElementById('notification-container');
+            const n = document.createElement('div');
+            n.className = `notification ${type}`;
+            n.innerText = msg;
+            container.appendChild(n);
+            setTimeout(() => n.remove(), 4000);
+        }
+
+        // AUTORYZACJA
+        auth.onAuthStateChanged(user => {
+            currentUser = user;
+            const status = document.getElementById('authStatus');
+            const fab = document.getElementById('addSpotFab');
+            if (user) {
+                status.innerText = `Skater: ${user.displayName || user.email}`;
+                document.getElementById('authActions').innerHTML = `<button class="btn-neon btn-red" onclick="auth.signOut()">Wyloguj</button>`;
+                fab.style.display = 'flex';
+            } else {
+                status.innerText = "Zaloguj się, aby dodać spot.";
+                document.getElementById('authActions').innerHTML = `
+                    <button class="btn-neon btn-green" onclick="showAuth('login')">Zaloguj</button>
+                    <button class="btn-neon btn-orange" onclick="showAuth('reg')">Rejestracja</button>`;
+                fab.style.display = 'none';
+            }
         });
 
-        // --- RENDEROWANIE SPOTÓW I GALERII ---
-        function renderSpots(filtered) {
-            const list = document.getElementById('spotsListContent');
-            list.innerHTML = '';
-            filtered.forEach(spot => {
+        window.showAuth = (type) => {
+            document.getElementById('loginForm').style.display = type === 'login' ? 'block' : 'none';
+            document.getElementById('registerForm').style.display = type === 'reg' ? 'block' : 'none';
+        };
+
+        window.handleLogin = async () => {
+            const e = document.getElementById('loginEmail').value;
+            const p = document.getElementById('loginPassword').value;
+            try { await auth.signInWithEmailAndPassword(e, p); showNotification("Witaj z powrotem!"); } 
+            catch(err) { showNotification(err.message, "error"); }
+        };
+
+        window.handleRegister = async () => {
+            const n = document.getElementById('registerNick').value;
+            const e = document.getElementById('registerEmail').value;
+            const p = document.getElementById('registerPassword').value;
+            try { 
+                const res = await auth.createUserWithEmailAndPassword(e, p);
+                await res.user.updateProfile({ displayName: n });
+                showNotification("Konto założone!");
+            } catch(err) { showNotification(err.message, "error"); }
+        };
+
+        // FORMULARZ
+        function toggleForm(show, lat, lng) {
+            const form = document.getElementById('spot-form');
+            const fab = document.getElementById('addSpotFab');
+            if (show) {
+                form.style.display = 'block';
+                fab.classList.add('form-active');
+                if (lat) {
+                    document.getElementById('spotLat').value = lat;
+                    document.getElementById('spotLng').value = lng;
+                    if (tempMarker) map.removeLayer(tempMarker);
+                    tempMarker = L.marker([lat, lng]).addTo(map);
+                }
+            } else {
+                form.style.display = 'none';
+                fab.classList.remove('form-active');
+                resetForm();
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('spotName').value = "";
+            document.getElementById('spotDesc').value = "";
+            selectedImages = [];
+            editingSpotId = null;
+            renderPreviews();
+            if (tempMarker) map.removeLayer(tempMarker);
+            tempMarker = null;
+            isPlacingSpot = false;
+        }
+
+        document.getElementById('addSpotFab').addEventListener('click', () => {
+            if (isPlacingSpot) { toggleForm(false); return; }
+            isPlacingSpot = true;
+            showNotification("Kliknij na mapie, gdzie jest spot!");
+            document.getElementById('addSpotFab').classList.add('form-active');
+        });
+
+        map.on('click', (e) => {
+            if (isPlacingSpot) {
+                isPlacingSpot = false;
+                toggleForm(true, e.latlng.lat, e.latlng.lng);
+            }
+        });
+
+        // ZAPIS DO FIREBASE
+        document.getElementById('saveSpotBtn').addEventListener('click', async () => {
+            const name = document.getElementById('spotName').value;
+            const desc = document.getElementById('spotDesc').value;
+            const lat = parseFloat(document.getElementById('spotLat').value);
+            const lng = parseFloat(document.getElementById('spotLng').value);
+            const bust = document.getElementById('spotBust').value;
+
+            if (!name || !lat) return showNotification("Uzupełnij nazwę i miejsce!", "error");
+
+            const data = {
+                name, description: desc, lat, lng, bust,
+                images: selectedImages,
+                authorId: currentUser.uid,
+                authorName: currentUser.displayName || "Skater",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                if (editingSpotId) {
+                    await spotsCollection.doc(editingSpotId).update(data);
+                } else {
+                    await spotsCollection.add(data);
+                }
+                showNotification("Zapisano spot!");
+                toggleForm(false);
+            } catch(err) { showNotification(err.message, "error"); }
+        });
+
+        // RENDEROWANIE LISTY
+        function renderSpots() {
+            const list = document.getElementById('spotsList');
+            list.innerHTML = "";
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+
+            spots.forEach((spot, idx) => {
                 const card = document.createElement('div');
-                card.className = 'card';
-                card.style.padding = '15px'; card.style.background = 'var(--card-bg)'; card.style.marginBottom = '15px'; card.style.borderRadius = '10px';
+                card.className = "spot-card";
                 
-                let galleryHtml = '';
+                let galleryHtml = "";
                 if (spot.images && spot.images.length > 0) {
-                    galleryHtml = `
-                        <div class="spot-gallery" id="gal-${spot.id}">
-                            ${spot.images.map((img, i) => `
-                                <div class="gallery-slide ${i === 0 ? 'active' : ''}">
-                                    <img src="${img.url}" style="transform: rotate(${img.rotation || 0}deg)" onclick="openLightbox('${img.url}', ${img.rotation || 0})">
-                                </div>
-                            `).join('')}
-                            ${spot.images.length > 1 ? `
-                                <div class="gallery-nav">
-                                    <i class="fas fa-chevron-left" onclick="changeSlide('${spot.id}', -1)"></i>
-                                    <i class="fas fa-chevron-right" onclick="changeSlide('${spot.id}', 1)"></i>
-                                </div>
-                            ` : ''}
-                        </div>
-                    `;
+                    galleryHtml = `<div class="gallery-wrapper">`;
+                    spot.images.forEach(img => {
+                        galleryHtml += `<div class="spot-img-container"><img src="${img}" class="spot-img"></div>`;
+                    });
+                    galleryHtml += `</div>`;
                 }
 
                 card.innerHTML = `
-                    <h3 style="color: var(--neon-pink)">${spot.name}</h3>
+                    <h3>${idx+1}. ${spot.name}</h3>
+                    <p style="color:var(--neon-orange); font-size:0.8rem; margin-bottom:5px;">Bust: ${spot.bust}</p>
                     ${galleryHtml}
-                    <p style="font-size: 0.9rem; margin: 5px 0;">${spot.description || 'Brak opisu'}</p>
-                    <div style="margin-top: 10px;">${(spot.tags || []).map(t => `<span class="spot-tag">${t}</span>`).join('')}</div>
-                    <button class="btn-neon btn-blue" onclick="map.flyTo([${spot.lat}, ${spot.lng}], 16)">POKAŻ NA MAPIE</button>
+                    <p>${spot.description}</p>
+                    <button class="btn-neon btn-blue" onclick="map.flyTo([${spot.lat}, ${spot.lng}], 17)">MAPA</button>
+                    ${currentUser && currentUser.uid === spot.authorId ? 
+                        `<button class="btn-neon btn-orange" onclick="editSpot('${spot.id}')">EDYTUJ</button>` : ''}
                 `;
                 list.appendChild(card);
+
+                const m = L.marker([spot.lat, spot.lng], {
+                    icon: L.divIcon({ className: 'custom-marker-icon', html: (idx+1).toString(), iconSize:[25,25] })
+                }).addTo(map);
+                markers.push(m);
             });
         }
 
-        window.changeSlide = (spotId, dir) => {
-            const gal = document.getElementById(`gal-${spotId}`);
-            const slides = gal.querySelectorAll('.gallery-slide');
-            let activeIdx = Array.from(slides).findIndex(s => s.classList.contains('active'));
-            slides[activeIdx].classList.remove('active');
-            activeIdx = (activeIdx + dir + slides.length) % slides.length;
-            slides[activeIdx].classList.add('active');
+        window.editSpot = (id) => {
+            const spot = spots.find(s => s.id === id);
+            editingSpotId = id;
+            document.getElementById('spotName').value = spot.name;
+            document.getElementById('spotDesc').value = spot.description;
+            document.getElementById('spotBust').value = spot.bust;
+            document.getElementById('spotLat').value = spot.lat;
+            document.getElementById('spotLng').value = spot.lng;
+            selectedImages = spot.images ? [...spot.images] : [];
+            renderPreviews();
+            toggleForm(true);
         };
 
-        window.openLightbox = (url, rot) => {
-            const lb = document.getElementById('lightbox');
-            const img = document.getElementById('lightbox-img');
-            img.src = url;
-            img.style.transform = `rotate(${rot}deg)`;
-            lb.style.display = 'flex';
-        };
-
-        // --- OBSŁUGA FORMULARZA ---
-        function toggleForm(show) {
-            document.getElementById('authContent').classList.toggle('active', !show);
-            document.getElementById('spotFormSection').classList.toggle('active', show);
-            if (!show) {
-                editingSpotId = null;
-                document.getElementById('spotName').value = '';
-                document.getElementById('spotDesc').value = '';
-            }
-        }
-
-        function switchSidebarSection(section) {
-            const sidebar = document.getElementById('mainSidebar');
-            if (section === 'map') {
-                sidebar.classList.remove('active');
-            } else {
-                sidebar.classList.add('active');
-            }
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-        }
-
-        // --- AUTH I START ---
-        auth.onAuthStateChanged(user => {
-            currentUser = user;
-            document.getElementById('loginSection').style.display = user ? 'none' : 'block';
-            document.getElementById('userSection').style.display = user ? 'block' : 'none';
-            if (user) document.getElementById('userEmailDisplay').innerText = user.email;
+        // SYNC Z BAZĄ
+        spotsCollection.orderBy('timestamp', 'desc').onSnapshot(snap => {
+            spots = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderSpots();
         });
 
-        document.getElementById('showLoginBtn').onclick = () => {
-            const email = prompt("Email:");
-            const pass = prompt("Hasło:");
-            if (email && pass) auth.signInWithEmailAndPassword(email, pass).catch(e => alert(e.message));
-        };
-
-        document.getElementById('showRegisterBtn').onclick = () => {
-            const email = prompt("Email:");
-            const pass = prompt("Hasło:");
-            if (email && pass) auth.createUserWithEmailAndPassword(email, pass).catch(e => alert(e.message));
-        };
-
-        document.getElementById('logoutBtn').onclick = () => auth.signOut();
-
-        document.querySelectorAll('.tag-selectable').forEach(tag => {
-            tag.onclick = () => tag.classList.toggle('active');
-        });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            initMap();
-            gsap.to('#loader', { opacity: 0, duration: 0.8, delay: 1, onComplete: () => {
-                document.getElementById('loader').style.display = 'none';
-                gsap.to('.app-container', { opacity: 1, duration: 0.5 });
-            }});
-            spotsCollection.onSnapshot(snap => {
-                spots = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderSpots(spots);
+        // UI MOBILE
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const target = item.dataset.target;
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                
+                if (target === 'map') {
+                    document.getElementById('mainSidebar').classList.remove('active');
+                } else {
+                    document.getElementById('mainSidebar').classList.add('active');
+                    document.querySelectorAll('.sidebar-section').forEach(s => s.classList.remove('active'));
+                    document.getElementById(target + 'Content').classList.add('active');
+                }
             });
         });
 
-        const customCursor = document.getElementById('cursor');
-        document.addEventListener('mousemove', (e) => {
-            customCursor.style.left = e.clientX + 'px';
-            customCursor.style.top = e.clientY + 'px';
+        // CURSOR & LOADER
+        const cursor = document.getElementById('cursor');
+        document.addEventListener('mousemove', e => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
         });
+        window.onload = () => {
+            setTimeout(() => {
+                document.getElementById('loader').style.opacity = "0";
+                setTimeout(() => document.getElementById('loader').style.display = "none", 500);
+                document.querySelector('.app-container').style.opacity = "1";
+            }, 1000);
+        };
     </script>
 </body>
 </html>

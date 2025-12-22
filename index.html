@@ -3,98 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKEJTY - Mapa Spotów</title>
+    <title>SKEJTY </title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> 
     
     <style>
+        /* --- POWRÓT DO ORYGINALNEGO DESIGNU --- */
         :root {
-            --neon-green: #39ff14; --neon-pink: #ff00ff; --neon-blue: #00f3ff;
-            --neon-red: #ff3131; --neon-orange: #ffaa00; --main-bg: #1a1a2e;
-            --sidebar-bg: rgba(26, 26, 46, 0.98); --text-color: #f0f0f0;
-            --card-bg: #2d2d4d; --form-bg: #3e3e6e; --comment-bg: #4a4a7d;
+            --neon-green: #39ff14;
+            --neon-pink: #ff00ff;
+            --neon-blue: #00f3ff;
+            --neon-red: #ff3131;
+            --neon-orange: #ffaa00;
+            --main-bg: #1a1a2e;
+            --sidebar-bg: rgba(26, 26, 46, 0.98);
+            --text-color: #f0f0f0;
+            --card-bg: #2d2d4d;
+            --form-bg: #3e3e6e;
+            --comment-bg: #4a4a7d;
+            --shadow-color: rgba(0, 243, 255, 0.1);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
+
         body {
-            font-family: 'Orbitron', sans-serif; background-color: var(--main-bg);
-            color: var(--text-color); overflow: hidden; height: 100vh;
+            font-family: 'Orbitron', sans-serif; 
+            background-color: var(--main-bg);
+            color: var(--text-color);
+            overflow-x: hidden;
+            height: 100vh;
         }
         
         #cursor {
-            position: fixed; width: 20px; height: 20px; border: 2px solid var(--neon-pink);
-            border-radius: 50%; pointer-events: none; z-index: 9999;
-            transform: translate(-50%, -50%); transition: width 0.2s, height 0.2s;
+            position: fixed; width: 20px; height: 20px;
+            border: 2px solid var(--neon-pink); border-radius: 50%;
+            pointer-events: none; z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.2s, height 0.2s, background 0.2s;
             mix-blend-mode: difference;
         }
-        #cursor.hovered { width: 40px; height: 40px; background: rgba(255,0,255,0.2); }
+        #cursor.hovered { width: 50px; height: 50px; background: rgba(255, 0, 255, 0.2); border-color: var(--neon-green); mix-blend-mode: normal; }
 
         #loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--main-bg); display: flex; justify-content: center;
-            align-items: center; z-index: 10000; flex-direction: column;
+            background: var(--main-bg); display: flex; justify-content: center; align-items: center;
+            z-index: 10000; flex-direction: column;
         }
         .skate-wheel {
-            width: 80px; height: 80px; border: 8px solid var(--neon-green);
-            border-top: 8px solid var(--neon-pink); border-radius: 50%;
-            animation: spin 0.6s linear infinite;
+            width: 80px; height: 80px;
+            border: 8px solid var(--neon-green); border-top: 8px solid var(--neon-pink);
+            border-radius: 50%; animation: spin 0.5s linear infinite;
         }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .app-container { display: grid; grid-template-columns: 400px 1fr; height: 100vh; opacity: 0; }
 
         .sidebar {
-            background: var(--sidebar-bg); border-right: 2px solid var(--neon-pink);
-            padding: 20px; overflow-y: auto; display: flex; flex-direction: column;
+            background: var(--sidebar-bg); backdrop-filter: blur(10px);
+            border-right: 2px solid var(--neon-pink); padding: 20px; overflow-y: auto;
+            display: flex; flex-direction: column;
         }
         
         #map-container { position: relative; width: 100%; height: 100%; }
         #map { width: 100%; height: 100%; z-index: 1; }
         
         #notification-container {
-            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-            z-index: 9000; pointer-events: none; display: flex; flex-direction: column-reverse; gap: 10px;
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 9000; pointer-events: none; display: flex; flex-direction: column-reverse; gap: 10px; width: 90%; max-width: 450px;
         }
         .notification {
-            padding: 12px 20px; border: 2px solid; color: #fff; background: #111;
-            font-size: 0.8rem; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            padding: 15px 20px; border: 2px solid; font-family: 'Orbitron'; font-size: 0.9rem; color: #fff; background: #111;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.4); transform: translateY(100%); pointer-events: auto;
         }
         .notification.success { border-color: var(--neon-green); }
         .notification.error { border-color: var(--neon-red); }
 
-        .sidebar-section { display: none; padding-top: 20px; }
+        .sidebar-section { display: none; height: 100%; overflow-y: auto; padding-top: 20px; }
         .sidebar-section.active { display: block; }
         
         .fab {
             position: fixed; bottom: 80px; right: 20px; width: 55px; height: 55px;
             background: var(--neon-pink); color: white; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 28px; cursor: pointer; z-index: 2000; transition: 0.3s;
+            display: flex; justify-content: center; align-items: center; font-size: 28px;
+            cursor: pointer; z-index: 2000; transition: transform 0.3s, background 0.3s;
         }
         .fab.form-active { background: var(--neon-red); transform: rotate(45deg); }
         
         .btn-neon {
-            font-family: 'Orbitron'; font-weight: bold; padding: 10px; margin: 5px 0;
-            border: 2px solid; border-radius: 5px; background: transparent;
-            cursor: pointer !important; width: 100%; color: inherit;
+            font-family: 'Orbitron'; font-weight: bold; padding: 10px 15px; margin-top: 10px;
+            border: 2px solid; border-radius: 5px; cursor: pointer !important; transition: all 0.3s;
+            text-transform: uppercase; background: transparent; width: 100%; 
         }
-        .btn-green { color: var(--neon-green); border-color: var(--neon-green); }
-        .btn-orange { color: var(--neon-orange); border-color: var(--neon-orange); }
-        .btn-red { color: var(--neon-red); border-color: var(--neon-red); }
-        .btn-blue { color: var(--neon-blue); border-color: var(--neon-blue); }
+        .btn-green { color: var(--neon-green); border-color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green); }
+        .btn-orange { color: var(--neon-orange); border-color: var(--neon-orange); text-shadow: 0 0 5px var(--neon-orange); }
+        .btn-red { color: var(--neon-red); border-color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red); }
+        .btn-blue { color: var(--neon-blue); border-color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue); }
+        .btn-neon:hover { transform: translateY(-2px); box-shadow: 0 0 15px var(--neon-pink); }
 
-        /* SLIDER ZDJĘĆ */
+        /* --- DESIGN SLIDERA ZDJĘĆ --- */
         .spot-slider {
             display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
             gap: 10px; margin-bottom: 10px; padding-bottom: 5px;
+            scrollbar-width: thin; scrollbar-color: var(--neon-pink) transparent;
         }
         .spot-slider::-webkit-scrollbar { height: 4px; }
         .spot-slider::-webkit-scrollbar-thumb { background: var(--neon-pink); border-radius: 10px; }
+        
         .slide-item {
             flex: 0 0 100%; scroll-snap-align: start; height: 200px;
-            border-radius: 8px; overflow: hidden; background: #000;
+            border-radius: 5px; overflow: hidden; background: #000;
             display: flex; justify-content: center; align-items: center;
         }
         .slide-item img { width: 100%; height: 100%; object-fit: cover; }
@@ -106,18 +125,24 @@
         .spot-card.highlight { border-color: var(--neon-green); box-shadow: 0 0 15px var(--neon-green); }
 
         .comments-section { margin-top: 15px; border-top: 1px dashed var(--neon-blue); padding-top: 10px; }
-        .comment { background: var(--comment-bg); padding: 8px; border-radius: 5px; font-size: 0.75rem; margin-bottom: 5px; }
-        
+        .comment { background: var(--comment-bg); padding: 8px; border-radius: 5px; font-size: 0.8rem; margin-bottom: 5px; }
+
+        .preview-thumb { position: relative; width: 60px; height: 60px; border: 1px solid var(--neon-blue); }
+        .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .remove-img { position: absolute; top: 0; right: 0; background: var(--neon-red); color: white; font-size: 10px; padding: 2px 4px; cursor: pointer; }
+
         #spot-form {
             display: none; position: fixed; bottom: 150px; right: 20px; z-index: 2000;
-            width: 350px; background: var(--form-bg); padding: 15px; border: 2px solid var(--neon-pink);
+            width: 90%; max-width: 350px; background: var(--form-bg); padding: 15px;
+            border: 2px solid var(--neon-pink); box-shadow: 0 5px 20px rgba(0,0,0,0.6);
         }
 
         @media (max-width: 768px) {
             .app-container { grid-template-columns: 1fr; }
             .sidebar { 
-                position: fixed; bottom: 60px; left: 0; width: 100%; height: 70vh;
-                z-index: 5000; transform: translateY(100%); transition: 0.5s;
+                position: fixed; bottom: 60px; left: 0; width: 100%; height: calc(100vh - 60px); 
+                z-index: 5000; transform: translateY(100%); transition: transform 0.5s;
+                border-right: none; border-top: 2px solid var(--neon-pink);
             }
             .sidebar.active { transform: translateY(0); }
             .mobile-nav {
@@ -125,88 +150,81 @@
                 background: #111; border-top: 2px solid var(--neon-pink); z-index: 6000;
                 justify-content: space-around; align-items: center;
             }
-            #spot-form { width: 90%; right: 5%; bottom: 70px; }
         }
-
-        .nav-item { color: #888; text-align: center; font-size: 0.7rem; }
+        .nav-item { color: #ccc; font-size: 0.65rem; text-align: center; }
         .nav-item.active { color: var(--neon-green); }
-        .nav-item i { font-size: 1.2rem; display: block; }
-
-        .preview-thumb { position: relative; width: 60px; height: 60px; border: 1px solid var(--neon-blue); }
-        .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
-        .remove-img { position: absolute; top: 0; right: 0; background: red; color: white; padding: 2px; cursor: pointer; font-size: 10px; }
+        .nav-item i { font-size: 20px; display: block; }
     </style>
 </head>
 <body class="dark-mode">
     <div id="cursor"></div>
-    <div id="lightbox" onclick="this.style.display='none'" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:10000; justify-content:center; align-items:center;">
-        <img id="lightbox-img" style="max-width:90%; max-height:90%;">
-    </div>
 
     <div id="loader">
         <div class="skate-wheel"></div>
-        <h2 style="margin-top:20px;">SKEJTY ŁADUJĄ...</h2>
+        <h2 style="margin-top: 20px; font-family: 'Orbitron'">SKEJTY ŁADOWANIE...</h2>
     </div>
 
     <div id="notification-container"></div>
 
     <div class="app-container">
+        <!-- SIDEBAR -->
         <div class="sidebar" id="mainSidebar">
             <h1>SKEJ<span style="color:var(--neon-pink)">TY</span></h1>
             
             <!-- KONTO -->
             <div id="authContent" class="sidebar-section active">
-                <h2 style="color: var(--neon-blue);">Twoje Konto</h2>
-                <div id="authStatus" style="margin: 10px 0;">Sprawdzanie...</div>
-                
-                <div id="loggedOutUI">
-                    <div class="auth-actions" style="display:flex; gap:10px;">
-                        <button class="btn-neon btn-green" onclick="showAuth('login')">Zaloguj</button>
-                        <button class="btn-neon btn-orange" onclick="showAuth('reg')">Rejestruj</button>
-                    </div>
-                    <div id="loginForm" style="display:none; margin-top:10px;">
-                        <input type="email" id="loginEmail" placeholder="Email" class="btn-neon" style="cursor:text !important">
-                        <input type="password" id="loginPassword" placeholder="Hasło" class="btn-neon" style="cursor:text !important">
-                        <button class="btn-neon btn-green" onclick="handleLogin()">ZALOGUJ</button>
-                    </div>
-                    <div id="regForm" style="display:none; margin-top:10px;">
-                        <input type="text" id="regNick" placeholder="Nick" class="btn-neon" style="cursor:text !important">
-                        <input type="email" id="regEmail" placeholder="Email" class="btn-neon" style="cursor:text !important">
-                        <input type="password" id="regPassword" placeholder="Hasło" class="btn-neon" style="cursor:text !important">
-                        <button class="btn-neon btn-orange" onclick="handleRegister()">ZAREJESTRUJ</button>
-                    </div>
-                </div>
+                 <h2 style="color: var(--neon-blue); margin-bottom: 15px;">Zarządzanie Kontem</h2>
+                 <div id="authStatus">Ładowanie...</div>
+                 
+                 <div id="authControls">
+                     <div class="auth-actions" id="guestButtons">
+                         <button class="btn-neon btn-green" id="showLoginBtn">Zaloguj</button>
+                         <button class="btn-neon btn-orange" id="showRegisterBtn">Rejestruj</button>
+                     </div>
+                     <button class="btn-neon btn-red" id="logoutBtn" style="display:none;">Wyloguj</button>
 
-                <div id="loggedInUI" style="display:none;">
-                    <button class="btn-neon btn-red" onclick="auth.signOut()">WYLOGUJ SIĘ</button>
-                </div>
+                     <div id="loginForm" style="display:none; margin-top: 15px;">
+                         <input type="email" id="loginEmail" placeholder="Email" class="btn-neon" style="cursor:text !important">
+                         <input type="password" id="loginPassword" placeholder="Hasło" class="btn-neon" style="cursor:text !important">
+                         <button class="btn-neon btn-green" onclick="handleLogin()">ZALOGUJ SIĘ</button>
+                     </div>
+
+                     <div id="registerForm" style="display:none; margin-top: 15px;">
+                         <input type="text" id="regNick" placeholder="Twój Nick" class="btn-neon" style="cursor:text !important">
+                         <input type="email" id="regEmail" placeholder="Email" class="btn-neon" style="cursor:text !important">
+                         <input type="password" id="regPassword" placeholder="Hasło" class="btn-neon" style="cursor:text !important">
+                         <button class="btn-neon btn-orange" onclick="handleRegister()">ZAREJESTRUJ</button>
+                     </div>
+                 </div>
             </div>
 
             <!-- LISTA SPOTÓW -->
             <div id="spotsListContent" class="sidebar-section">
-                <h2 style="color: var(--neon-pink);">Spoty (<span id="spotCount">0</span>)</h2>
-                <div id="spotsList" style="margin-top:15px;"></div>
+                <h2 style="color: var(--neon-pink); margin-bottom: 15px;">Lista Spotów (<span id="spotCount">0</span>)</h2>
+                <div id="spotsList"></div>
             </div>
         </div>
-
+        
+        <!-- MAPA -->
         <div id="map-container">
             <div id="map"></div>
-            <div style="position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:1000; display:flex; gap:5px; width:90%; max-width:300px;">
-                <input type="text" id="searchCity" placeholder="Szukaj miasta..." style="flex:1; padding:10px; border-radius:5px; border:none; background:rgba(0,0,0,0.7); color:white;">
-                <button onclick="searchLoc()" class="btn-neon btn-blue" style="width:auto; margin:0;">OK</button>
-            </div>
-            <button onclick="geoLoc()" style="position:absolute; top:60px; right:20px; z-index:1000; width:40px; height:40px; border-radius:50%; background:var(--neon-green); border:none; color:black;">📍</button>
             
-            <div class="fab" id="addSpotFab" style="display:none;">+</div>
+            <!-- SZUKAJKA -->
+            <div style="position:absolute; top:20px; left:50%; transform:translateX(-50%); z-index:1000; display:flex; gap:10px; width:90%; max-width:350px;">
+                <input type="text" id="citySearch" placeholder="Szukaj miasta..." style="flex:1; padding:10px; border-radius:5px; border:2px solid var(--neon-blue); background:rgba(0,0,0,0.8); color:white;">
+                <button onclick="searchCity()" class="btn-neon btn-blue" style="width:auto; margin:0; padding:10px;">OK</button>
+            </div>
 
-            <!-- FORMULARZ DODAWANIA -->
+            <div class="fab" id="addSpotFab" style="display:none;">+</div>
+            
+            <!-- FORMULARZ -->
             <div id="spot-form">
-                <div onclick="toggleForm(false)" style="position:absolute; top:5px; right:10px; color:red; cursor:pointer;">&times;</div>
-                <h3 id="formTitle">Dodaj Spot</h3>
+                <div onclick="toggleForm(false)" style="position:absolute; top:10px; right:15px; color:var(--neon-red); cursor:pointer; font-size:24px;">&times;</div>
+                <h3 id="formTitle">Nowy Spot</h3>
                 <input type="text" id="spotName" placeholder="Nazwa spota" class="btn-neon" style="cursor:text !important">
                 <textarea id="spotDesc" placeholder="Opis..." class="btn-neon" style="cursor:text !important; height:60px;"></textarea>
                 
-                <div style="display:grid; grid-template-columns: 1fr 1fr; font-size:0.7rem;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; font-size:0.7rem; margin:10px 0;">
                     <label><input type="checkbox" class="tag-in" value="Murki"> Murki</label>
                     <label><input type="checkbox" class="tag-in" value="Rurki"> Rurki</label>
                     <label><input type="checkbox" class="tag-in" value="Schody" id="stairsCheck"> Schody</label>
@@ -215,27 +233,27 @@
                     <label><input type="checkbox" class="tag-in" value="Inne" id="otherCheck"> Inne</label>
                 </div>
                 
-                <div id="stairsSet" style="display:none; margin:5px 0;">
-                    <small>Schodów: <span id="stairsV">8</span></small>
-                    <input type="range" id="stairsR" min="1" max="20" value="8" style="width:100%;">
+                <div id="stairsInput" style="display:none; margin-bottom:10px;">
+                    <small>Liczba schodów: <span id="stairsVal">8</span></small>
+                    <input type="range" id="stairsRange" min="1" max="20" value="8" style="width:100%;">
                 </div>
-                <input type="text" id="otherV" placeholder="Co innego?" style="display:none; margin:5px 0;" class="btn-neon">
+                <input type="text" id="otherValue" placeholder="Co tam jest?" class="btn-neon" style="display:none; margin-bottom:10px; border-color:var(--neon-orange);">
 
-                <div style="margin:10px 0;">
-                    <small>ZDJĘCIA (MAX 3):</small>
-                    <input type="file" id="imgIn" accept="image/*" multiple style="font-size:0.6rem;">
-                    <div id="previews" style="display:flex; gap:5px; margin-top:5px;"></div>
+                <div>
+                    <small style="color:var(--neon-blue)">ZDJĘCIA (MAX 3):</small>
+                    <input type="file" id="imageInput" accept="image/*" multiple style="font-size:0.7rem; margin-top:5px;">
+                    <div id="formImagePreviews" style="display:flex; gap:5px; margin-top:10px;"></div>
                 </div>
 
-                <button class="btn-neon btn-green" id="saveBtn">ZAPISZ</button>
+                <button class="btn-neon btn-green" id="saveSpotBtn">ZAPISZ</button>
             </div>
         </div>
     </div>
 
     <div class="mobile-nav">
-        <div class="nav-item active" onclick="switchTab('map')" data-target="map"><i class="fas fa-map"></i>Mapa</div>
-        <div class="nav-item" onclick="switchTab('spotsList')" data-target="spotsList"><i class="fas fa-list"></i>Spoty</div>
-        <div class="nav-item" onclick="switchTab('auth')" data-target="auth"><i class="fas fa-user"></i>Konto</div>
+        <div class="nav-item" onclick="switchSection('auth')" data-target="auth"><i class="fas fa-user-circle"></i>Konto</div>
+        <div class="nav-item active" onclick="switchSection('map')" data-target="map"><i class="fas fa-map-marked-alt"></i>Mapa</div>
+        <div class="nav-item" onclick="switchSection('spotsList')" data-target="spotsList"><i class="fas fa-list-alt"></i>Spoty</div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -245,6 +263,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
     <script>
+        // --- TWOJE API KEYS ---
         const firebaseConfig = {
             apiKey: "AIzaSyCCxW6X7MJlWPfxP_6I8FlLc7Vp2wiR69Q",
             authDomain: "skejspoty.firebaseapp.com",
@@ -260,7 +279,7 @@
         let currentUser = null;
         let allSpots = [];
         let markers = [];
-        let selectedFiles = [];
+        let selectedImages = [];
         let editingId = null;
         let isPlacing = false;
 
@@ -268,54 +287,33 @@
         const map = L.map('map', { center: [52.1, 19.4], zoom: 6, zoomControl: false });
         L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'] }).addTo(map);
 
-        // --- AUTH ---
+        // --- OBSŁUGA AUTH ---
         auth.onAuthStateChanged(user => {
             currentUser = user;
             const status = document.getElementById('authStatus');
-            const loggedInUI = document.getElementById('loggedInUI');
-            const loggedOutUI = document.getElementById('loggedOutUI');
+            const guestButtons = document.getElementById('guestButtons');
+            const logoutBtn = document.getElementById('logoutBtn');
             const fab = document.getElementById('addSpotFab');
 
             if (user) {
                 status.innerHTML = `Zalogowany jako: <b style="color:var(--neon-green)">${user.displayName || user.email}</b>`;
-                loggedInUI.style.display = 'block';
-                loggedOutUI.style.display = 'none';
+                guestButtons.style.display = 'none';
+                logoutBtn.style.display = 'block';
                 fab.style.display = 'flex';
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('registerForm').style.display = 'none';
             } else {
-                status.innerText = "Niezalogowany";
-                loggedInUI.style.display = 'none';
-                loggedOutUI.style.display = 'block';
+                status.innerText = "Niezalogowany. Zaloguj się, aby dodawać spoty.";
+                guestButtons.style.display = 'flex';
+                logoutBtn.style.display = 'none';
                 fab.style.display = 'none';
             }
             renderSpots();
         });
 
-        function showAuth(type) {
-            document.getElementById('loginForm').style.display = type === 'login' ? 'block' : 'none';
-            document.getElementById('regForm').style.display = type === 'reg' ? 'block' : 'none';
-        }
-
-        async function handleLogin() {
-            const e = document.getElementById('loginEmail').value;
-            const p = document.getElementById('loginPassword').value;
-            try { await auth.signInWithEmailAndPassword(e, p); notify("Witaj z powrotem!", "success"); }
-            catch(err) { notify(err.message, "error"); }
-        }
-
-        async function handleRegister() {
-            const n = document.getElementById('regNick').value;
-            const e = document.getElementById('regEmail').value;
-            const p = document.getElementById('regPassword').value;
-            try { 
-                const res = await auth.createUserWithEmailAndPassword(e, p);
-                await res.user.updateProfile({ displayName: n });
-                notify("Konto stworzone!", "success");
-            } catch(err) { notify(err.message, "error"); }
-        }
-
-        // --- KOMPRESJA I ZDJĘCIA ---
-        async function compress(file) {
-            return new Promise(res => {
+        // --- KOMPRESJA ---
+        async function compressImage(file) {
+            return new Promise(resolve => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = e => {
@@ -323,38 +321,40 @@
                     img.src = e.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const w = 800; const scale = w / img.width;
-                        canvas.width = w; canvas.height = img.height * scale;
+                        const MAX_W = 800;
+                        const scale = MAX_W / img.width;
+                        canvas.width = MAX_W;
+                        canvas.height = img.height * scale;
                         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                        res(canvas.toDataURL('image/jpeg', 0.6));
+                        resolve(canvas.toDataURL('image/jpeg', 0.6));
                     }
                 }
             });
         }
 
-        document.getElementById('imgIn').addEventListener('change', async (e) => {
+        document.getElementById('imageInput').addEventListener('change', async (e) => {
             for (let f of e.target.files) {
-                if (selectedFiles.length < 3) {
-                    const b64 = await compress(f);
-                    selectedFiles.push(b64);
+                if (selectedImages.length < 3) {
+                    const b64 = await compressImage(f);
+                    selectedImages.push(b64);
                 }
             }
-            renderPreviews();
+            renderFormPreviews();
         });
 
-        function renderPreviews() {
-            const container = document.getElementById('previews');
-            container.innerHTML = '';
-            selectedFiles.forEach((f, i) => {
-                const d = document.createElement('div');
-                d.className = 'preview-thumb';
-                d.innerHTML = `<img src="${f}"><div class="remove-img" onclick="removeImg(${i})">&times;</div>`;
-                container.appendChild(d);
+        function renderFormPreviews() {
+            const cont = document.getElementById('formImagePreviews');
+            cont.innerHTML = '';
+            selectedImages.forEach((src, i) => {
+                const div = document.createElement('div');
+                div.className = 'preview-thumb';
+                div.innerHTML = `<img src="${src}"><div class="remove-img" onclick="removeImg(${i})">&times;</div>`;
+                cont.appendChild(div);
             });
         }
-        window.removeImg = i => { selectedFiles.splice(i, 1); renderPreviews(); };
+        window.removeImg = i => { selectedImages.splice(i, 1); renderFormPreviews(); };
 
-        // --- LOGIKA SPOTÓW ---
+        // --- LOGIKA FORMULARZA ---
         function toggleForm(show) {
             document.getElementById('spot-form').style.display = show ? 'block' : 'none';
             document.getElementById('addSpotFab').classList.toggle('form-active', show);
@@ -362,60 +362,61 @@
         }
 
         function resetForm() {
-            editingId = null; selectedFiles = [];
+            editingId = null; selectedImages = [];
             document.getElementById('spotName').value = '';
             document.getElementById('spotDesc').value = '';
-            document.getElementById('formTitle').innerText = "Dodaj Spot";
+            document.getElementById('formTitle').innerText = "Nowy Spot";
             document.querySelectorAll('.tag-in').forEach(c => c.checked = false);
-            document.getElementById('stairsSet').style.display = 'none';
-            document.getElementById('otherV').style.display = 'none';
-            renderPreviews();
+            document.getElementById('stairsInput').style.display = 'none';
+            document.getElementById('otherValue').style.display = 'none';
+            renderFormPreviews();
         }
 
         document.getElementById('addSpotFab').addEventListener('click', () => {
             if (document.getElementById('spot-form').style.display === 'block') toggleForm(false);
-            else { isPlacing = true; notify("Kliknij na mapę, aby wybrać miejsce!", "success"); }
+            else { isPlacing = true; showNotification("Kliknij na mapę!", "success"); }
         });
 
         map.on('click', e => {
             if (isPlacing) {
                 isPlacing = false;
                 toggleForm(true);
-                window.tempLat = e.latlng.lat; window.tempLng = e.latlng.lng;
+                window.lastLat = e.latlng.lat; window.lastLng = e.latlng.lng;
             }
         });
 
-        document.getElementById('stairsCheck').addEventListener('change', e => document.getElementById('stairsSet').style.display = e.target.checked ? 'block' : 'none');
-        document.getElementById('otherCheck').addEventListener('change', e => document.getElementById('otherV').style.display = e.target.checked ? 'block' : 'none');
-        document.getElementById('stairsR').addEventListener('input', e => document.getElementById('stairsV').innerText = e.target.value);
+        document.getElementById('stairsCheck').addEventListener('change', e => document.getElementById('stairsInput').style.display = e.target.checked ? 'block' : 'none');
+        document.getElementById('otherCheck').addEventListener('change', e => document.getElementById('otherValue').style.display = e.target.checked ? 'block' : 'none');
+        document.getElementById('stairsRange').addEventListener('input', e => document.getElementById('stairsVal').innerText = e.target.value);
 
-        document.getElementById('saveBtn').addEventListener('click', async () => {
+        document.getElementById('saveSpotBtn').addEventListener('click', async () => {
             const name = document.getElementById('spotName').value;
-            if (!name) return notify("Podaj nazwę!", "error");
+            if (!name) return showNotification("Podaj nazwę!", "error");
 
             const data = {
                 name, desc: document.getElementById('spotDesc').value,
                 tags: Array.from(document.querySelectorAll('.tag-in:checked')).map(c => c.value),
-                stairs: document.getElementById('stairsCheck').checked ? document.getElementById('stairsR').value : null,
-                other: document.getElementById('otherV').value,
-                imgs: selectedFiles,
-                lat: window.tempLat, lng: window.tempLng,
-                authorId: currentUser.uid, authorName: currentUser.displayName || currentUser.email,
+                stairs: document.getElementById('stairsCheck').checked ? document.getElementById('stairsRange').value : null,
+                other: document.getElementById('otherCheck').checked ? document.getElementById('otherValue').value : null,
+                images: selectedImages,
+                lat: window.lastLat, lng: window.lastLng,
+                authorId: currentUser.uid,
+                authorName: currentUser.displayName || currentUser.email.split('@')[0],
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             try {
                 if (editingId) await db.collection('spots').doc(editingId).update(data);
                 else await db.collection('spots').add(data);
-                notify("Zapisano!", "success");
+                showNotification("Zapisano spot!", "success");
                 toggleForm(false);
-            } catch(err) { notify(err.message, "error"); }
+            } catch(e) { showNotification(e.message, "error"); }
         });
 
-        // --- WYŚWIETLANIE ---
+        // --- RENDEROWANIE LISTY I KART ---
         function renderSpots() {
-            const container = document.getElementById('spotsList');
-            container.innerHTML = '';
+            const list = document.getElementById('spotsList');
+            list.innerHTML = '';
             markers.forEach(m => map.removeLayer(m));
             markers = [];
 
@@ -424,50 +425,50 @@
                 card.className = 'spot-card';
                 card.id = `card-${s.id}`;
 
-                let sliderHtml = '';
-                if (s.imgs && s.imgs.length > 0) {
-                    sliderHtml = `<div class="spot-slider">` + s.imgs.map(img => `<div class="slide-item" onclick="openLight('${img}')"><img src="${img}"></div>`).join('') + `</div>`;
+                let slider = '';
+                if (s.images && s.images.length > 0) {
+                    slider = `<div class="spot-slider">` + s.images.map(img => `<div class="slide-item"><img src="${img}" onclick="openLightbox('${img}')"></div>`).join('') + `</div>`;
                 }
 
                 const commentsHtml = (s.comments || []).map(c => `<div class="comment"><b>${c.user}:</b> ${c.text}</div>`).join('');
 
                 card.innerHTML = `
                     <h3 style="color:var(--neon-blue)">${i+1}. ${s.name}</h3>
-                    ${sliderHtml}
-                    <p style="font-size:0.8rem; margin:5px 0;">${s.desc}</p>
-                    <div style="font-size:0.65rem; color:var(--neon-pink)">${s.tags.join(', ')} ${s.stairs ? '('+s.stairs+' schodów)' : ''}</div>
+                    ${slider}
+                    <p style="margin:5px 0; font-size:0.9rem;">${s.desc}</p>
+                    <div style="font-size:0.7rem; color:var(--neon-pink)">${s.tags.join(', ')} ${s.stairs ? '('+s.stairs+' schodów)' : ''}</div>
                     
-                    <div class="card-actions" style="margin-top:10px; display:flex; gap:5px; flex-wrap:wrap;">
-                        <button class="btn-neon btn-blue" style="font-size:0.6rem; padding:5px;" onclick="locateOnMap(${s.lat}, ${s.lng}, '${s.id}')">POKAŻ NA MAPIE</button>
+                    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+                        <button class="btn-neon btn-blue" style="font-size:0.7rem; padding:5px;" onclick="focusSpot(${s.lat}, ${s.lng}, '${s.id}')">POKAŻ NA MAPIE</button>
                         ${currentUser && currentUser.uid === s.authorId ? `
-                            <button class="btn-neon btn-orange" style="font-size:0.6rem; padding:5px;" onclick="editSpot('${s.id}')">EDYCJA</button>
-                            <button class="btn-neon btn-red" style="font-size:0.6rem; padding:5px;" onclick="deleteSpot('${s.id}')">USUŃ</button>
+                            <button class="btn-neon btn-orange" style="font-size:0.7rem; padding:5px;" onclick="editSpot('${s.id}')">EDYTUJ</button>
+                            <button class="btn-neon btn-red" style="font-size:0.7rem; padding:5px;" onclick="deleteSpot('${s.id}')">USUŃ</button>
                         ` : ''}
                     </div>
 
                     <div class="comments-section">
-                        <div id="comm-list-${s.id}">${commentsHtml}</div>
+                        <div id="comms-${s.id}">${commentsHtml}</div>
                         ${currentUser ? `
                             <div style="display:flex; gap:5px; margin-top:5px;">
-                                <input type="text" id="in-${s.id}" placeholder="Dodaj komentarz..." style="flex:1; background:#111; border:1px solid var(--neon-blue); color:white; font-size:0.7rem; padding:3px;">
-                                <button onclick="addComment('${s.id}')" class="btn-neon btn-blue" style="width:auto; margin:0; font-size:0.6rem; padding:2px 5px;">OK</button>
+                                <input type="text" id="comm-in-${s.id}" placeholder="Skomentuj..." style="flex:1; background:#111; border:1px solid var(--neon-blue); color:white; font-size:0.8rem; padding:5px;">
+                                <button onclick="addComment('${s.id}')" class="btn-neon btn-blue" style="width:auto; margin:0; padding:5px 10px;">OK</button>
                             </div>
                         ` : ''}
                     </div>
                 `;
-                container.appendChild(card);
+                list.appendChild(card);
 
-                const marker = L.marker([s.lat, s.lng]).addTo(map);
-                marker.on('click', () => {
-                    switchTab('spotsList');
-                    setTimeout(() => locateOnMap(s.lat, s.lng, s.id), 300);
+                const m = L.marker([s.lat, s.lng]).addTo(map);
+                m.on('click', () => {
+                    switchSection('spotsList');
+                    setTimeout(() => focusSpot(s.lat, s.lng, s.id), 300);
                 });
-                markers.push(marker);
+                markers.push(m);
             });
             document.getElementById('spotCount').innerText = allSpots.length;
         }
 
-        window.locateOnMap = (lat, lng, id) => {
+        window.focusSpot = (lat, lng, id) => {
             map.flyTo([lat, lng], 17);
             document.querySelectorAll('.spot-card').forEach(c => c.classList.remove('highlight'));
             const card = document.getElementById(`card-${id}`);
@@ -477,82 +478,101 @@
         window.editSpot = id => {
             const s = allSpots.find(x => x.id === id);
             editingId = id;
-            selectedFiles = [...(s.imgs || [])];
+            selectedImages = [...(s.images || [])];
             document.getElementById('spotName').value = s.name;
             document.getElementById('spotDesc').value = s.desc;
-            document.getElementById('formTitle').innerText = "Edytuj Spot";
-            window.tempLat = s.lat; window.tempLng = s.lng;
+            document.getElementById('formTitle').innerText = "Edycja Spota";
+            window.lastLat = s.lat; window.lastLng = s.lng;
             
             document.querySelectorAll('.tag-in').forEach(c => c.checked = s.tags.includes(c.value));
             if (s.stairs) {
                 document.getElementById('stairsCheck').checked = true;
-                document.getElementById('stairsSet').style.display = 'block';
-                document.getElementById('stairsR').value = s.stairs;
-                document.getElementById('stairsV').innerText = s.stairs;
+                document.getElementById('stairsInput').style.display = 'block';
+                document.getElementById('stairsRange').value = s.stairs;
+                document.getElementById('stairsVal').innerText = s.stairs;
             }
             if (s.other) {
                 document.getElementById('otherCheck').checked = true;
-                document.getElementById('otherV').style.display = 'block';
-                document.getElementById('otherV').value = s.other;
+                document.getElementById('otherValue').style.display = 'block';
+                document.getElementById('otherValue').value = s.other;
             }
-            renderPreviews();
-            switchTab('map');
+            renderFormPreviews();
+            switchSection('map');
             toggleForm(true);
         };
 
         window.deleteSpot = async id => {
-            if (confirm("Usunąć ten spot na stałe?")) {
+            if (confirm("Usunąć ten spot?")) {
                 await db.collection('spots').doc(id).delete();
-                notify("Usunięto.", "success");
+                showNotification("Usunięto spot", "success");
             }
         };
 
         window.addComment = async id => {
-            const text = document.getElementById(`in-${id}`).value;
-            if (!text) return;
+            const input = document.getElementById(`comm-in-${id}`);
+            if (!input.value) return;
             const spot = allSpots.find(x => x.id === id);
-            const newComm = { user: currentUser.displayName || currentUser.email, text: text };
-            const updated = [...(spot.comments || []), newComm];
+            const newC = { user: currentUser.displayName || currentUser.email.split('@')[0], text: input.value };
+            const updated = [...(spot.comments || []), newC];
             await db.collection('spots').doc(id).update({ comments: updated });
-            document.getElementById(`in-${id}`).value = '';
+            input.value = '';
         };
 
-        // --- UI HELPERS ---
-        function switchTab(target) {
+        // --- AUTH ACTIONS ---
+        window.handleLogin = async () => {
+            const e = document.getElementById('loginEmail').value;
+            const p = document.getElementById('loginPassword').value;
+            try { await auth.signInWithEmailAndPassword(e, p); showNotification("Zalogowano!", "success"); }
+            catch(err) { showNotification(err.message, "error"); }
+        };
+
+        window.handleRegister = async () => {
+            const n = document.getElementById('regNick').value;
+            const e = document.getElementById('regEmail').value;
+            const p = document.getElementById('regPassword').value;
+            try { 
+                const res = await auth.createUserWithEmailAndPassword(e, p);
+                await res.user.updateProfile({ displayName: n });
+                showNotification("Witaj " + n, "success");
+            } catch(err) { showNotification(err.message, "error"); }
+        };
+
+        document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
+        document.getElementById('showLoginBtn').addEventListener('click', () => { document.getElementById('loginForm').style.display='block'; document.getElementById('registerForm').style.display='none'; });
+        document.getElementById('showRegisterBtn').addEventListener('click', () => { document.getElementById('registerForm').style.display='block'; document.getElementById('loginForm').style.display='none'; });
+
+        // --- POMOCNICZE UI ---
+        function switchSection(target) {
             document.querySelectorAll('.sidebar-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById(target + 'Content').classList.add('active');
             document.querySelector(`[data-target="${target}"]`).classList.add('active');
-            
-            if (window.innerWidth <= 768) {
-                document.getElementById('mainSidebar').classList.toggle('active', target !== 'map');
-            }
+            if (window.innerWidth <= 768) document.getElementById('mainSidebar').classList.toggle('active', target !== 'map');
         }
 
-        function notify(msg, type) {
-            const c = document.getElementById('notification-container');
+        function showNotification(msg, type) {
+            const cont = document.getElementById('notification-container');
             const d = document.createElement('div');
             d.className = `notification ${type}`;
             d.innerText = msg;
-            c.appendChild(d);
+            cont.appendChild(d);
             gsap.from(d, { y: 50, opacity: 0 });
-            setTimeout(() => gsap.to(d, { opacity: 0, onComplete: () => d.remove() }), 3000);
+            setTimeout(() => gsap.to(d, { opacity: 0, onComplete: () => d.remove() }), 4000);
         }
 
-        window.openLight = src => {
-            document.getElementById('lightbox-img').src = src;
-            document.getElementById('lightbox').style.display = 'flex';
-        };
-
-        async function searchLoc() {
-            const q = document.getElementById('searchCity').value;
+        async function searchCity() {
+            const q = document.getElementById('citySearch').value;
             const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}`);
             const data = await res.json();
             if (data[0]) map.flyTo([data[0].lat, data[0].lon], 13);
         }
 
-        function geoLoc() {
-            map.locate({ setView: true, maxZoom: 16 });
+        window.openLightbox = src => {
+            const lb = document.createElement('div');
+            lb.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:10000; display:flex; justify-content:center; align-items:center; cursor:zoom-out;";
+            lb.innerHTML = `<img src="${src}" style="max-width:95%; max-height:95%;">`;
+            lb.onclick = () => lb.remove();
+            document.body.appendChild(lb);
         }
 
         // --- START ---
@@ -564,7 +584,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 document.getElementById('loader').style.display = 'none';
-                document.querySelector('.app-container').style.opacity = 1;
+                gsap.to('.app-container', { opacity: 1, duration: 0.5 });
             }, 1000);
         });
 
@@ -573,7 +593,7 @@
             cursor.style.left = e.clientX + 'px';
             cursor.style.top = e.clientY + 'px';
         });
-        document.querySelectorAll('button, input, textarea, label').forEach(el => {
+        document.querySelectorAll('button, input, textarea, label, .spot-card').forEach(el => {
             el.addEventListener('mouseenter', () => cursor.classList.add('hovered'));
             el.addEventListener('mouseleave', () => cursor.classList.remove('hovered'));
         });

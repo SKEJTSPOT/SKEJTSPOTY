@@ -76,6 +76,24 @@
             mix-blend-mode: normal;
         }
 
+        /* --- CYBERPUNK SCROLLBAR --- */
+        .cyber-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+        .cyber-scroll::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+        .cyber-scroll::-webkit-scrollbar-thumb {
+            background: linear-gradient(90deg, var(--neon-pink), var(--neon-blue));
+            border-radius: 4px;
+            box-shadow: 0 0 5px var(--neon-blue);
+        }
+        .cyber-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: var(--neon-pink) rgba(0,0,0,0.1);
+        }
+
         /* --- LOADER --- */
         #loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -516,7 +534,7 @@
                          <button class="btn-neon btn-red" id="logoutBtn" style="display:none;" data-hover>Wyloguj</button>
                      </div>
                      
-                     <div style="margin-top: 10px; display: none;" id="notificationPermissionSection">
+                     <div style="margin-top: 10px;" id="notificationPermissionSection">
                         <button class="btn-neon btn-blue" id="enableNotifBtn" style="width: 100%;" data-hover>🔔 WŁĄCZ POWIADOMIENIA</button>
                      </div>
 
@@ -737,23 +755,43 @@
         
         function checkNotificationPermission() {
             const btnContainer = document.getElementById('notificationPermissionSection');
+            const btn = document.getElementById('enableNotifBtn');
+            
             if (!("Notification" in window)) {
                 btnContainer.style.display = 'none';
                 return;
             }
             
-            if (Notification.permission === 'default') {
-                btnContainer.style.display = 'block';
+            btnContainer.style.display = 'block';
+            
+            if (Notification.permission === 'granted') {
+                btn.innerHTML = '✅ POWIADOMIENIA WŁĄCZONE';
+                btn.className = 'btn-neon btn-green';
+                btn.style.opacity = '1';
+            } else if (Notification.permission === 'denied') {
+                btn.innerHTML = '🚫 BRAK ZGODY (Zmień w ust.)';
+                btn.className = 'btn-neon btn-red';
             } else {
-                btnContainer.style.display = 'none';
+                btn.innerHTML = '🔔 WŁĄCZ POWIADOMIENIA';
+                btn.className = 'btn-neon btn-blue';
             }
         }
 
         document.getElementById('enableNotifBtn').addEventListener('click', () => {
+            if (Notification.permission === 'granted') {
+                 new Notification("SKEJTY", { body: "Test powiadomienia! 🛹" });
+                 showNotification("Powiadomienia działają!", "success");
+                 return;
+            }
+            if (Notification.permission === 'denied') {
+                 alert("Musisz ręcznie włączyć powiadomienia w ustawieniach przeglądarki (ikona kłódki przy adresie).");
+                 return;
+            }
+
             Notification.requestPermission().then(permission => {
+                checkNotificationPermission();
                 if (permission === "granted") {
                     new Notification("SKEJTY", { body: "Powiadomienia włączone! 🛹" });
-                    checkNotificationPermission();
                 }
             });
         });
@@ -1314,7 +1352,7 @@
 
             let galleryHtml = '';
             if (allImages.length > 0) {
-                galleryHtml = '<div style="display: flex; gap: 10px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; scroll-snap-type: x mandatory;">';
+                galleryHtml = '<div class="cyber-scroll" style="display: flex; gap: 10px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 10px; scroll-snap-type: x mandatory;">';
                 allImages.forEach(url => {
                     galleryHtml += `<div style="flex: 0 0 80%; scroll-snap-align: center; border-radius: 8px; overflow: hidden; border: 2px solid var(--neon-pink);">
                         <img src="${url}" onclick="openLightbox('${url}')" style="width: 100%; height: 200px; object-fit: cover; cursor: pointer; display: block;">
@@ -1640,7 +1678,7 @@
                 logoutBtn.style.display = 'inline-block';
                 addSpotFab.style.display = 'flex';
             } else {
-                authStatusEl.innerHTML = 'Niezalogowany. Zaloguj się lub zarejestruj.';
+                authStatusEl.innerHTML = a'Niezalogowany. Zaloguj się lub zarejestruj.';
                 showLoginBtn.style.display = 'inline-block';
                 showRegisterBtn.style.display = 'inline-block';
                 logoutBtn.style.display = 'none';

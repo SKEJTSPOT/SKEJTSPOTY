@@ -515,6 +515,10 @@
                          <button class="btn-neon btn-orange" id="showRegisterBtn" data-hover>Rejestruj</button>
                          <button class="btn-neon btn-red" id="logoutBtn" style="display:none;" data-hover>Wyloguj</button>
                      </div>
+                     
+                     <div style="margin-top: 10px; display: none;" id="notificationPermissionSection">
+                        <button class="btn-neon btn-blue" id="enableNotifBtn" style="width: 100%;" data-hover>🔔 WŁĄCZ POWIADOMIENIA</button>
+                     </div>
 
                      <div id="loginForm" style="display:none;">
                          <input type="email" id="loginEmail" placeholder="Email" data-hover>
@@ -725,7 +729,38 @@
                     }
                 );
             }, duration);
+
+            // SYSTEM NOTIFICATION
+            if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
+                 new Notification("SKEJTY", {
+                     body: message,
+                     icon: '/favicon-96x96.png'
+                 });
+            }
         }
+        
+        function checkNotificationPermission() {
+            const btnContainer = document.getElementById('notificationPermissionSection');
+            if (!("Notification" in window)) {
+                btnContainer.style.display = 'none';
+                return;
+            }
+            
+            if (Notification.permission === 'default') {
+                btnContainer.style.display = 'block';
+            } else {
+                btnContainer.style.display = 'none';
+            }
+        }
+
+        document.getElementById('enableNotifBtn').addEventListener('click', () => {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    new Notification("SKEJTY", { body: "Powiadomienia włączone! 🛹" });
+                    checkNotificationPermission();
+                }
+            });
+        });
         
         // --- LOGIKA AUTORYZACJI ---
 
@@ -1640,14 +1675,43 @@
 
         // --- START APLIKACJI ---
         document.addEventListener('DOMContentLoaded', () => {
+            checkNotificationPermission(); // Sprawdź zgody na starcie
+            
             gsap.to('#loader', { opacity: 0, duration: 0.8, delay: 1, onComplete: () => {
                 document.getElementById('loader').style.display = 'none';
                 gsap.to('.app-container', { opacity: 1, duration: 0.5 });
             }});
             
+            let initialLoad = true;
             spotsCollection.onSnapshot(snapshot => {
-                spots = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const newSpots = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Wykrywanie nowych spotów (jeśli to nie pierwsze ładowanie)
+                if (!initialLoad && newSpots.length > spots.length) {
+                    const diff = newSpots.length - spots.length;
+                    if (diff === 1) {
+                         // Znajdź ten nowy
+                         const addedSpot = newSpots.find(ns => !spots.some(s => s.id === ns.id));
+                         if (addedSpot) {
+                             // Jeśli autor to nie ja (zakładając że currentUser jest ustawiony)
+                             if (!currentUser || addedSpot.authorId !== currentUser.uid) {
+                                 showNotification(`Nowy spot: ${addedSpot.name} 🛹`, 'success');
+                                 
+                                 // System notification even if not hidden for new spots
+                                 if ("Notification" in window && Notification.permission === "granted" && !document.hidden) {
+                                     new Notification("SKEJTY - NOWY SPOT!", {
+                                         body: `Ktoś dodał: ${addedSpot.name}`,
+                                         icon: '/favicon-96x96.png'
+                                     });
+                                 }
+                             }
+                         }
+                    }
+                }
+                
+                spots = newSpots;
                 renderSpots(getActiveFilters()); 
+                initialLoad = false;
             });
         });
 

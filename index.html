@@ -723,8 +723,10 @@
 
     //---ImgBB----\\
         // FUNKCJA WYSYŁAJĄCA DO ImgBB
-        async function uploadToImgBB(file) {
-            if (!file) return null;
+            async function uploadToImgBB(file) { // Musi być 'async' na początku!
+                if (!file) return null;
+                // ... reszta kodu
+            }
             const formData = new FormData();
             formData.append("image", file);
             
@@ -1685,5 +1687,6 @@ function renderSpots(filters = { selectedBust: 'all', selectedTags: [] }) {
     </script>
 </body>
 </html>
+
 
 

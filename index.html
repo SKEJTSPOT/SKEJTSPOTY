@@ -619,6 +619,22 @@
                         <input type="password" id="registerPassword" class="input-cyber" placeholder="Hasło (min. 6 znaków)" data-hover>
                         <button class="btn-neon btn-orange" onclick="handleRegister()" data-hover>ZAREJESTRUJ</button>
                     </div>
+                     
+                     <div id="accountSettings" style="display:none; margin-top: 15px; border-top: 1px dashed var(--neon-blue); padding-top: 15px;">
+                        <h3 style="color: var(--neon-pink); margin-bottom: 10px;">Ustawienia konta</h3>
+                        <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+                            <input type="text" id="newNickInput" class="input-cyber" placeholder="Nowy nick">
+                            <button class="btn-neon btn-blue" id="changeNickBtn">Zmień nick</button>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <input type="password" id="newPasswordInput" class="input-cyber" placeholder="Nowe hasło (min. 6 znaków)">
+                            <button class="btn-neon btn-orange" id="changePasswordBtn">Zmień hasło</button>
+                        </div>
+                        <div id="pwaInstallSection" style="display:none; margin-top: 15px;">
+                            <h3 style="color: var(--neon-blue); margin-bottom: 8px;">Dodaj aplikację na ekran główny</h3>
+                            <button class="btn-neon btn-blue" id="installPwaBtn">Zainstaluj aplikację</button>
+                        </div>
+                     </div>
                  </div>
             </div>
 
@@ -787,6 +803,12 @@
         }
 
         let currentUser = null; 
+        let deferredPwaPrompt = null;
+        const installSectionEl = document.getElementById('pwaInstallSection');
+        const installPwaBtn = document.getElementById('installPwaBtn');
+        const accountSettingsEl = document.getElementById('accountSettings');
+        const newNickInput = document.getElementById('newNickInput');
+        const newPasswordInput = document.getElementById('newPasswordInput');
 
         // --- OGÓLNE NARZĘDZIA UI ---
         function showNotification(message, type = 'info', duration = 4000) {
@@ -814,7 +836,63 @@
             }, duration);
         }
         
-        // POWIADOMIENIA SYSTEMOWE USUNIĘTE NA PROŚBĘ UŻYTKOWNIKA
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPwaPrompt = e;
+            if (installSectionEl) installSectionEl.style.display = 'block';
+        });
+        function showInstallPromptIfAvailable() {
+            if (deferredPwaPrompt) {
+                if (installSectionEl) installSectionEl.style.display = 'block';
+                showNotification("Dodaj aplikację na ekran główny", 'info', 4000);
+            }
+        }
+        if (installPwaBtn) {
+            installPwaBtn.addEventListener('click', async () => {
+                if (!deferredPwaPrompt) return;
+                deferredPwaPrompt.prompt();
+                const choice = await deferredPwaPrompt.userChoice;
+                if (choice.outcome === 'accepted') {
+                    showNotification("Instalacja rozpoczęta.", 'success', 3000);
+                } else {
+                    showNotification("Instalacja anulowana.", 'info', 3000);
+                }
+                deferredPwaPrompt = null;
+                if (installSectionEl) installSectionEl.style.display = 'none';
+            });
+        }
+
+        if (document.getElementById('changeNickBtn')) {
+            document.getElementById('changeNickBtn').addEventListener('click', async () => {
+                const newNick = (newNickInput.value || '').trim();
+                if (!newNick || newNick.length < 2) return showNotification("Nick za krótki.", 'error');
+                if (!auth.currentUser) return showNotification("Zaloguj się.", 'error');
+                try {
+                    await auth.currentUser.updateProfile({ displayName: newNick });
+                    showNotification("Nick zaktualizowany.", 'success');
+                    renderSpots(getActiveFilters());
+                } catch (err) {
+                    showNotification("Błąd zmiany nicku: " + err.message, 'error', 6000);
+                }
+            });
+        }
+        if (document.getElementById('changePasswordBtn')) {
+            document.getElementById('changePasswordBtn').addEventListener('click', async () => {
+                const newPass = (newPasswordInput.value || '').trim();
+                if (!newPass || newPass.length < 6) return showNotification("Hasło min. 6 znaków.", 'error');
+                if (!auth.currentUser) return showNotification("Zaloguj się.", 'error');
+                try {
+                    await auth.currentUser.updatePassword(newPass);
+                    showNotification("Hasło zmienione.", 'success');
+                } catch (err) {
+                    if (err.code === 'auth/requires-recent-login') {
+                        showNotification("Zaloguj ponownie, aby zmienić hasło.", 'error', 6000);
+                    } else {
+                        showNotification("Błąd zmiany hasła: " + err.message, 'error', 6000);
+                    }
+                }
+            });
+        }
 
         
         // --- LOGIKA AUTORYZACJI ---
@@ -832,6 +910,7 @@
                 await auth.signInWithEmailAndPassword(email, password);
                 showNotification("Zalogowano pomyślnie!", 'success');
                 loginFormEl.style.display = 'none';
+                showInstallPromptIfAvailable();
             } catch (error) {
                 showNotification("Błąd logowania: " + error.message, 'error', 6000);
             }
@@ -849,6 +928,7 @@
                 });
                 showNotification("Rejestracja pomyślna! Witaj " + nick, 'success');
                 registerFormEl.style.display = 'none';
+                showInstallPromptIfAvailable();
             } catch (error) {
                 showNotification("Błąd rejestracji: " + error.message, 'error', 6000);
             }
@@ -1308,27 +1388,35 @@
 
             const commentsList = document.createElement('div');
             commentsList.id = `comments-list-${spotId}`;
-            // Upewniamy się, że timestamp to obiekt Firebase Timestamp lub Data, aby móc sortować
-            comments.sort((a, b) => {
-                const timeA = a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-                const timeB = b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
-                return timeB - timeA;
-            }).slice(0, 3).forEach(c => {
-                const commentEl = document.createElement('div');
-                commentEl.className = 'comment';
-                
-                let dateStr;
-                if (c.timestamp && c.timestamp.seconds) {
-                    dateStr = new Date(c.timestamp.seconds * 1000).toLocaleDateString();
-                } else if (c.timestamp) {
-                     dateStr = new Date(c.timestamp).toLocaleDateString();
-                } else {
-                    dateStr = 'Brak daty';
-                }
-
-                commentEl.innerHTML = `<strong>${c.authorName}:</strong> ${c.text} <span style="font-size: 0.7rem; float: right; color: #888;">${dateStr}</span>`;
-                commentsList.appendChild(commentEl);
-            });
+            comments
+                .sort((a, b) => {
+                    const timeA = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+                    const timeB = b.timestamp && b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+                    return timeB - timeA;
+                })
+                .slice(0, 3)
+                .forEach(c => {
+                    const commentEl = document.createElement('div');
+                    commentEl.className = 'comment';
+                    const t = c.timestamp && c.timestamp.seconds ? new Date(c.timestamp.seconds * 1000) : new Date(c.timestamp);
+                    const dateStr = isNaN(t) ? '' : t.toLocaleDateString();
+                    const cid = c.id ? c.id : `${c.authorId || 'anon'}-${t.getTime()}`;
+                    commentEl.innerHTML = `<strong>${c.authorName}:</strong> ${c.text} <span style="font-size: 0.7rem; float: right; color: #888;">${dateStr}</span>`;
+                    if (currentUser && currentUser.uid === c.authorId) {
+                        const actions = document.createElement('div');
+                        actions.style.marginTop = '6px';
+                        actions.innerHTML = `
+                            <button class="card-btn" onclick="startEditComment('${spotId}','${cid}', '${encodeURIComponent(c.text)}')">EDYTUJ</button>
+                            <button class="card-btn btn-red" onclick="deleteComment('${spotId}','${cid}')">USUŃ</button>
+                            <div style="display:none; margin-top:6px;">
+                                <textarea id="edit-comment-${spotId}-${cid}" class="textarea-cyber comment-input" rows="3"></textarea>
+                                <button id="save-comment-${spotId}-${cid}" class="card-btn" style="margin-top:6px; display:none;" onclick="saveEditComment('${spotId}','${cid}')">ZAPISZ</button>
+                            </div>
+                        `;
+                        commentEl.appendChild(actions);
+                    }
+                    commentsList.appendChild(commentEl);
+                });
             section.appendChild(commentsList);
 
             if (currentUser) {
@@ -1339,7 +1427,6 @@
                 `;
                 section.appendChild(commentForm);
             }
-            
             return section;
         }
 
@@ -1359,8 +1446,8 @@
                     text: text,
                     authorId: currentUser.uid,
                     authorName: currentUser.displayName || currentUser.email.split('@')[0],
-                    // NAPRAWIONA LINIA: używamy new Date()
-                    timestamp: new Date() 
+                    timestamp: new Date(),
+                    id: `${currentUser.uid}-${Date.now()}`
                 };
 
                 const updatedComments = [...(currentSpot.comments || []), newComment];
@@ -1372,6 +1459,60 @@
             } catch (error) {
                 showNotification("Błąd dodawania komentarza: " + error.message, 'error', 6000);
                 console.error("Błąd dodawania komentarza:", error);
+            }
+        };
+
+        window.startEditComment = (spotId, commentId, initialTextEnc) => {
+            const area = document.getElementById(`edit-comment-${spotId}-${commentId}`);
+            const btn = document.getElementById(`save-comment-${spotId}-${commentId}`);
+            if (!area || !btn) return;
+            area.style.display = 'block';
+            btn.style.display = 'inline-block';
+            try { area.value = decodeURIComponent(initialTextEnc); } catch (e) { area.value = ''; }
+        };
+
+        window.saveEditComment = async (spotId, commentId) => {
+            const area = document.getElementById(`edit-comment-${spotId}-${commentId}`);
+            if (!area) return;
+            const newText = area.value.trim();
+            if (!newText) return showNotification("Wpisz treść.", 'error');
+            try {
+                const spotRef = spotsCollection.doc(spotId);
+                const doc = await spotRef.get();
+                if (!doc.exists) return;
+                const data = doc.data();
+                const updated = (data.comments || []).map(c => {
+                    const t = c.timestamp && c.timestamp.seconds ? c.timestamp.seconds * 1000 : new Date(c.timestamp).getTime();
+                    const cid = c.id ? c.id : `${c.authorId || 'anon'}-${t}`;
+                    if (cid === commentId && c.authorId === currentUser.uid) {
+                        return { ...c, text: newText };
+                    }
+                    return c;
+                });
+                await spotRef.update({ comments: updated });
+                showNotification("Komentarz zaktualizowany.", 'success');
+                renderSpots(getActiveFilters());
+            } catch (e) {
+                showNotification("Błąd edycji komentarza: " + e.message, 'error', 6000);
+            }
+        };
+
+        window.deleteComment = async (spotId, commentId) => {
+            try {
+                const spotRef = spotsCollection.doc(spotId);
+                const doc = await spotRef.get();
+                if (!doc.exists) return;
+                const data = doc.data();
+                const filtered = (data.comments || []).filter(c => {
+                    const t = c.timestamp && c.timestamp.seconds ? c.timestamp.seconds * 1000 : new Date(c.timestamp).getTime();
+                    const cid = c.id ? c.id : `${c.authorId || 'anon'}-${t}`;
+                    return !(cid === commentId && c.authorId === currentUser.uid);
+                });
+                await spotRef.update({ comments: filtered });
+                showNotification("Komentarz usunięty.", 'info');
+                renderSpots(getActiveFilters());
+            } catch (e) {
+                showNotification("Błąd usuwania komentarza: " + e.message, 'error', 6000);
             }
         };
 
@@ -1793,6 +1934,8 @@
                 showRegisterBtn.style.display = 'none';
                 logoutBtn.style.display = 'inline-block';
                 addSpotFab.style.display = 'flex';
+                if (accountSettingsEl) accountSettingsEl.style.display = 'block';
+                showInstallPromptIfAvailable();
             } else {
                 authStatusEl.innerHTML = 'Niezalogowany. Zaloguj się lub zarejestruj.';
                 showLoginBtn.style.display = 'inline-block';
@@ -1800,6 +1943,8 @@
                 logoutBtn.style.display = 'none';
                 addSpotFab.style.display = 'none';
                 toggleForm(false);
+                if (accountSettingsEl) accountSettingsEl.style.display = 'none';
+                if (installSectionEl) installSectionEl.style.display = 'none';
             }
             loginFormEl.style.display = 'none';
             registerFormEl.style.display = 'none';

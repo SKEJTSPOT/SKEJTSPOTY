@@ -546,6 +546,17 @@
             border-color: var(--neon-pink);
             box-shadow: 0 0 6px var(--neon-pink), 0 0 10px rgba(255,0,255,0.25);
         }
+        .login-required {
+            border: 2px dashed var(--neon-red);
+            background: rgba(255, 49, 49, 0.08);
+            color: var(--neon-red);
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Orbitron';
+            text-align: center;
+            margin-top: 8px;
+            box-shadow: 0 0 4px rgba(255, 49, 49, 0.3);
+        }
 
         .custom-marker-icon {
             width: 30px; height: 30px;
@@ -640,6 +651,7 @@
 
             <div id="spotsListContent" class="sidebar-section">
                 <h2 style="margin-bottom: 15px; color: var(--neon-pink);">Lista Spotów</h2>
+                <div id="loginRequiredGlobal" class="login-required" style="display:none;">Musisz się zalogować!</div>
 
                  <div id="filterSection" style="margin-top: 0; padding: 15px 0; border-top: 1px dashed var(--neon-blue); border-bottom: 1px dashed var(--neon-blue); margin-bottom: 15px;">
                     <h3 style="color: var(--neon-orange); margin-bottom: 10px;">🔍 Filtruj Spoty</h3>
@@ -1458,6 +1470,11 @@
                     <button class="card-btn" style="width: 100%; margin-top: 8px;" onclick="addComment('${spotId}')">Wyślij Komentarz</button>
                 `;
                 section.appendChild(commentForm);
+            } else {
+                const loginBox = document.createElement('div');
+                loginBox.className = 'login-required';
+                loginBox.textContent = 'Musisz się zalogować!';
+                section.appendChild(loginBox);
             }
             return section;
         }
@@ -1935,6 +1952,8 @@
                 addSpotFab.style.display = 'flex';
                 if (accountSettingsEl) accountSettingsEl.style.display = 'block';
                 showInstallPromptIfAvailable();
+                const globalBox = document.getElementById('loginRequiredGlobal');
+                if (globalBox) globalBox.style.display = 'none';
             } else {
                 authStatusEl.innerHTML = 'Niezalogowany. Zaloguj się lub zarejestruj.';
                 showLoginBtn.style.display = 'inline-block';
@@ -1944,6 +1963,8 @@
                 toggleForm(false);
                 if (accountSettingsEl) accountSettingsEl.style.display = 'none';
                 if (installSectionEl) installSectionEl.style.display = 'none';
+                const globalBox = document.getElementById('loginRequiredGlobal');
+                if (globalBox) globalBox.style.display = 'block';
             }
             loginFormEl.style.display = 'none';
             registerFormEl.style.display = 'none';

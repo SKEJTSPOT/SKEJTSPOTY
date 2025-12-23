@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKEJTY — apka na deskę | skateboarding app</title>
+    <title>Skejty! </title>
     <meta name="description" content="Skejty — apka dla skatów. Odkrywaj i dodawaj spoty skateboardowe na mapie.">
     <meta name="keywords" content="skejty, apka na deskę, apka dla skatów, skejty app, skateboarding app, skate spots, mapa skejtów">
     
@@ -1613,6 +1613,42 @@
             }
         });
 
+        // Wykrywanie miasta po IP (bez zgód)
+        async function detectCityByIP() {
+            try {
+                // Pierwszy provider: ipinfo.io (bez klucza, ograniczenia rate)
+                let city, loc;
+                try {
+                    const res = await fetch('https://ipinfo.io/json', { headers: { 'Accept': 'application/json' } });
+                    const data = await res.json();
+                    city = data.city;
+                    loc = data.loc; // "lat,lng"
+                } catch (e) {}
+                
+                // Fallback: ipapi.co jeśli ipinfo nie zwróci danych
+                if (!loc) {
+                    const res2 = await fetch('https://ipapi.co/json/', { headers: { 'Accept': 'application/json' } });
+                    const data2 = await res2.json();
+                    city = city || data2.city;
+                    if (data2.latitude && data2.longitude) {
+                        loc = `${data2.latitude},${data2.longitude}`;
+                    }
+                }
+                
+                if (loc) {
+                    const [lat, lng] = loc.split(',').map(Number);
+                    map.flyTo([lat, lng], 12, { duration: 1.2 });
+                    if (city) {
+                        searchInput.value = city;
+                        showNotification(`Wykryto miasto: ${city}`, 'info', 2500);
+                    }
+                }
+            } catch (err) {
+                // Cicho ignorujemy, żeby nie przeszkadzać startowi aplikacji
+                console.warn('IP geolocation failed', err);
+            }
+        }
+
         // --- LOGIKA FILTROWANIA ---
         const filterBustEl = document.getElementById('filterBust');
         const applyFilterBtn = document.getElementById('applyFilterBtn');
@@ -1772,6 +1808,8 @@
 
         // --- START APLIKACJI ---
         document.addEventListener('DOMContentLoaded', () => {
+            detectCityByIP();
+            
             gsap.to('#loader', { opacity: 0, duration: 0.8, delay: 1, onComplete: () => {
                 document.getElementById('loader').style.display = 'none';
                 gsap.to('.app-container', { opacity: 1, duration: 0.5 });

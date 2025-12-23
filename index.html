@@ -869,7 +869,44 @@
                 if (!auth.currentUser) return showNotification("Zaloguj się.", 'error');
                 try {
                     await auth.currentUser.updateProfile({ displayName: newNick });
-                    showNotification("Nick zaktualizowany.", 'success');
+                    const authStatusElLocal = document.getElementById('authStatus');
+                    if (authStatusElLocal) authStatusElLocal.innerHTML = `Zalogowano jako: <b>${newNick}</b>`;
+                    
+                    // Zaktualizuj nick w dokumentach spotów oraz w komentarzach autora
+                    const uid = auth.currentUser.uid;
+                    const snapshot = await spotsCollection.get();
+                    const updates = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        let changed = false;
+                        const payload = {};
+                        if (data.authorId === uid && data.authorName !== newNick) {
+                            payload.authorName = newNick;
+                            changed = true;
+                        }
+                        if (Array.isArray(data.comments) && data.comments.length > 0) {
+                            const updatedComments = data.comments.map(c => {
+                                if (c.authorId === uid && c.authorName !== newNick) {
+                                    return { ...c, authorName: newNick };
+                                }
+                                return c;
+                            });
+                            // Sprawdź czy nastąpiła zmiana
+                            for (let i = 0; i < data.comments.length; i++) {
+                                if (data.comments[i].authorId === uid && data.comments[i].authorName !== newNick) {
+                                    payload.comments = updatedComments;
+                                    changed = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (changed) {
+                            updates.push(spotsCollection.doc(doc.id).update(payload));
+                        }
+                    });
+                    if (updates.length > 0) await Promise.all(updates);
+                    
+                    showNotification("Nick zaktualizowany w spotach i komentarzach.", 'success');
                     renderSpots(getActiveFilters());
                 } catch (err) {
                     showNotification("Błąd zmiany nicku: " + err.message, 'error', 6000);
@@ -1406,12 +1443,7 @@
                         const actions = document.createElement('div');
                         actions.style.marginTop = '6px';
                         actions.innerHTML = `
-                            <button class="card-btn" onclick="startEditComment('${spotId}','${cid}', '${encodeURIComponent(c.text)}')">EDYTUJ</button>
                             <button class="card-btn btn-red" onclick="deleteComment('${spotId}','${cid}')">USUŃ</button>
-                            <div style="display:none; margin-top:6px;">
-                                <textarea id="edit-comment-${spotId}-${cid}" class="textarea-cyber comment-input" rows="3"></textarea>
-                                <button id="save-comment-${spotId}-${cid}" class="card-btn" style="margin-top:6px; display:none;" onclick="saveEditComment('${spotId}','${cid}')">ZAPISZ</button>
-                            </div>
                         `;
                         commentEl.appendChild(actions);
                     }
@@ -1422,7 +1454,7 @@
             if (currentUser) {
                 const commentForm = document.createElement('div');
                 commentForm.innerHTML = `
-                    <textarea id="comment-text-${spotId}" class="textarea-cyber comment-input" rows="4" placeholder="Dodaj komentarz..." style="margin-top: 10px; min-height: 90px;"></textarea>
+                    <textarea id="comment-text-${spotId}" class="textarea-cyber comment-input" rows="2" placeholder="Dodaj komentarz..." style="margin-top: 10px; min-height: 60px;"></textarea>
                     <button class="card-btn" style="width: 100%; margin-top: 8px;" onclick="addComment('${spotId}')">Wyślij Komentarz</button>
                 `;
                 section.appendChild(commentForm);
@@ -1462,40 +1494,7 @@
             }
         };
 
-        window.startEditComment = (spotId, commentId, initialTextEnc) => {
-            const area = document.getElementById(`edit-comment-${spotId}-${commentId}`);
-            const btn = document.getElementById(`save-comment-${spotId}-${commentId}`);
-            if (!area || !btn) return;
-            area.style.display = 'block';
-            btn.style.display = 'inline-block';
-            try { area.value = decodeURIComponent(initialTextEnc); } catch (e) { area.value = ''; }
-        };
-
-        window.saveEditComment = async (spotId, commentId) => {
-            const area = document.getElementById(`edit-comment-${spotId}-${commentId}`);
-            if (!area) return;
-            const newText = area.value.trim();
-            if (!newText) return showNotification("Wpisz treść.", 'error');
-            try {
-                const spotRef = spotsCollection.doc(spotId);
-                const doc = await spotRef.get();
-                if (!doc.exists) return;
-                const data = doc.data();
-                const updated = (data.comments || []).map(c => {
-                    const t = c.timestamp && c.timestamp.seconds ? c.timestamp.seconds * 1000 : new Date(c.timestamp).getTime();
-                    const cid = c.id ? c.id : `${c.authorId || 'anon'}-${t}`;
-                    if (cid === commentId && c.authorId === currentUser.uid) {
-                        return { ...c, text: newText };
-                    }
-                    return c;
-                });
-                await spotRef.update({ comments: updated });
-                showNotification("Komentarz zaktualizowany.", 'success');
-                renderSpots(getActiveFilters());
-            } catch (e) {
-                showNotification("Błąd edycji komentarza: " + e.message, 'error', 6000);
-            }
-        };
+        // Edycja komentarzy usunięta na prośbę użytkownika
 
         window.deleteComment = async (spotId, commentId) => {
             try {

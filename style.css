@@ -1,621 +1,258 @@
-/* --- ZMIENNE KOLORÓW --- */
-:root {
-    --neon-green: #39ff14;
-    --neon-pink: #ff00ff;
-    --neon-blue: #00f3ff;
-    --neon-red: #ff3131;
-    --neon-orange: #ffaa00;
-    --main-bg: #f0f0f0; 
-    --sidebar-bg: rgba(240, 240, 240, 0.95);
-    --text-color: #111;
-    --card-bg: white;
-    --form-bg: white;
-    --comment-bg: #f4f4f4;
-    --shadow-color: rgba(0,0,0,0.1);
-}
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SKEJTY — apka na deskę | skateboarding app</title>
+    <meta name="description" content="Skejty — apka dla skatów. Odkrywaj i dodawaj spoty skateboardowe na mapie.">
+    <meta name="keywords" content="skejty, apka na deskę, apka dla skatów, skejty app, skateboarding app, skate spots, mapa skejtów">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> 
+    
+    <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="shortcut icon" href="favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Skejty" />
+    <link rel="manifest" href="site.webmanifest" />
+    
+    <link rel="stylesheet" href="style.css?v=4">
 
-/* --- TRYB CIEMNY (Dark Mode) --- */
-body.dark-mode {
-    --neon-green: #39ff14;
-    --neon-pink: #ff00ff;
-    --neon-blue: #00f3ff;
-    --neon-red: #ff3131;
-    --neon-orange: #ffaa00;
-    --main-bg: #1a1a2e;
-    --sidebar-bg: rgba(26, 26, 46, 0.98);
-    --text-color: #f0f0f0;
-    --card-bg: #2d2d4d;
-    --form-bg: #3e3e6e;
-    --comment-bg: #4a4a7d;
-    --shadow-color: rgba(0, 243, 255, 0.1);
-}
+</head>
+<body class="dark-mode"> <div id="cursor"></div>
 
-/* --- OGÓLNE STYLI DLA OBU TRYBÓW --- */
-* { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
+    <div id="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="Full Screen">
+    </div>
 
-body {
-    font-family: 'Orbitron', sans-serif; 
-    background-color: var(--main-bg);
-    color: var(--text-color);
-    overflow-x: hidden;
-    height: 100vh;
-    transition: background-color 0.5s;
-}
+    <div id="loader">
+        <div class="stickman-loader-container">
+            <svg class="stickman-svg" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+                <!-- Defs for gradients/glows -->
+                <defs>
+                    <filter id="glow-neon">
+                        <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+                
+                <!-- Group for the whole rider + board to bob together -->
+                <g class="rider-group">
+                    <!-- Skateboard -->
+                    <g class="skateboard">
+                        <rect x="50" y="110" width="100" height="8" rx="4" fill="var(--neon-blue)" filter="url(#glow-neon)" />
+                        <circle class="wheel-spin-svg" cx="70" cy="122" r="8" stroke="var(--neon-pink)" stroke-width="3" fill="none" filter="url(#glow-neon)" />
+                        <circle class="wheel-spin-svg" cx="130" cy="122" r="8" stroke="var(--neon-pink)" stroke-width="3" fill="none" filter="url(#glow-neon)" />
+                        <!-- Spoke for wheel animation visibility -->
+                        <line class="wheel-spoke" x1="70" y1="122" x2="70" y2="114" stroke="var(--neon-pink)" stroke-width="2" />
+                        <line class="wheel-spoke" x1="130" y1="122" x2="130" y2="114" stroke="var(--neon-pink)" stroke-width="2" />
+                    </g>
+                    
+                    <!-- Stickman -->
+                    <g class="stickman">
+                        <!-- Leg on board (Front) -->
+                        <line x1="100" y1="80" x2="110" y2="110" stroke="var(--neon-green)" stroke-width="4" stroke-linecap="round" filter="url(#glow-neon)" />
+                        <!-- Leg pushing (Back) - Animated -->
+                        <line class="leg-push" x1="100" y1="80" x2="70" y2="110" stroke="var(--neon-green)" stroke-width="4" stroke-linecap="round" filter="url(#glow-neon)" />
+                        
+                        <!-- Body -->
+                        <line x1="100" y1="80" x2="95" y2="40" stroke="var(--neon-green)" stroke-width="4" stroke-linecap="round" filter="url(#glow-neon)" />
+                        
+                        <!-- Arms -->
+                        <line class="arm-wave" x1="95" y1="50" x2="125" y2="60" stroke="var(--neon-green)" stroke-width="4" stroke-linecap="round" filter="url(#glow-neon)" />
+                        <line class="arm-wave-back" x1="95" y1="50" x2="65" y2="60" stroke="var(--neon-green)" stroke-width="4" stroke-linecap="round" filter="url(#glow-neon)" />
+                        
+                        <!-- Head -->
+                        <circle cx="95" cy="30" r="10" stroke="var(--neon-green)" stroke-width="3" fill="none" filter="url(#glow-neon)" />
+                    </g>
+                </g>
+                
+                <!-- Speed lines (Static or Animated) -->
+                <line class="speed-line" x1="180" y1="100" x2="220" y2="100" stroke="var(--neon-blue)" stroke-width="2" opacity="0.5" />
+                <line class="speed-line" x1="170" y1="120" x2="200" y2="120" stroke="var(--neon-pink)" stroke-width="2" opacity="0.5" />
+            </svg>
+        </div>
+        <h2 style="margin-top: 20px; font-family: 'Orbitron'; animation: pulseText 1.5s infinite alternate;">SKEJTY ŁADOWANIE...</h2>
+    </div>
 
-/* --- CUSTOM CURSOR --- */
-#cursor {
-    position: fixed; width: 20px; height: 20px;
-    border: 2px solid var(--neon-pink); border-radius: 50%;
-    pointer-events: none; z-index: 9999;
-    transform: translate(-50%, -50%);
-    transition: width 0.2s, height 0.2s, background 0.2s;
-    mix-blend-mode: difference;
-}
-#cursor.hovered {
-    width: 50px; height: 50px;
-    background: rgba(255, 0, 255, 0.2); border-color: var(--neon-green);
-    mix-blend-mode: normal;
-}
+    <div id="notification-container"></div>
 
-/* --- CYBERPUNK SCROLLBAR --- */
-.cyber-scroll::-webkit-scrollbar {
-    height: 8px;
-}
-.cyber-scroll::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.1);
-    border-radius: 4px;
-}
-.cyber-scroll::-webkit-scrollbar-thumb {
-    background: linear-gradient(90deg, var(--neon-pink), var(--neon-blue));
-    border-radius: 4px;
-    box-shadow: 0 0 1px var(--neon-blue);
-}
-.cyber-scroll {
-    scrollbar-width: thin;
-    scrollbar-color: var(--neon-pink) rgba(0,0,0,0.1);
-}
+    <div class="app-container">
+        <div class="sidebar" id="mainSidebar">
+            <h1 style="cursor: pointer; transition: text-shadow 0.3s;" onclick="resetMap()" title="Wróć do widoku mapy">SKEJ<span style="color:var(--neon-pink)">TY</span></h1>
+            
+            <div id="authContent" class="sidebar-section active">
+                 <h2 style="margin-bottom: 15px; color: var(--neon-blue);">Zarządzanie Kontem</h2>
+                 <div id="authSection">
+                     <div id="authStatus">Ładowanie...</div>
+                     <div class="auth-actions">
+                         <button class="btn-neon btn-green" id="showLoginBtn" data-hover>Zaloguj</button>
+                         <button class="btn-neon btn-orange" id="showRegisterBtn" data-hover>Rejestruj</button>
+                         <button class="btn-neon btn-red" id="logoutBtn" style="display:none;" data-hover>Wyloguj</button>
+                     </div>
+                     
+                     <div id="loginForm" style="display:none;">
+                        <input type="email" id="loginEmail" class="input-cyber" placeholder="Email" data-hover>
+                        <input type="password" id="loginPassword" class="input-cyber" placeholder="Hasło" data-hover>
+                        <button class="btn-neon btn-green" onclick="handleLogin()" data-hover>ZALOGUJ SIĘ</button>
+                    </div>
 
-/* --- LOADER --- */
-#loader {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: var(--main-bg); display: flex; justify-content: center; align-items: center;
-    z-index: 10000; flex-direction: column;
-    transition: background-color 0.5s;
-}
-/* --- LOADER SVG --- */
-.stickman-loader-container {
-    width: 200px;
-    height: 150px;
-}
-.stickman-svg {
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-}
-.rider-group {
-    animation: riderBobSVG 1s ease-in-out infinite;
-}
-.wheel-spin-svg, .wheel-spoke {
-    transform-origin: center;
-    animation: wheelSpinSVG 0.5s linear infinite;
-    transform-box: fill-box;
-}
-.leg-push {
-    transform-origin: 100px 80px;
-    animation: legPushSVG 1s ease-in-out infinite;
-}
-.arm-wave {
-    transform-origin: 95px 50px;
-    animation: armWaveSVG 1s ease-in-out infinite;
-}
-.arm-wave-back {
-    transform-origin: 95px 50px;
-    animation: armWaveBackSVG 1s ease-in-out infinite;
-}
-.speed-line {
-    animation: speedLineSVG 0.5s linear infinite;
-}
+                     <div id="registerForm" style="display:none;">
+                        <input type="text" id="registerNick" class="input-cyber" placeholder="Twój Nick/Ksywa" data-hover>
+                        <input type="email" id="registerEmail" class="input-cyber" placeholder="Email (np. skater@gmail.com)" data-hover>
+                        <input type="password" id="registerPassword" class="input-cyber" placeholder="Hasło (min. 6 znaków)" data-hover>
+                        <button class="btn-neon btn-orange" onclick="handleRegister()" data-hover>ZAREJESTRUJ</button>
+                    </div>
+                     
+                     <div id="accountSettings" style="display:none; margin-top: 15px; border-top: 1px dashed var(--neon-blue); padding-top: 15px;">
+                        <h3 style="color: var(--neon-pink); margin-bottom: 10px;">Ustawienia konta</h3>
+                        <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+                            <input type="text" id="newNickInput" class="input-cyber" placeholder="Nowy nick">
+                            <button class="btn-neon btn-blue" id="changeNickBtn">Zmień nick</button>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <input type="password" id="newPasswordInput" class="input-cyber" placeholder="Nowe hasło (min. 6 znaków)">
+                            <button class="btn-neon btn-orange" id="changePasswordBtn">Zmień hasło</button>
+                        </div>
+                        <div id="pwaInstallSection" style="display:none; margin-top: 15px;">
+                            <h3 style="color: var(--neon-blue); margin-bottom: 8px;">Dodaj aplikację na ekran główny</h3>
+                            <button class="btn-neon btn-blue" id="installPwaBtn">Zainstaluj aplikację</button>
+                        </div>
+                     </div>
+                 </div>
+            </div>
 
-@keyframes riderBobSVG {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
-}
-@keyframes wheelSpinSVG {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-@keyframes legPushSVG {
-    0% { transform: rotate(0deg); }
-    50% { transform: rotate(25deg); }
-    100% { transform: rotate(0deg); }
-}
-@keyframes armWaveSVG {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(-10deg); }
-}
-@keyframes armWaveBackSVG {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(10deg); }
-}
-@keyframes speedLineSVG {
-    0% { transform: translateX(0); opacity: 0; }
-    50% { opacity: 1; }
-    100% { transform: translateX(-50px); opacity: 0; }
-}
-@keyframes pulseText {
-    from { opacity: 0.6; text-shadow: 0 0 5px var(--neon-blue); }
-    to { opacity: 1; text-shadow: 0 0 15px var(--neon-blue), 0 0 25px var(--neon-pink); }
-}
+            <div id="spotsListContent" class="sidebar-section">
+                <h2 style="margin-bottom: 15px; color: var(--neon-pink);">Lista Spotów</h2>
+                <div id="loginRequiredGlobal" class="login-required" style="display:none;">Musisz się zalogować!</div>
 
-/* --- UI LAYOUT (MOBILE FORCED) --- */
-.app-container {
-    display: grid; 
-    opacity: 0;
-    /* Mobile Forced */
-    grid-template-columns: 1fr; 
-    grid-template-rows: calc(100vh - 60px) 0; 
-    overflow: hidden;
-}
+                 <div id="filterSection" style="margin-top: 0; padding: 15px 0; border-top: 1px dashed var(--neon-blue); border-bottom: 1px dashed var(--neon-blue); margin-bottom: 15px;">
+                    <h3 style="color: var(--neon-orange); margin-bottom: 10px;">🔍 Filtruj Spoty</h3>
+                    
+                    <label style="font-size: 0.9rem; font-weight: bold;">Poziom Przypału:</label>
+                    <select id="filterBust" style="width: 100%; padding: 8px; margin-bottom: 10px; font-family: 'Roboto Mono', monospace;" data-hover>
+                        <option value="all">Wszystkie</option>
+                        <option value="safe">Bezpiecznie (Chill)</option>
+                        <option value="medium">Średni (Wbijaj szybko)</option>
+                        <option value="high">Duży (Ochrona goni)</option>
+                    </select>
 
-/* --- SIDEBAR (MOBILE FORCED) --- */
-.sidebar {
-    /* Mobile Forced */
-    position: fixed; bottom: 60px; left: 0; 
-    width: 100%; height: calc(100vh - 60px); 
-    z-index: 5000; 
-    transform: translateY(100%); 
-    transition: transform 0.5s ease-out;
-    border-right: none;
-    border-top: 2px solid var(--neon-pink);
-    background: var(--sidebar-bg);
-    padding: 20px;
-    padding-bottom: 70px; 
-    overflow-y: auto;
-    display: flex; flex-direction: column;
-    backdrop-filter: blur(10px);
-}
-.sidebar.active { transform: translateY(0); }
+                    <label style="font-size: 0.9rem; font-weight: bold;">Tagi/Elementy:</label>
+                    <div class="checkbox-group filter-tags-group" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;">
+                        <label class="checkbox-item"><input type="checkbox" class="filter-tag" value="Murki"> Murki</label>
+                        <label class="checkbox-item"><input type="checkbox" class="filter-tag" value="Rurki"> Rurki</label>
+                        <label class="checkbox-item"><input type="checkbox" value="Schody" class="filter-tag"> Schody</label>
+                        <label class="checkbox-item"><input type="checkbox" value="Bank" class="filter-tag"> Bank</label>
+                        <label class="checkbox-item"><input type="checkbox" value="Flat" class="filter-tag"> Flat</label>
+                        <label class="checkbox-item"><input type="checkbox" value="Bowl" class="filter-tag"> Bowl</label>
+                        <label class="checkbox-item"><input type="checkbox" value="Inne" class="filter-tag"> Inne</label>
+                    </div>
+                    <button class="btn-neon btn-blue" id="applyFilterBtn" style="margin-top: 15px;" data-hover>ZASTOSUJ FILTR</button>
+                </div>
+                <div style="font-family: 'Orbitron'; color: #666; margin: 10px 0; text-align: right;">
+                    Liczba spotów: <span id="spotCount" style="color: var(--neon-pink)">0</span>
+                </div>
+                <div class="spots-list" id="spotsList">
+                </div>
+            </div>
+        </div>
+        
+        <div id="map-container" class="map-wrapper"> 
+            <div id="map" data-hover></div>
+            
+            <div class="search-overlay">
+                <input type="text" id="citySearchInput" class="input-cyber" placeholder="Wpisz miasto / wieś / ulicę..." data-hover>
+                <button class="search-btn" id="citySearchBtn" data-hover>SZUKAJ</button>
+            </div>
 
-/* --- MAP CONTAINER --- */
-#map-container { position: relative; width: 100%; height: 100%; }
-.map-wrapper { grid-row: 1 / 2; height: 100%; }
-#map { width: 100%; height: 100%; z-index: 1; }
+            <button class="geo-btn" id="locateUserBtn" title="Znajdź mnie (GPS)" data-hover>📍</button>
+            
+            <div id="loginRequiredFab" class="login-required" style="display:none; position: fixed; bottom: 150px; right: 20px; z-index: 5001; padding: 5px 10px; font-size: 0.8rem; pointer-events: none;">Musisz się zalogować!</div>
+            <div class="fab" id="addSpotFab" data-hover style="display:none;">+</div>
+            
+            <div id="spot-form" style="display:none; position: fixed; bottom: 150px; right: 20px; z-index: 2000; width: 90%; max-width: 350px; background: var(--form-bg); padding: 15px; border: 2px solid var(--neon-pink); box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);">
+                
+                <div class="close-form-btn" onclick="toggleForm(false)" data-hover>&times;</div>
+                <div style="font-size: 0.8rem; margin-bottom: 5px; color: var(--neon-orange); display: none;" id="editModeLabel">TRYB EDYCJI</div>
+                <input type="text" id="spotName" class="input-cyber" placeholder="Nazwa spota (np. Schody Kina)" data-hover>
+                <textarea id="spotDesc" class="textarea-cyber" rows="2" placeholder="Opis nawierzchni..." data-hover></textarea>
+                
+                <label style="font-size: 0.8rem; font-weight: bold;">Co tam jest?</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-item"><input type="checkbox" value="Murki" class="spot-tag"> Murki</label>
+                    <label class="checkbox-item"><input type="checkbox" value="Rurki" class="spot-tag"> Rurki</label>
+                    
+                    <label class="checkbox-item"><input type="checkbox" value="Schody" class="spot-tag" id="tagSchody"> Schody</label>
+                    <div id="stairsCountContainer" style="display:none; margin-bottom: 10px; background: rgba(0,0,0,0.05); padding: 5px; border-radius: 5px;">
+                        <label style="font-size: 0.8rem; font-weight: bold;">Liczba schodów: <span id="stairsValue" style="color:var(--neon-pink)">8</span></label>
+                        <input type="range" id="stairsRange" min="1" max="16" value="8">
+                    </div>
 
-/* --- POWIADOMIENIA --- */
-#notification-container {
-    position: fixed;
-    bottom: 20px; 
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 9000; 
-    pointer-events: none; 
-    display: flex;
-    flex-direction: column-reverse; 
-    gap: 10px;
-    width: 90%; 
-    max-width: 450px;
-}
+                    <label class="checkbox-item"><input type="checkbox" value="Bank" class="spot-tag"> Bank</label>
+                    <label class="checkbox-item"><input type="checkbox" value="Flat" class="spot-tag"> Flat</label>
+                    <label class="checkbox-item"><input type="checkbox" value="Bowl" class="spot-tag"> Bowl</label>
+                    
+                    <label class="checkbox-item"><input type="checkbox" value="Inne" class="spot-tag" id="tagInne"> Inne</label>
+                    <div id="otherInputContainer" style="display:none; margin-bottom: 10px;">
+                        <input type="text" id="otherInputValue" class="input-cyber" placeholder="Wpisz co to za element...">
+                    </div>
+                </div>
 
-.notification {
-    padding: 15px 20px;
-    border: 2px solid;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 0.9rem;
-    color: #fff; 
-    background: var(--text-color);
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
-    transform: translateY(100%); 
-    pointer-events: auto;
-}
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.8rem; font-weight: bold;">Przypał:</label>
+                        <select id="spotBust" class="select-cyber" style="margin-bottom: 0;">
+                            <option value="safe">Bezpiecznie (Chill)</option>
+                            <option value="medium">Średni (Wbijaj szybko)</option>
+                            <option value="high">Duży (Ochrona goni)</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <label class="checkbox-item" style="height: 42px; margin-top: 18px;">
+                            <input type="checkbox" id="spotLights"> 💡 Lampy?
+                        </label>
+                    </div>
+                </div>
 
-.notification.success { border-color: var(--neon-green); background: #1f3d24; }
-.notification.error { border-color: var(--neon-red); background: #4d2d2d; }
-.notification.info { border-color: var(--neon-blue); background: #2d3d4d; }
+                <label style="font-size: 0.8rem; font-weight: bold; margin-top: 10px; display: block; color: var(--neon-blue);">Zdjęcia spotu (Galeria):</label>
+                <div style="font-size: 0.7rem; color: #aaa; margin-bottom: 5px;">Dodaj wiele zdjęć naraz. Przesuwaj palcem aby zobaczyć wszystkie.</div>
+                <input type="file" id="galleryUpload" multiple accept="image/*" data-hover>
+                <div id="galleryPreviewContainer" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;"></div>
+                <div style="font-size: 0.7rem; color: #888; margin-bottom: 10px;">*Kliknij na mapę aby zmienić lokalizację</div>
+                <input type="hidden" id="spotLat">
+                <input type="hidden" id="spotLng">
+                <button class="btn-neon btn-green" id="saveSpotBtn" data-hover>ZAPISZ NA MAPIE</button>
+                <button class="btn-neon btn-orange" id="cancelEditBtn" style="display:none;" data-hover>ANULUJ</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mobile-nav" id="mobileNav">
+        <div class="nav-item" id="navKonto" data-target="auth">
+            <i class="fas fa-user"></i>
+            <span>Konto</span>
+        </div>
+        <div class="nav-item active" id="navMapa" data-target="map">
+            <i class="fas fa-map-location-dot"></i>
+            <span>Mapa</span>
+        </div>
+        <div class="nav-item" id="navSpoty" data-target="spotsList">
+            <i class="fas fa-layer-group"></i>
+            <span>Spoty</span>
+        </div>
+    </div>
 
-/* --- SIDEBAR SECTIONS --- */
-.sidebar-section {
-    display: none; 
-    height: 100%;
-    overflow-y: auto;
-    padding-top: 20px;
-}
-.sidebar-section.active {
-    display: block;
-}
-
-/* --- Floating Action Button (FAB) --- */
-.fab {
-    position: fixed;
-    bottom: 80px; /* Mobile Forced */
-    right: 20px;
-    width: 55px; height: 55px;
-    background: var(--neon-pink);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 28px;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-    z-index: 2000;
-    transition: transform 0.3s, background 0.3s;
-    animation: floatY 3s ease-in-out infinite;
-}
-.fab:hover {
-    background: var(--neon-green);
-}
-.fab.form-active { 
-    background: var(--neon-red); 
-    transform: rotate(45deg); 
-    font-size: 24px; 
-}
-
-/* --- NEON BUTTON STYLES --- */
-.btn-neon {
-    font-family: 'Orbitron', sans-serif;
-    font-weight: bold;
-    padding: 10px 15px;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    border: 2px solid;
-    border-radius: 5px;
-    cursor: pointer !important;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
-    background: transparent;
-    width: 100%; 
-}
-
-.btn-neon.btn-green {
-    color: var(--neon-green);
-    border-color: var(--neon-green);
-    text-shadow: 0 0 1px var(--neon-green);
-}
-
-.btn-neon.btn-orange {
-    color: var(--neon-orange);
-    border-color: var(--neon-orange);
-    text-shadow: 0 0 1px var(--neon-orange);
-}
-
-.btn-neon.btn-red {
-    color: var(--neon-red);
-    border-color: var(--neon-red);
-    text-shadow: 0 0 1px var(--neon-red);
-}
-
-.btn-neon.btn-blue {
-    color: var(--neon-blue);
-    border-color: var(--neon-blue);
-    text-shadow: 0 0 1px var(--neon-blue);
-}
-
-.btn-neon:hover {
-    box-shadow: 0 0 5px var(--neon-pink);
-    color: var(--text-color); 
-    text-shadow: none;
-    transform: translateY(-2px);
-}
-.btn-neon { animation: pulseGlow 5s ease-in-out infinite; }
-@keyframes pulseGlow { 0% { box-shadow: 0 0 3px rgba(0,0,0,0.5); } 50% { box-shadow: 0 0 8px var(--neon-pink); } 100% { box-shadow: 0 0 3px rgba(0,0,0,0.5); } }
-@keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-
-.btn-neon.btn-green:hover { background: var(--neon-green); }
-.btn-neon.btn-orange:hover { background: var(--neon-orange); }
-.btn-neon.btn-red:hover { background: var(--neon-red); }
-.btn-neon.btn-blue:hover { background: var(--neon-blue); }
-
-.auth-actions {
-    display: flex;
-    gap: 10px;
-}
-.auth-actions .btn-neon {
-    flex: 1;
-}
-.auth-actions .btn-red {
-    width: auto;
-    flex: none;
-}
-
-/* --- STYLE WYSZUKIWANIA I GEOLOKALIZACJI --- */
-.search-overlay {
-    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-    display: flex; gap: 10px; z-index: 1000; 
-    width: 95%; max-width: 95%; /* Mobile Forced */
-}
-.search-overlay input {
-    flex: 1 1 auto; min-width: 0; padding: 10px 15px;
-    background: rgba(17, 17, 17, 0.8); color: white;
-    border: 2px solid var(--neon-blue); border-radius: 5px;
-    font-family: 'Roboto Mono', monospace; font-size: 1rem;
-}
-.search-overlay .search-btn {
-    padding: 10px 15px;
-    background: var(--neon-blue); color: white;
-    border: none; border-radius: 5px;
-    font-family: 'Orbitron', sans-serif; font-size: 1rem;
-    cursor: pointer !important; transition: background 0.3s;
-}
-.search-overlay .search-btn:hover { background: var(--neon-pink); }
-
-.geo-btn {
-    position: absolute; top: 80px; right: 20px;
-    width: 40px; height: 40px;
-    background: rgba(17, 17, 17, 0.7); color: var(--neon-green);
-    border: 2px solid var(--neon-green); border-radius: 50%;
-    display: flex; justify-content: center; align-items: center;
-    font-size: 20px; cursor: pointer !important; z-index: 1000;
-    transition: background 0.3s, color 0.3s;
-    animation: floatY 3.5s ease-in-out infinite;
-}
-.geo-btn:hover {
-    background: var(--neon-green); color: black;
-    box-shadow: 0 0 5px var(--neon-green);
-}
-
-/* --- MOBILE NAV BAR (FORCED) --- */
-.mobile-nav {
-    display: flex; position: fixed; bottom: 0; left: 0;
-    width: 100%; height: 60px;
-    background: rgba(17, 17, 17, 0.95);
-    border-top: 2px solid var(--neon-pink);
-    z-index: 6000; justify-content: space-around; align-items: center;
-}
-
-.nav-item {
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    color: #ccc; font-size: 0.65rem;
-    font-family: 'Orbitron'; padding: 5px; cursor: pointer !important; transition: color 0.2s;
-}
-.nav-item i {
-    font-size: 20px; margin-bottom: 3px;
-    text-shadow: 0 0 2px rgba(255, 255, 255, 0.5); 
-}
-.nav-item.active i {
-    color: var(--neon-green);
-    text-shadow: 0 0 5px var(--neon-green), 0 0 10px rgba(57, 255, 20, 0.5);
-}
-.nav-item.active span { color: var(--neon-green); }
-
-/* --- SPOT FORM (MOBILE FORCED) --- */
-#spot-form {
-    bottom: 60px !important; 
-    right: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    max-width: none !important; 
-    max-height: calc(100vh - 70px) !important; 
-    overflow-y: auto !important; 
-    border-radius: 10px 10px 0 0 !important; 
-    border: 2px solid var(--neon-pink) !important;
-    border-bottom: none !important;
-    padding: 15px;
-    padding-bottom: 20px !important;
-    padding-top: 40px !important;
-    position: fixed; z-index: 2000; background: var(--form-bg);
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
-    display: none;
-}
-
-/* --- STYL PRZYCISKU ZAMYKAJĄCEGO FORMULARZ --- */
-.close-form-btn {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    font-size: 24px;
-    color: var(--neon-red);
-    cursor: pointer;
-    z-index: 2010;
-    transition: color 0.2s;
-    line-height: 1;
-}
-.close-form-btn:hover {
-    color: var(--neon-pink);
-}
-
-/* --- STYL DLA SLIDERA (SUWAKA) I INPUTÓW DODATKOWYCH --- */
-input[type=range] {
-    -webkit-appearance: none; width: 100%; background: transparent; margin: 10px 0;
-}
-input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
-    background: var(--neon-green); cursor: pointer; margin-top: -6px;
-    box-shadow: 0 0 2px var(--neon-green);
-}
-input[type=range]::-webkit-slider-runnable-track {
-    width: 100%; height: 4px; cursor: pointer; background: var(--neon-blue); border-radius: 2px;
-}
-/* Dla Firefox */
-input[type=range]::-moz-range-thumb {
-    height: 16px; width: 16px; border-radius: 50%;
-    background: var(--neon-green); cursor: pointer; border: none;
-    box-shadow: 0 0 2px var(--neon-green);
-}
-input[type=range]::-moz-range-track {
-    width: 100%; height: 4px; cursor: pointer; background: var(--neon-blue); border-radius: 2px;
-}
-
-/* --- STYLE KART SPOTÓW --- */
-.spot-card {
-    background: var(--card-bg);
-    border: 2px solid var(--neon-pink);
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 20px;
-    box-shadow: 0 0 5px var(--shadow-color);
-    transition: all 0.3s;
-    cursor: pointer; 
-}
-.spot-card.highlight {
-    border-color: var(--neon-green);
-    box-shadow: 0 0 8px var(--neon-green);
-}
-
-.spot-img-container {
-    width: 100%; height: 200px; overflow: hidden;
-    border-radius: 5px; margin-bottom: 10px;
-    cursor: pointer;
-    /* Dodajemy flex dla centrowania, na wypadek gdy obrót zmieni proporcje */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.spot-img {
-    width: 100%; height: 100%; object-fit: cover;
-    transition: transform 0.5s;
-    /* Zapewniamy, że obrót jest poprawnie wyświetlany */
-}
-.spot-img:hover { transform: scale(1.05); }
-
-.bust-level {
-    font-family: 'Orbitron'; font-size: 0.8rem;
-    padding: 5px 8px; border-radius: 3px; font-weight: bold;
-}
-.bust-safe { background: var(--neon-green); color: black; }
-.bust-medium { background: var(--neon-orange); color: black; }
-.bust-high { background: var(--neon-red); color: white; }
-
-.tags-container { margin: 8px 0; display: flex; flex-wrap: wrap; gap: 5px; }
-.tag {
-    font-size: 0.7rem; padding: 3px 6px; border-radius: 3px;
-    border: 1px solid var(--neon-pink); color: var(--neon-pink);
-    font-family: 'Orbitron';
-}
-
-.card-actions { margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
-.card-btn {
-    padding: 8px 12px; border: 1px solid var(--neon-blue);
-    background: transparent; color: var(--neon-blue);
-    cursor: pointer !important; border-radius: 5px;
-    font-size: 0.8rem; transition: all 0.2s;
-}
-.card-btn:hover { background: var(--neon-blue); color: white; }
-.card-actions .hidden { display: none; }
-
-.comments-section { 
-    margin-top: 15px; border-top: 1px dashed var(--neon-blue); 
-    padding-top: 10px; 
-}
-.comment {
-    background: var(--comment-bg); padding: 8px; border-radius: 5px;
-    font-size: 0.8rem; margin-bottom: 5px;
-}
-
-/* --- Lightbox --- */
-#lightbox {
-    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.9); z-index: 9990; justify-content: center; align-items: center;
-    opacity: 0; transition: opacity 0.3s;
-}
-#lightbox-img {
-    max-width: 90%; max-height: 90%; border: 3px solid white;
-}
-
-.input-cyber, .textarea-cyber, .select-cyber {
-    width: 100%; padding: 10px; margin-bottom: 10px;
-    background: #0c0f13; color: var(--text-color);
-    border-radius: 6px;
-    border: 1px solid rgba(0, 243, 255, 0.3);
-    outline: none;
-    font-family: 'Roboto Mono', sans-serif;
-    transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
-    caret-color: var(--neon-pink);
-}
-.input-cyber::placeholder, .textarea-cyber::placeholder {
-    color: #889; letter-spacing: 0.5px;
-}
-.input-cyber:focus, .textarea-cyber:focus, .select-cyber:focus {
-    border-color: var(--neon-blue);
-    box-shadow: 0 0 6px var(--neon-blue), 0 0 10px rgba(0, 243, 255, 0.25);
-    background: #0e1116;
-}
-.select-cyber {
-    appearance: none;
-    background-image: linear-gradient(90deg, rgba(255,0,255,0.12), rgba(0,243,255,0.12));
-}
-.search-overlay .input-cyber {
-    border-color: rgba(255, 0, 255, 0.25);
-}
-.search-overlay .input-cyber:focus {
-    border-color: var(--neon-pink);
-    box-shadow: 0 0 6px var(--neon-pink), 0 0 10px rgba(255, 0, 255, 0.25);
-}
-.logo {
-    display: flex; align-items: center;
-    margin-bottom: 10px;
-    cursor: pointer;
-    user-select: none;
-    filter: drop-shadow(0 0 4px var(--neon-blue));
-    transition: filter 0.2s, transform 0.2s;
-}
-.logo:hover { filter: drop-shadow(0 0 8px var(--neon-pink)); transform: translateY(-2px); }
-.logo img { max-width: 180px; height: auto; display: block; }
-#galleryUpload { 
-    width: 100%; 
-    padding: 10px; 
-    border: 1px dashed var(--neon-pink); 
-    border-radius: 6px; 
-    background: #0c0f13; 
-    color: var(--text-color);
-}
-.comment-input {
-    width: 100%;
-    padding: 10px;
-    border: 1px dashed var(--neon-pink);
-    border-radius: 6px;
-    background: #0c0f13;
-    color: var(--text-color);
-    resize: vertical;
-}
-.comment-input:focus {
-    outline: none;
-    border-color: var(--neon-pink);
-    box-shadow: 0 0 6px var(--neon-pink), 0 0 10px rgba(255,0,255,0.25);
-}
-.login-required {
-    border: 2px dashed var(--neon-red);
-    background: rgba(255, 49, 49, 0.08);
-    color: var(--neon-red);
-    padding: 10px;
-    border-radius: 6px;
-    font-family: 'Orbitron';
-    text-align: center;
-    margin-top: 8px;
-    box-shadow: 0 0 4px rgba(255, 49, 49, 0.3);
-}
-
-.custom-marker-icon {
-    width: 30px; height: 30px;
-    background: rgba(10, 10, 12, 0.6);
-    color: var(--marker-color);
-    border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
-    filter: drop-shadow(0 0 4px var(--marker-color));
-    transition: transform 0.2s, filter 0.2s;
-    animation: beaconGlow 6s ease-in-out infinite;
-}
-.custom-marker-icon:hover { 
-    transform: translateY(-2px) scale(1.06);
-    filter: drop-shadow(0 0 8px var(--marker-color));
-}
-@keyframes beaconGlow { 0%,100% { filter: drop-shadow(0 0 4px var(--marker-color)); } 50% { filter: drop-shadow(0 0 9px var(--marker-color)); } }
-.custom-marker-icon svg {
-    width: 22px; height: 22px;
-    stroke: currentColor; fill: none; 
-    stroke-width: 2.5; 
-    stroke-linecap: round; stroke-linejoin: round;
-}
-.custom-marker-icon.marker-bank  { --marker-color: var(--neon-pink); }
-.custom-marker-icon.marker-rura  { --marker-color: var(--neon-orange); }
-.custom-marker-icon.marker-murek { --marker-color: var(--neon-blue); }
-.custom-marker-icon.marker-schody{ --marker-color: var(--neon-green); }
-.custom-marker-icon.marker-bowl  { --marker-color: var(--neon-red); }
-.custom-marker-icon.marker-flat  { --marker-color: var(--neon-blue); }
-.custom-marker-icon.marker-inne  { --marker-color: var(--neon-pink); }
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <script src="script.js?v=3"></script>
+</body>
+</html>

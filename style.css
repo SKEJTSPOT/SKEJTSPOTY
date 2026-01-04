@@ -100,51 +100,108 @@ body {
     animation: wheelSpinSVG 0.5s linear infinite;
     transform-box: fill-box;
 }
-.leg-push {
-    transform-origin: 100px 80px;
-    animation: legPushSVG 1s ease-in-out infinite;
+
+/* --- RIG ANIMATIONS --- */
+/* Back Leg (Pushing) */
+.leg-back-group {
+    transform-origin: 100px 80px; /* Hip */
+    animation: legBackCycle 1.2s ease-in-out infinite;
 }
-.arm-wave {
-    transform-origin: 95px 50px;
-    animation: armWaveSVG 1s ease-in-out infinite;
-}
-.arm-wave-back {
-    transform-origin: 95px 50px;
-    animation: armWaveBackSVG 1s ease-in-out infinite;
-}
-.speed-line {
-    animation: speedLineSVG 0.5s linear infinite;
+.shin-back {
+    transform-origin: 80px 95px; /* Knee */
+    animation: shinBackCycle 1.2s ease-in-out infinite;
 }
 
+/* Front Leg (Balance) */
+.leg-front-group {
+    transform-origin: 100px 80px; /* Hip */
+    animation: legFrontCycle 1.2s ease-in-out infinite;
+}
+
+/* Arms */
+.arm-front-group {
+    transform-origin: 100px 50px; /* Shoulder */
+    animation: armFrontCycle 1.2s ease-in-out infinite;
+}
+.forearm-front {
+    transform-origin: 120px 60px; /* Elbow */
+    animation: forearmFrontCycle 1.2s ease-in-out infinite;
+}
+
+.arm-back-group {
+    transform-origin: 100px 50px; /* Shoulder */
+    animation: armBackCycle 1.2s ease-in-out infinite;
+}
+.forearm-back {
+    transform-origin: 80px 60px; /* Elbow */
+    animation: forearmBackCycle 1.2s ease-in-out infinite;
+}
+
+.speed-line {
+    animation: speedLineSVG 0.3s linear infinite;
+}
+
+/* KEYFRAMES */
 @keyframes riderBobSVG {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
+    50% { transform: translateY(-4px); }
 }
 @keyframes wheelSpinSVG {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
-@keyframes legPushSVG {
-    0% { transform: rotate(0deg); }
-    50% { transform: rotate(25deg); }
+
+/* Leg Pushing Cycle */
+@keyframes legBackCycle {
+    0% { transform: rotate(0deg); } /* Start push */
+    50% { transform: rotate(20deg); } /* End push */
+    75% { transform: rotate(-15deg); } /* Recovery (swing forward) */
     100% { transform: rotate(0deg); }
 }
-@keyframes armWaveSVG {
+@keyframes shinBackCycle {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(0deg); } /* Straight leg pushing */
+    75% { transform: rotate(45deg); } /* Bend knee during recovery */
+    100% { transform: rotate(0deg); }
+}
+
+/* Front Leg adjusting to balance */
+@keyframes legFrontCycle {
     0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(-5deg); }
+}
+
+/* Arms swinging */
+@keyframes armFrontCycle {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(-20deg); } /* Swing back */
+    100% { transform: rotate(0deg); }
+}
+@keyframes forearmFrontCycle {
+    0% { transform: rotate(0deg); }
     50% { transform: rotate(-10deg); }
+    100% { transform: rotate(0deg); }
 }
-@keyframes armWaveBackSVG {
-    0%, 100% { transform: rotate(0deg); }
+
+@keyframes armBackCycle {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(20deg); } /* Swing forward */
+    100% { transform: rotate(0deg); }
+}
+@keyframes forearmBackCycle {
+    0% { transform: rotate(0deg); }
     50% { transform: rotate(10deg); }
+    100% { transform: rotate(0deg); }
 }
+
 @keyframes speedLineSVG {
     0% { transform: translateX(0); opacity: 0; }
     50% { opacity: 1; }
-    100% { transform: translateX(-50px); opacity: 0; }
+    100% { transform: translateX(-80px); opacity: 0; }
 }
 @keyframes pulseText {
-    from { opacity: 0.6; text-shadow: 0 0 5px var(--neon-blue); }
-    to { opacity: 1; text-shadow: 0 0 15px var(--neon-blue), 0 0 25px var(--neon-pink); }
+    from { opacity: 0.8; text-shadow: 0 0 5px var(--neon-green); }
+    to { opacity: 1; text-shadow: 0 0 20px var(--neon-green), 0 0 30px var(--neon-green); }
 }
 
 /* --- UI LAYOUT (MOBILE FORCED) --- */

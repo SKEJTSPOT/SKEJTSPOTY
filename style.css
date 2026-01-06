@@ -294,7 +294,7 @@ body {
     display: none; 
     height: 100%;
     overflow-y: auto;
-    overflow-x: visible;
+    overflow-x: visible; /* To zapobiega ucinaniu logo na boki */
     padding-top: 20px;
 }
 .sidebar-section.active {
@@ -740,3 +740,4 @@ input[type=range]::-moz-range-track {
 .cluster-marker svg {
     width: 34px; height: 18px; stroke: var(--neon-pink); fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
 }
+

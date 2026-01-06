@@ -1,0 +1,10 @@
+/* 
+Rozpiska: Logo
+- Co zawiera: style logo (.app-logo, .app-logo-img), skalowanie przez --logo-scale
+- Jak zmienić: edytuj max-width, padding, lub ustaw CSS zmienną --logo-scale
+- Co wysłać do innego chatu: plik assets/css/logo.css i ewentualnie wartość --logo-scale
+*/
+
+:root { --logo-scale: 1.2; }
+.app-logo { position: relative; z-index: 10; padding: 6px 0; display: flex; justify-content: center; align-items: center; overflow: visible; }
+.app-logo-img { max-width: 180px; width: auto; height: auto; filter: none; display: block; margin: 0 auto; transform: scale(var(--logo-scale)); transform-origin: center; image-rendering: crisp-edges; }

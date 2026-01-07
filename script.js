@@ -81,6 +81,22 @@ function showInstallPromptIfAvailable() {
         showNotification("Dodaj aplikację na ekran główny", 'info', 4000);
     }
 }
+function triggerInstallOrGuide() {
+    if (deferredPwaPrompt) {
+        deferredPwaPrompt.prompt();
+        deferredPwaPrompt.userChoice.then(choice => {
+            if (choice.outcome === 'accepted') {
+                showNotification("Instalacja rozpoczęta.", 'success', 3000);
+            } else {
+                showNotification("Instalacja anulowana.", 'info', 3000);
+            }
+        }).catch(() => {});
+        deferredPwaPrompt = null;
+        if (installSectionEl) installSectionEl.style.display = 'none';
+    } else {
+        showNotification("Na iOS: Udostępnij → Dodaj do ekranu głównego. Na Android: Menu przeglądarki → Zainstaluj aplikację.", 'info', 6000);
+    }
+}
 if (installPwaBtn) {
     installPwaBtn.addEventListener('click', async () => {
         if (!deferredPwaPrompt) return;
@@ -1314,6 +1330,11 @@ const mobileNav = document.getElementById('mobileNav');
 const navKonto = document.getElementById('navKonto');
 const navMapa = document.getElementById('navMapa');
 const navSpoty = document.getElementById('navSpoty');
+const navUstawienia = document.getElementById('navUstawienia');
+const settingsContent = document.getElementById('settingsContent');
+const settingsTilesDownload = document.querySelectorAll('.settings-tile-download');
+const settingsTilesTheme = document.querySelectorAll('.settings-tile-theme');
+const settingsDownloadPanels = document.querySelectorAll('.settings-download-panel');
 
 // Zwraca true dla trybu mobilnego (tutaj wymuszony)
 function isMobile() {
@@ -1343,6 +1364,9 @@ function switchSidebarSection(target) {
         navSpoty.classList.add('active');
     } else if (target === 'map') {
         navMapa.classList.add('active');
+    } else if (target === 'settings') {
+        settingsContent.classList.add('active');
+        navUstawienia.classList.add('active');
     }
 }
 
@@ -1409,6 +1433,54 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSpots(getActiveFilters()); 
         initialLoad = false;
     });
+});
+
+// Theme
+function applyThemeFromStorage() {
+    const pref = localStorage.getItem('skejty_theme') || 'dark';
+    if (pref === 'dark') document.body.classList.add('dark-mode');
+    else document.body.classList.remove('dark-mode');
+    settingsTilesTheme.forEach(tile => {
+        const span = tile.querySelector('span');
+        if (span) span.textContent = `Motyw: ${document.body.classList.contains('dark-mode') ? 'Ciemny' : 'Jasny'}`;
+        const icon = tile.querySelector('i');
+        if (icon) icon.className = document.body.classList.contains('dark-mode') ? 'fas fa-moon' : 'fas fa-sun';
+    });
+}
+applyThemeFromStorage();
+settingsTilesTheme.forEach(tile => {
+    tile.addEventListener('click', () => {
+        const dark = !document.body.classList.contains('dark-mode');
+        if (dark) document.body.classList.add('dark-mode');
+        else document.body.classList.remove('dark-mode');
+        localStorage.setItem('skejty_theme', dark ? 'dark' : 'light');
+        applyThemeFromStorage();
+    });
+});
+
+// Settings: Downloads panel
+settingsTilesDownload.forEach(tile => {
+    tile.addEventListener('click', () => {
+        const panel = tile.closest('.sidebar-section').querySelector('.settings-download-panel');
+        if (panel) {
+            const visible = panel.style.display !== 'none';
+            panel.style.display = visible ? 'none' : 'block';
+        }
+    });
+});
+
+// --- USTAWIENIA: przyciski pobierania ---
+const ANDROID_APK_URL = 'https://www.dropbox.com/scl/fi/e3jjh30zfssh1o35q3bp1/Skejty.apk?rlkey=nip6hpsvuat0z2rg9i50xxhw6&st=htsr6a3g&dl=1';
+const IOS_PACKAGE_URL = 'https://www.dropbox.com/scl/fi/c4yz06w31m1yrpxt9annc/Skejty.gz?rlkey=rnuhscziti4knkl5tw93h3ebi&st=jpp4lwkz&dl=1';
+
+document.querySelectorAll('.download-browser-btn').forEach(btn => {
+    btn.addEventListener('click', () => triggerInstallOrGuide());
+});
+document.querySelectorAll('.download-android-btn').forEach(btn => {
+    btn.addEventListener('click', () => { window.location.href = ANDROID_APK_URL; });
+});
+document.querySelectorAll('.download-ios-btn').forEach(btn => {
+    btn.addEventListener('click', () => { window.location.href = IOS_PACKAGE_URL; });
 });
 
 // --- CUSTOM CURSOR ---

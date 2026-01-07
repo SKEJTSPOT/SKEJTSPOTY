@@ -90,7 +90,7 @@
             
             <div id="authContent" class="sidebar-section active">
                  <div class="app-logo" title="SKEJTY">
-                     <img class="app-logo-img" src="https://i.ibb.co/SwTK5SHh/skejtylogo.png" alt="SKEJTY logo">
+                     <div class="app-logo-text">SKEJTY</div>
                  </div>
                  <h2 style="margin-bottom: 15px; color: var(--neon-blue);">Zarządzanie Kontem</h2>
                  <div id="authSection">
@@ -134,7 +134,7 @@
 
             <div id="spotsListContent" class="sidebar-section">
                 <div class="app-logo" title="SKEJTY">
-                    <img class="app-logo-img" src="https://i.ibb.co/SwTK5SHh/skejtylogo.png" alt="SKEJTY logo">
+                    <div class="app-logo-text">SKEJTY</div>
                 </div>
                 <h2 style="margin-bottom: 15px; color: var(--neon-pink);">Lista Spotów</h2>
                 <div id="loginRequiredGlobal" class="login-required" style="display:none;">Musisz się zalogować!</div>
@@ -168,6 +168,29 @@
                 <div class="spots-list" id="spotsList">
                 </div>
             </div>
+            
+            <div id="settingsContent" class="sidebar-section">
+                <div class="app-logo" title="SKEJTY">
+                    <div class="app-logo-text">SKEJTY</div>
+                </div>
+                <h2 style="margin-bottom: 15px; color: var(--neon-blue);">Ustawienia</h2>
+                <div class="settings-grid">
+                    <div class="settings-tile settings-tile-download" data-hover>
+                        <i class="fas fa-download"></i>
+                        <span>Pobieranie</span>
+                    </div>
+                    <div class="settings-tile settings-tile-theme" data-hover>
+                        <i class="fas fa-moon"></i>
+                        <span>Motyw: Ciemny</span>
+                    </div>
+                </div>
+                <div class="settings-download-panel" style="display:none; margin-top: 15px;">
+                    <button class="btn-neon btn-blue download-browser-btn" data-hover>Pobierz z przeglądarki</button>
+                    <button class="btn-neon btn-green download-android-btn" data-hover>Pobierz Android (APK)</button>
+                    <button class="btn-neon btn-orange download-ios-btn" data-hover>Pobierz iOS</button>
+                </div>
+            </div>
+            
         </div>
         
         <div id="map-container" class="map-wrapper"> 
@@ -251,6 +274,10 @@
         <div class="nav-item" id="navSpoty" data-target="spotsList">
             <i class="fas fa-layer-group"></i>
             <span>Spoty</span>
+        </div>
+        <div class="nav-item" id="navUstawienia" data-target="settings">
+            <i class="fas fa-gear"></i>
+            <span>Ustawienia</span>
         </div>
     </div>
 

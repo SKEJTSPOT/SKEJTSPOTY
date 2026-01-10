@@ -103,19 +103,7 @@ if ('serviceWorker' in navigator) {
         .then(() => console.log("Service Worker aktywny."));
 }
 
-let deferredPwaPrompt = null;
-const installSectionEl = document.getElementById('pwaInstallSection');
-const installPwaBtn = document.getElementById('installPwaBtn');
-
-// Przechwytywanie systemowego komunikatu o instalacji
-window.addEventListener('beforeinstallprompt', (e) => {
-    // Zablokuj automatyczne pokazanie, abyśmy mogli wywołać to naszym przyciskiem
-    e.preventDefault();
-    deferredPwaPrompt = e;
-    
-    // Pokaż sekcję instalacji w menu Konto, bo wiemy, że urządzenie pozwala na instalację
-    if (installSectionEl) installSectionEl.style.display = 'block';
-});
+// Przechwytywanie systemowego komunikatu o instalacji (already registered above)
 
 // Co się dzieje po kliknięciu "ZAINSTALUJ"
 if (installPwaBtn) {

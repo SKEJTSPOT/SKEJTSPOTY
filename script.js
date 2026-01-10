@@ -972,6 +972,12 @@ window.openEditForm = (spotId) => {
 
 // Filter spots by author
 window.filterByAuthor = (authorId, authorName) => {
+    // Scroll to top of the sidebar/content
+    const spotsListContent = document.getElementById('spotsListContent');
+    if (spotsListContent) spotsListContent.scrollTo({ top: 0, behavior: 'smooth' });
+    const mainSidebar = document.getElementById('mainSidebar');
+    if (mainSidebar) mainSidebar.scrollTo({ top: 0, behavior: 'smooth' });
+
     // Clear existing filters
     filterBustEl.value = 'all';
     filterTagEls.forEach(cb => cb.checked = false);
@@ -1044,6 +1050,16 @@ function showLightboxAtIndex(i) {
     if (!currentLightboxImages.length) return;
     currentLightboxIndex = ((i % currentLightboxImages.length) + currentLightboxImages.length) % currentLightboxImages.length;
     lightboxImg.src = currentLightboxImages[currentLightboxIndex];
+    
+    // Ukryj strzałki jeśli jest tylko jedno zdjęcie
+    const prevBtn = document.querySelector('.lightbox-prev');
+    const nextBtn = document.querySelector('.lightbox-next');
+    if (prevBtn && nextBtn) {
+        const isMultiple = currentLightboxImages.length > 1;
+        prevBtn.style.display = isMultiple ? 'flex' : 'none';
+        nextBtn.style.display = isMultiple ? 'flex' : 'none';
+    }
+
     lightbox.style.display = 'flex';
     setTimeout(() => lightbox.style.opacity = 1, 10);
 }

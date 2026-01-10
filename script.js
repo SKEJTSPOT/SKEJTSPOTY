@@ -213,6 +213,11 @@ window.handleRegister = async () => {
         await userCredential.user.updateProfile({
             displayName: nick
         });
+        // Update auth status display immediately
+        const authStatusEl = document.getElementById('authStatus');
+        if (authStatusEl) {
+            authStatusEl.innerHTML = `Zalogowano jako: <b>${nick}</b>`;
+        }
         showNotification("Rejestracja pomyślna! Witaj " + nick, 'success');
         registerFormEl.style.display = 'none';
         showInstallPromptIfAvailable();
@@ -777,17 +782,39 @@ let activeCardId = null;
 
 // Podświetla kartę spota i przewija listę do tej karty
 function highlightCard(spotId) {
+    // Remove previous highlight
     if (activeCardId) {
         const prevCard = document.getElementById(`card-${activeCardId}`);
         if (prevCard) prevCard.classList.remove('highlight');
     }
+    
+    // Highlight new card
     if (activeCardId !== spotId) {
         const newCard = document.getElementById(`card-${spotId}`);
         if (newCard) {
             newCard.classList.add('highlight');
-            newCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            // Instant scroll to the card (no animation)
+            newCard.scrollIntoView({ 
+                behavior: 'auto', 
+                block: 'center',
+                inline: 'nearest'
+            });
+            activeCardId = spotId;
+        } else {
+            // If card not found, try again after a short delay
+            setTimeout(() => {
+                const delayedCard = document.getElementById(`card-${spotId}`);
+                if (delayedCard) {
+                    delayedCard.classList.add('highlight');
+                    delayedCard.scrollIntoView({ 
+                        behavior: 'auto', 
+                        block: 'center',
+                        inline: 'nearest'
+                    });
+                    activeCardId = spotId;
+                }
+            }, 200);
         }
-        activeCardId = spotId;
     } else {
         activeCardId = null;
     }
@@ -861,10 +888,10 @@ function createSpotCard(spot, index) {
     // ---------------------
 
     card.innerHTML = `
-        <h3 style="color: var(--neon-blue); margin-bottom: 5px;">${index}. ${spot.name}</h3>
+        <h3 style="color: var(--neon-blue); margin-bottom: 5px;">${spot.name}</h3>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <span class="${bustClass} bust-level">${bustText}</span>
-            <span style="font-size: 0.8rem; color: #888;">Autor: ${spot.authorName || 'Anonim'}</span>
+            <span style="font-size: 0.8rem; color: var(--neon-pink); cursor: pointer;" onclick="filterByAuthor('${spot.authorId}', '${spot.authorName || 'Anonim'}')">Autor: ${spot.authorName || 'Anonim'}</span>
         </div>
         ${galleryHtml}
         <p style="font-size: 0.9rem; margin-bottom: 10px;">${spot.description}</p>
@@ -942,6 +969,54 @@ window.openEditForm = (spotId) => {
     toggleForm(true, spot.lat, spot.lng);
     map.setView([spot.lat, spot.lng], 17);
 }
+
+// Filter spots by author
+window.filterByAuthor = (authorId, authorName) => {
+    // Clear existing filters
+    filterBustEl.value = 'all';
+    filterTagEls.forEach(cb => cb.checked = false);
+    
+    // Filter spots by author
+    const authorFilteredSpots = spots.filter(spot => spot.authorId === authorId);
+    
+    // Update spot count display
+    document.getElementById('spotCount').textContent = authorFilteredSpots.length;
+    
+    // Clear and rebuild spot list
+    const spotsListEl = document.getElementById('spotsList');
+    spotsListEl.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--neon-pink); font-family: Orbitron;">Pokazuję tylko spoty użytkownika: <strong>' + authorName + '</strong></div>';
+    
+    // Add reset button
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'btn-neon btn-blue';
+    resetBtn.style.marginBottom = '15px';
+    resetBtn.style.width = '100%';
+    resetBtn.textContent = 'Pokaż wszystkie spoty';
+    resetBtn.onclick = () => {
+        // Reset filters and show all spots
+        filterBustEl.value = 'all';
+        filterTagEls.forEach(cb => cb.checked = false);
+        renderSpots(getActiveFilters());
+    };
+    spotsListEl.appendChild(resetBtn);
+    
+    // Add filtered spots
+    authorFilteredSpots
+        .sort((a, b) => {
+            const timeA = a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+            const timeB = b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+            return timeB - timeA;
+        })
+        .forEach((spot, index) => {
+            spotsListEl.appendChild(createSpotCard(spot, index + 1));
+        });
+    
+    // Clear markers and render only author's spots
+    clearAllMarkers();
+    renderMarkersOnly({ selectedBust: 'all', selectedTags: [] });
+    
+    showNotification(`Pokazuję ${authorFilteredSpots.length} spotów użytkownika ${authorName}`, 'info');
+};
 
 window.deleteSpot = async (spotId) => {
     const spot = spots.find(s => s.id === spotId);
@@ -1185,7 +1260,7 @@ function renderSpots(filters = { selectedBust: 'all', selectedTags: [] }) {
         const activeCard = document.getElementById(`card-${activeCardId}`);
         if (activeCard) {
             activeCard.classList.add('highlight');
-            activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            activeCard.scrollIntoView({ behavior: 'auto', block: 'nearest' });
         } else {
             activeCardId = null; 
         }
@@ -1284,15 +1359,7 @@ function renderMarkersOnly(filters = { selectedBust: 'all', selectedTags: [] }) 
             marker.on('click', () => {
                 map.setView([c.lat, c.lng], CLUSTER_ZOOM_THRESHOLD + 1);
             });
-            try {
-                if (marker._icon && typeof gsap !== 'undefined') {
-                    const inner = marker._icon.querySelector('.cluster-content');
-                    if (inner) {
-                        inner.style.transform = 'scale(0.75)';
-                        gsap.to(inner, { scale: 1, duration: 0.25, ease: 'back.out(1.7)' });
-                    }
-                }
-            } catch (e) {}
+            // Removed GSAP animation for cluster markers
             clusterMarkers.push(marker);
         });
     } else {
@@ -1304,17 +1371,12 @@ function renderMarkersOnly(filters = { selectedBust: 'all', selectedTags: [] }) 
             marker.on('click', () => {
                 map.setView([spot.lat, spot.lng], 17);
                 switchSidebarSection('spotsList');
-                highlightCardNoScroll(spot.id);
+                // Ensure we highlight and scroll to the spot card
+                setTimeout(() => {
+                    highlightCard(spot.id);
+                }, 300);
             });
-            try {
-                if (marker._icon && typeof gsap !== 'undefined') {
-                    const svg = marker._icon.querySelector('svg');
-                    if (svg) {
-                        svg.style.transform = 'scale(0.8)';
-                        gsap.to(svg, { scale: 1, duration: 0.25, ease: 'back.out(1.7)' });
-                    }
-                }
-            } catch (e) {}
+            // Removed GSAP animation for spot markers
             markers.push(marker);
         });
     }
@@ -1351,9 +1413,12 @@ function switchSidebarSection(target) {
         }
     }
 
+    // Hide all sections first
     authContent.classList.remove('active');
     spotsListContent.classList.remove('active');
+    settingsContent.classList.remove('active');
     
+    // Remove active class from all nav items
     document.querySelectorAll('.mobile-nav .nav-item').forEach(item => item.classList.remove('active'));
 
     if (target === 'auth') {
@@ -1366,7 +1431,7 @@ function switchSidebarSection(target) {
         navMapa.classList.add('active');
     } else if (target === 'settings') {
         settingsContent.classList.add('active');
-        navUstawienia.classList.add('active');
+        if (navUstawienia) navUstawienia.classList.add('active');
     }
 }
 

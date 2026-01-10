@@ -97,21 +97,52 @@ function triggerInstallOrGuide() {
         showNotification("Na iOS: Udostępnij → Dodaj do ekranu głównego. Na Android: Menu przeglądarki → Zainstaluj aplikację.", 'info', 6000);
     }
 }
+// === REJESTRACJA SERVICE WORKERA ===
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+        .then(() => console.log("Service Worker aktywny."));
+}
+
+let deferredPwaPrompt = null;
+const installSectionEl = document.getElementById('pwaInstallSection');
+const installPwaBtn = document.getElementById('installPwaBtn');
+
+// Przechwytywanie systemowego komunikatu o instalacji
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Zablokuj automatyczne pokazanie, abyśmy mogli wywołać to naszym przyciskiem
+    e.preventDefault();
+    deferredPwaPrompt = e;
+    
+    // Pokaż sekcję instalacji w menu Konto, bo wiemy, że urządzenie pozwala na instalację
+    if (installSectionEl) installSectionEl.style.display = 'block';
+});
+
+// Co się dzieje po kliknięciu "ZAINSTALUJ"
 if (installPwaBtn) {
     installPwaBtn.addEventListener('click', async () => {
-        if (!deferredPwaPrompt) return;
-        deferredPwaPrompt.prompt();
-        const choice = await deferredPwaPrompt.userChoice;
-        if (choice.outcome === 'accepted') {
-            showNotification("Instalacja rozpoczęta.", 'success', 3000);
+        if (deferredPwaPrompt) {
+            // WYWOŁAJ NATYWNE OKNO PRZEGLĄDARKI
+            deferredPwaPrompt.prompt();
+            
+            // Sprawdź decyzję użytkownika
+            const { outcome } = await deferredPwaPrompt.userChoice;
+            if (outcome === 'accepted') {
+                showNotification("Dzięki za instalację!", 'success');
+                if (installSectionEl) installSectionEl.style.display = 'none';
+            }
+            deferredPwaPrompt = null; // Można wywołać tylko raz
         } else {
-            showNotification("Instalacja anulowana.", 'info', 3000);
+            // Instrukcja dla iPhone (iOS nie obsługuje natywnego okna prompt)
+            showNotification("Aby zainstalować na iOS: kliknij 'Udostępnij' i 'Dodaj do ekranu głównego'.", 'info', 6000);
         }
-        deferredPwaPrompt = null;
-        if (installSectionEl) installSectionEl.style.display = 'none';
     });
 }
 
+// Sprawdź czy aplikacja jest już zainstalowana (wtedy ukryj przycisk)
+window.addEventListener('appinstalled', () => {
+    if (installSectionEl) installSectionEl.style.display = 'none';
+    deferredPwaPrompt = null;
+});
 if (document.getElementById('changeNickBtn')) {
     document.getElementById('changeNickBtn').addEventListener('click', async () => {
         const newNick = (newNickInput.value || '').trim();
@@ -1581,4 +1612,5 @@ document.querySelectorAll('[data-hover]').forEach(el => {
     el.addEventListener('mouseover', () => customCursor.classList.add('hovered'));
     el.addEventListener('mouseout', () => customCursor.classList.remove('hovered'));
 });
+
 

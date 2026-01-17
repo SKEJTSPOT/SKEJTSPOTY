@@ -85,7 +85,11 @@
                 <line class="speed-line" x1="160" y1="90" x2="210" y2="90" stroke="var(--neon-blue)" stroke-width="2" opacity="0.4" />
             </svg>
         </div>
-        <h2 style="margin-top: 20px; font-family: 'Orbitron'; animation: pulseText 1.5s infinite alternate;">SKEJTY ŁADOWANIE...</h2>
+        <h2 style="margin-top: 20px; font-family: 'Orbitron'; animation: pulseText 1.5s infinite alternate;">SKEJTY</h2>
+        <div id="loader-status" style="font-family: 'Orbitron'; font-size: 0.7rem; color: var(--neon-blue); margin-top: 5px; letter-spacing: 2px;">INICJALIZACJA...</div>
+        <div class="loader-progress-bar">
+            <div class="loader-progress-fill"></div>
+        </div>
     </div>
 
     <div id="notification-container"></div>
@@ -97,7 +101,7 @@
                  <div class="app-logo" title="SKEJTY">
                      <div class="app-logo-text">SKEJTY</div>
                  </div>
-                 <h2 style="margin-bottom: 15px; color: var(--neon-blue);">Zarządzanie Kontem</h2>
+                 <h2 class="section-title title-blue">Zarządzanie Kontem</h2>
                  <div id="authSection">
                      <div id="authStatus">Ładowanie...</div>
                      <div class="auth-actions">
@@ -133,10 +137,12 @@
                             <input type="password" id="newPasswordInput" class="input-cyber" placeholder="Wprowadź nowe hasło (min. 6 znaków)" style="padding: 12px; font-size: 1rem; margin-bottom: 10px;">
                             <button class="btn-neon btn-orange" id="changePasswordBtn" style="width: 100%; padding: 12px; font-size: 1rem;">ZMIEŃ HASŁO</button>
                         </div>
-                        <div id="pwaInstallSection" style="display:none; margin-top: 15px;">
-                            <h3 style="color: var(--neon-blue); margin-bottom: 8px;">Dodaj aplikację na ekran główny</h3>
-                            <button class="btn-neon btn-blue" id="installPwaBtn">Zainstaluj aplikację</button>
-                        </div>
+                     </div>
+                     
+                     <div id="pwaInstallSection" style="margin-top: 20px; border-top: 1px dashed var(--neon-green); padding-top: 20px;">
+                        <h3 style="color: var(--neon-green); margin-bottom: 10px; text-align: center;">📲 ZAINSTALUJ APLIKACJĘ</h3>
+                        <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px; text-align: center;">Dodaj SKEJTY na ekran główny telefonu</p>
+                        <button class="btn-neon btn-green" id="installPwaBtn" style="width: 100%; padding: 15px; font-size: 1.1rem;">ZAINSTALUJ</button>
                      </div>
                  </div>
             </div>
@@ -145,11 +151,11 @@
                 <div class="app-logo" title="SKEJTY">
                     <div class="app-logo-text">SKEJTY</div>
                 </div>
-                <h2 style="margin-bottom: 15px; color: var(--neon-pink);">Lista Spotów</h2>
+                <h2 class="section-title title-pink">Lista Spotów</h2>
                 <div id="loginRequiredGlobal" class="login-required" style="display:none;">Musisz się zalogować!</div>
 
-                 <div id="filterSection" style="margin-top: 0; padding: 15px 0; border-top: 1px dashed var(--neon-blue); border-bottom: 1px dashed var(--neon-blue); margin-bottom: 15px;">
-                    <h3 style="color: var(--neon-orange); margin-bottom: 10px;">🔍 Filtruj Spoty</h3>
+                 <div id="filterSection" class="filter-section">
+                    <h3 class="title-orange">🔍 Filtruj Spoty</h3>
                     
                     <label style="font-size: 0.9rem; font-weight: bold;">Poziom:</label>
                     <select id="filterBust" style="width: 100%; padding: 8px; margin-bottom: 10px; font-family: 'Roboto Mono', monospace;" data-hover>
@@ -178,28 +184,6 @@
                 </div>
             </div>
             
-            <div id="settingsContent" class="sidebar-section">
-                <div class="app-logo" title="SKEJTY">
-                    <div class="app-logo-text">SKEJTY</div>
-                </div>
-                <h2 style="margin-bottom: 15px; color: var(--neon-blue);">Ustawienia</h2>
-                <div class="settings-grid">
-                    <div class="settings-tile settings-tile-download" data-hover>
-                        <i class="fas fa-download"></i>
-                        <span>Pobieranie</span>
-                    </div>
-                    <div class="settings-tile settings-tile-theme" data-hover>
-                        <i class="fas fa-moon"></i>
-                        <span>Motyw: Ciemny</span>
-                    </div>
-                </div>
-                <div class="settings-download-panel" style="display:none; margin-top: 15px;">
-                    <button class="btn-neon btn-blue download-browser-btn" data-hover>Pobierz z przeglądarki</button>
-                    <button class="btn-neon btn-green download-android-btn" data-hover>Pobierz Android (APK)</button>
-                    <button class="btn-neon btn-orange download-ios-btn" data-hover>Pobierz iOS</button>
-                </div>
-            </div>
-            
         </div>
         
             <div id="map-container" class="map-wrapper"> 
@@ -211,11 +195,10 @@
                 </div>
 
                 <button class="geo-btn" id="locateUserBtn" title="Znajdź mnie (GPS)" data-hover>📍</button>
-                <button class="settings-btn" id="openSettingsBtn" title="Ustawienia" data-hover>⚙️</button>
             
             <div class="fab" id="addSpotFab" data-hover style="display:none;">+</div>
             
-            <div id="spot-form" style="display:none; position: fixed; bottom: 150px; right: 20px; z-index: 2000; width: 90%; max-width: 350px; background: var(--form-bg); padding: 15px; border: 2px solid var(--neon-pink); box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);">
+            <div id="spot-form" class="cyber-form">
                 
                 <div class="close-form-btn" onclick="toggleForm(false)" data-hover>&times;</div>
                 <div style="font-size: 0.8rem; margin-bottom: 5px; color: var(--neon-orange); display: none;" id="editModeLabel">TRYB EDYCJI</div>

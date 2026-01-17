@@ -15,10 +15,53 @@
     font-weight: 900;
     font-size: 32px;
     line-height: 1;
-    background: linear-gradient(90deg, var(--neon-green) 0%, var(--neon-green) 50%, var(--neon-pink) 50%, var(--neon-pink) 100%);
+    /* Cleaner split gradient with a tiny gap to prevent bleeding */
+    background: linear-gradient(90deg, 
+        var(--neon-green) 0%, 
+        var(--neon-green) 49.5%, 
+        #fff 49.5%, 
+        #fff 50.5%, 
+        var(--neon-pink) 50.5%, 
+        var(--neon-pink) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    text-shadow: 0 0 6px rgba(57,255,20,0.5), 0 0 10px rgba(255,0,255,0.45);
+    /* Sharper shadows, less "muddy" */
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.8);
     transform: scale(var(--logo-scale));
+    animation: textGlitch 5s infinite;
+    position: relative;
+    z-index: 1;
+}
+
+/* Split Glow Strategy */
+.app-logo-text::before,
+.app-logo-text::after {
+    content: "SKEJTY";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    color: transparent;
+    pointer-events: none;
+    transition: all 0.3s ease;
+}
+
+.app-logo-text::before {
+    text-shadow: 0 0 8px var(--neon-green), 0 0 2px var(--neon-green);
+    clip-path: inset(-10px 50% -10px -10px);
+}
+
+.app-logo-text::after {
+    text-shadow: 0 0 8px var(--neon-pink), 0 0 2px var(--neon-pink);
+    clip-path: inset(-10px -10px -10px 50%);
+}
+
+@keyframes textGlitch {
+    0%, 94%, 100% { text-shadow: 0 0 6px rgba(57,255,20,0.5), 0 0 10px rgba(255,0,255,0.45); transform: scale(var(--logo-scale)) translateX(0); }
+    95% { text-shadow: -3px 0 var(--neon-red), 3px 0 var(--neon-blue); transform: scale(var(--logo-scale)) translateX(1px); }
+    97% { text-shadow: 3px 0 var(--neon-red), -3px 0 var(--neon-blue); transform: scale(var(--logo-scale)) translateX(-1px); }
+    99% { text-shadow: -2px 0 var(--neon-green), 2px 0 var(--neon-pink); transform: scale(var(--logo-scale)) translateY(1px); }
 }

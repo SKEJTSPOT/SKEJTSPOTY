@@ -8,7 +8,7 @@
     <meta name="keywords" content="skejty, apka na deskę, apka dla skatów, skejty app, skateboarding app, skate spots, mapa skejtów">
     
     <!-- Weryfikacja Google Search Console -->
-    <meta name="google-site-verification" content="cszh40FVz3sIYy3U5WhHy2wxnruqgLyw-8VoOoZdNN8" />
+    <meta name="google-site-verification" content="wE-WLYjXHq2IoWRVwXNrEZiCs6jjCbkNIQb9n2q7gkA" />
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;500&display=swap" rel="stylesheet">
@@ -113,6 +113,13 @@
                      <div id="loginForm" style="display:none;">
                         <input type="email" id="loginEmail" class="input-cyber" placeholder="Email" data-hover>
                         <input type="password" id="loginPassword" class="input-cyber" placeholder="Hasło" data-hover>
+                        
+                        <div class="captcha-container" id="loginCaptchaContainer">
+                           <span class="captcha-label">CAPTCHA:</span>
+                           <span class="captcha-question" id="loginCaptchaQuestion"></span>
+                           <input type="number" id="loginCaptchaAnswer" class="input-cyber captcha-input" placeholder="Wynik?" data-hover>
+                        </div>
+                        
                         <button class="btn-neon btn-green" onclick="handleLogin()" data-hover>ZALOGUJ SIĘ</button>
                     </div>
 
@@ -120,6 +127,13 @@
                         <input type="text" id="registerNick" class="input-cyber" placeholder="Twój Nick/Ksywa" data-hover>
                         <input type="email" id="registerEmail" class="input-cyber" placeholder="Email (np. skater@gmail.com)" data-hover>
                         <input type="password" id="registerPassword" class="input-cyber" placeholder="Hasło (min. 6 znaków)" data-hover>
+                        
+                        <div class="captcha-container" id="registerCaptchaContainer">
+                           <span class="captcha-label">CAPTCHA:</span>
+                           <span class="captcha-question" id="registerCaptchaQuestion"></span>
+                           <input type="number" id="registerCaptchaAnswer" class="input-cyber captcha-input" placeholder="Wynik?" data-hover>
+                        </div>
+                        
                         <button class="btn-neon btn-orange" onclick="handleRegister()" data-hover>ZAREJESTRUJ</button>
                     </div>
                      
@@ -281,4 +295,3 @@
     <script src="script.js?v=3"></script>
 </body>
 </html>
-

@@ -194,9 +194,43 @@ const logoutBtn = document.getElementById('logoutBtn');
 const loginFormEl = document.getElementById('loginForm');
 const registerFormEl = document.getElementById('registerForm');
 
+// CAPTCHA logic
+let currentLoginCaptcha = 0;
+let currentRegisterCaptcha = 0;
+
+function generateCaptcha(type) {
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    const question = `${num1} + ${num2} = ?`;
+    const answer = num1 + num2;
+    
+    if (type === 'login') {
+        currentLoginCaptcha = answer;
+        const qEl = document.getElementById('loginCaptchaQuestion');
+        if (qEl) qEl.textContent = question;
+        const aEl = document.getElementById('loginCaptchaAnswer');
+        if (aEl) aEl.value = '';
+    } else {
+        currentRegisterCaptcha = answer;
+        const qEl = document.getElementById('registerCaptchaQuestion');
+        if (qEl) qEl.textContent = question;
+        const aEl = document.getElementById('registerCaptchaAnswer');
+        if (aEl) aEl.value = '';
+    }
+}
+
 window.handleLogin = async () => {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
+    const captchaInput = document.getElementById('loginCaptchaAnswer');
+    const captchaAnswer = captchaInput ? parseInt(captchaInput.value) : 0;
+
+    if (captchaAnswer !== currentLoginCaptcha) {
+        showNotification("Błędny wynik CAPTCHA! Spróbuj ponownie.", 'error');
+        generateCaptcha('login');
+        return;
+    }
+
     try {
         await auth.signInWithEmailAndPassword(email, password);
         showNotification("Zalogowano pomyślnie!", 'success');
@@ -204,6 +238,7 @@ window.handleLogin = async () => {
         showInstallPromptIfAvailable();
     } catch (error) {
         showNotification("Błąd logowania: " + error.message, 'error', 6000);
+        generateCaptcha('login');
     }
 };
 
@@ -211,7 +246,17 @@ window.handleRegister = async () => {
     const nick = document.getElementById('registerNick').value;
     const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
+    const captchaInput = document.getElementById('registerCaptchaAnswer');
+    const captchaAnswer = captchaInput ? parseInt(captchaInput.value) : 0;
+
     if (!nick) return showNotification("Wpisz swój nick!", 'error');
+
+    if (captchaAnswer !== currentRegisterCaptcha) {
+        showNotification("Błędny wynik CAPTCHA! Spróbuj ponownie.", 'error');
+        generateCaptcha('register');
+        return;
+    }
+
     try {
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         await userCredential.user.updateProfile({
@@ -227,17 +272,20 @@ window.handleRegister = async () => {
         showInstallPromptIfAvailable();
     } catch (error) {
         showNotification("Błąd rejestracji: " + error.message, 'error', 6000);
+        generateCaptcha('register');
     }
 };
 
 showLoginBtn.addEventListener('click', () => {
     loginFormEl.style.display = 'block';
     registerFormEl.style.display = 'none';
+    generateCaptcha('login');
 });
 
 showRegisterBtn.addEventListener('click', () => {
     registerFormEl.style.display = 'block';
     loginFormEl.style.display = 'none';
+    generateCaptcha('register');
 });
 
 logoutBtn.addEventListener('click', async () => {

@@ -821,6 +821,38 @@ input[type=range]::-moz-range-track {
     box-shadow: 0 0 15px rgba(255, 0, 255, 0.2), inset 0 2px 4px rgba(0,0,0,0.5);
     background: rgba(20, 25, 30, 0.9);
 }
+
+.captcha-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: rgba(255, 0, 255, 0.05);
+    border: 1px dashed rgba(255, 0, 255, 0.2);
+    border-radius: 4px;
+}
+
+.captcha-label {
+    font-size: 0.7rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.captcha-question {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--neon-pink);
+    text-shadow: 0 0 5px var(--neon-pink);
+    white-space: nowrap;
+}
+
+.captcha-input {
+    margin-bottom: 0 !important;
+    padding: 8px 10px !important;
+    flex: 1;
+}
 .select-cyber {
     appearance: none;
     background-image: linear-gradient(90deg, rgba(255,0,255,0.12), rgba(0,243,255,0.12));

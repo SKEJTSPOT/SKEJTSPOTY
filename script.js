@@ -926,6 +926,9 @@ function createSpotCard(spot, index) {
     card.setAttribute('data-hover', '');
     
     card.addEventListener('click', () => {
+        // Add visual feedback animation
+        animateSpotClick(card, spot);
+        
         if (isMobile() && mainSidebar.classList.contains('active')) {
         } else if (!isMobile()) {
             map.flyTo([spot.lat, spot.lng], 17, { duration: 0.8 });
@@ -1468,6 +1471,9 @@ function renderMarkersOnly(filters = { selectedBust: 'all', selectedTags: [] }) 
                 title: spot.name
             }).addTo(map);
             marker.on('click', () => {
+                // Add visual feedback animation for marker click
+                animateMarkerClick(marker);
+                
                 map.setView([spot.lat, spot.lng], 17);
                 switchSidebarSection('spotsList');
                 // Ensure we highlight and scroll to the spot card
@@ -1602,6 +1608,95 @@ document.querySelectorAll('[data-hover]').forEach(el => {
     el.addEventListener('mouseover', () => customCursor.classList.add('hovered'));
     el.addEventListener('mouseout', () => customCursor.classList.remove('hovered'));
 });
+
+// --- SPOT CLICK ANIMATIONS ---
+
+// Animation for spot card clicks
+function animateSpotClick(cardElement, spot) {
+    // Bounce and scale effect
+    gsap.to(cardElement, {
+        scale: 1.05,
+        duration: 0.1,
+        yoyo: true,
+        repeat: 1,
+        ease: "power2.out",
+        onStart: () => {
+            // Add temporary glow effect
+            cardElement.style.boxShadow = '0 0 20px var(--neon-pink), 0 0 30px var(--neon-blue)';
+            cardElement.style.borderColor = 'var(--neon-pink)';
+        },
+        onComplete: () => {
+            // Remove glow effect
+            cardElement.style.boxShadow = '';
+            cardElement.style.borderColor = '';
+        }
+    });
+    
+    // Particle burst effect (simple version)
+    createParticleBurst(cardElement);
+}
+
+// Animation for map marker clicks
+function animateMarkerClick(marker) {
+    const markerElement = marker._icon;
+    if (!markerElement) return;
+    
+    // Pulse effect
+    gsap.fromTo(markerElement, 
+        { 
+            scale: 1,
+            filter: 'brightness(1)'
+        },
+        { 
+            scale: 1.8,
+            filter: 'brightness(2) hue-rotate(90deg)',
+            duration: 0.3,
+            yoyo: true,
+            repeat: 1,
+            ease: "elastic.out(1, 0.5)"
+        }
+    );
+}
+
+// Create particle burst effect
+function createParticleBurst(element) {
+    const rect = element.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    // Create 8 particles
+    for (let i = 0; i < 8; i++) {
+        const particle = document.createElement('div');
+        particle.style.position = 'fixed';
+        particle.style.left = centerX + 'px';
+        particle.style.top = centerY + 'px';
+        particle.style.width = '6px';
+        particle.style.height = '6px';
+        particle.style.backgroundColor = i % 2 === 0 ? 'var(--neon-pink)' : 'var(--neon-blue)';
+        particle.style.borderRadius = '50%';
+        particle.style.zIndex = '9999';
+        particle.style.pointerEvents = 'none';
+        
+        document.body.appendChild(particle);
+        
+        // Random direction
+        const angle = (i * 45) * (Math.PI / 180);
+        const distance = 50 + Math.random() * 50;
+        const endX = centerX + Math.cos(angle) * distance;
+        const endY = centerY + Math.sin(angle) * distance;
+        
+        gsap.to(particle, {
+            x: endX - centerX,
+            y: endY - centerY,
+            opacity: 0,
+            duration: 0.6,
+            ease: "power2.out",
+            onComplete: () => {
+                document.body.removeChild(particle);
+            }
+        });
+    }
+}
 
 // === SERVICE WORKER REGISTRATION ===
 if ('serviceWorker' in navigator) {

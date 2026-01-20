@@ -39,7 +39,6 @@ async function uploadToImgBB(file) {
 let currentUser = null; 
 let deferredPwaPrompt = null;
 const installSectionEl = document.getElementById('pwaInstallSection');
-if (installSectionEl) installSectionEl.style.display = 'none'; // Hide on start until prompt available
 const installPwaBtn = document.getElementById('installPwaBtn');
 const accountSettingsEl = document.getElementById('accountSettings');
 const newNickInput = document.getElementById('newNickInput');
@@ -71,6 +70,29 @@ function showNotification(message, type = 'info', duration = 4000) {
     }, duration);
 }
 
+// Show PWA installation notification on mobile devices
+function showPwaInstallNotification() {
+    // Only show on mobile devices and if not already installed
+    if (!isMobileDevice() || window.matchMedia('(display-mode: standalone)').matches) {
+        return;
+    }
+    
+    // Delay the notification to appear after page load
+    setTimeout(() => {
+        showNotification(
+            "📱 Zainstaluj aplikację na ekran główny dla lepszego doświadczenia!", 
+            'info', 
+            8000
+        );
+    }, 3000); // Show after 3 seconds
+}
+
+// Check if device is mobile
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           window.innerWidth <= 768;
+}
+
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPwaPrompt = e;
@@ -98,24 +120,48 @@ function triggerInstallOrGuide() {
         showNotification("Na iOS: Udostępnij → Dodaj do ekranu głównego. Na Android: Menu przeglądarki → Zainstaluj aplikację.", 'info', 6000);
     }
 }
+// === REJESTRACJA SERVICE WORKERA ===
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+        .then(() => console.log("Service Worker aktywny."));
+}
+
+// Przechwytywanie systemowego komunikatu o instalacji
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Zablokuj automatyczne pokazanie, abyśmy mogli wywołać to naszym przyciskiem
+    e.preventDefault();
+    deferredPwaPrompt = e;
+    
+    // Pokaż sekcję instalacji w menu Konto, bo wiemy, że urządzenie pozwala na instalację
+    if (installSectionEl) installSectionEl.style.display = 'block';
+});
+
+// Co się dzieje po kliknięciu "ZAINSTALUJ"
 if (installPwaBtn) {
     installPwaBtn.addEventListener('click', async () => {
         if (deferredPwaPrompt) {
+            // WYWOŁAJ NATYWNE OKNO PRZEGLĄDARKI
             deferredPwaPrompt.prompt();
-            const choice = await deferredPwaPrompt.userChoice;
-            if (choice.outcome === 'accepted') {
-                showNotification("Instalacja rozpoczęta!", 'success', 3000);
-            } else {
-                showNotification("Instalacja anulowana.", 'info', 3000);
+            
+            // Sprawdź decyzję użytkownika
+            const { outcome } = await deferredPwaPrompt.userChoice;
+            if (outcome === 'accepted') {
+                showNotification("Dzięki za instalację!", 'success');
+                if (installSectionEl) installSectionEl.style.display = 'none';
             }
-            deferredPwaPrompt = null;
+            deferredPwaPrompt = null; // Można wywołać tylko raz
         } else {
-            // Pokaż instrukcje jeśli prompt nie jest dostępny
-            showNotification("Na iOS: Udostępnij → Dodaj do ekranu głównego. Na Android: Menu przeglądarki → Zainstaluj aplikację.", 'info', 8000);
+            // Instrukcja dla iPhone (iOS nie obsługuje natywnego okna prompt)
+            showNotification("Aby zainstalować na iOS: kliknij 'Udostępnij' i 'Dodaj do ekranu głównego'.", 'info', 6000);
         }
     });
 }
 
+// Sprawdź czy aplikacja jest już zainstalowana (wtedy ukryj przycisk)
+window.addEventListener('appinstalled', () => {
+    if (installSectionEl) installSectionEl.style.display = 'none';
+    deferredPwaPrompt = null;
+});
 if (document.getElementById('changeNickBtn')) {
     document.getElementById('changeNickBtn').addEventListener('click', async () => {
         const newNick = (newNickInput.value || '').trim();
@@ -194,43 +240,9 @@ const logoutBtn = document.getElementById('logoutBtn');
 const loginFormEl = document.getElementById('loginForm');
 const registerFormEl = document.getElementById('registerForm');
 
-// CAPTCHA logic
-let currentLoginCaptcha = 0;
-let currentRegisterCaptcha = 0;
-
-function generateCaptcha(type) {
-    const num1 = Math.floor(Math.random() * 10) + 1;
-    const num2 = Math.floor(Math.random() * 10) + 1;
-    const question = `${num1} + ${num2} = ?`;
-    const answer = num1 + num2;
-    
-    if (type === 'login') {
-        currentLoginCaptcha = answer;
-        const qEl = document.getElementById('loginCaptchaQuestion');
-        if (qEl) qEl.textContent = question;
-        const aEl = document.getElementById('loginCaptchaAnswer');
-        if (aEl) aEl.value = '';
-    } else {
-        currentRegisterCaptcha = answer;
-        const qEl = document.getElementById('registerCaptchaQuestion');
-        if (qEl) qEl.textContent = question;
-        const aEl = document.getElementById('registerCaptchaAnswer');
-        if (aEl) aEl.value = '';
-    }
-}
-
 window.handleLogin = async () => {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
-    const captchaInput = document.getElementById('loginCaptchaAnswer');
-    const captchaAnswer = captchaInput ? parseInt(captchaInput.value) : 0;
-
-    if (captchaAnswer !== currentLoginCaptcha) {
-        showNotification("Błędny wynik CAPTCHA! Spróbuj ponownie.", 'error');
-        generateCaptcha('login');
-        return;
-    }
-
     try {
         await auth.signInWithEmailAndPassword(email, password);
         showNotification("Zalogowano pomyślnie!", 'success');
@@ -238,7 +250,6 @@ window.handleLogin = async () => {
         showInstallPromptIfAvailable();
     } catch (error) {
         showNotification("Błąd logowania: " + error.message, 'error', 6000);
-        generateCaptcha('login');
     }
 };
 
@@ -246,17 +257,7 @@ window.handleRegister = async () => {
     const nick = document.getElementById('registerNick').value;
     const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
-    const captchaInput = document.getElementById('registerCaptchaAnswer');
-    const captchaAnswer = captchaInput ? parseInt(captchaInput.value) : 0;
-
     if (!nick) return showNotification("Wpisz swój nick!", 'error');
-
-    if (captchaAnswer !== currentRegisterCaptcha) {
-        showNotification("Błędny wynik CAPTCHA! Spróbuj ponownie.", 'error');
-        generateCaptcha('register');
-        return;
-    }
-
     try {
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         await userCredential.user.updateProfile({
@@ -272,20 +273,17 @@ window.handleRegister = async () => {
         showInstallPromptIfAvailable();
     } catch (error) {
         showNotification("Błąd rejestracji: " + error.message, 'error', 6000);
-        generateCaptcha('register');
     }
 };
 
 showLoginBtn.addEventListener('click', () => {
     loginFormEl.style.display = 'block';
     registerFormEl.style.display = 'none';
-    generateCaptcha('login');
 });
 
 showRegisterBtn.addEventListener('click', () => {
     registerFormEl.style.display = 'block';
     loginFormEl.style.display = 'none';
-    generateCaptcha('register');
 });
 
 logoutBtn.addEventListener('click', async () => {
@@ -603,7 +601,7 @@ function placeTempMarker(lat, lng) {
 
 function toggleForm(show, lat = null, lng = null) {
     if (show) {
-        spotFormEl.classList.add('active');
+        spotFormEl.style.display = 'block';
         addSpotFab.classList.add('form-active');
         addSpotFab.innerHTML = '&times;'; 
 
@@ -612,9 +610,7 @@ function toggleForm(show, lat = null, lng = null) {
         }
         if (isMobile()) switchSidebarSection('map');
     } else {
-        spotFormEl.classList.remove('active');
-        addSpotFab.classList.remove('form-active');
-        addSpotFab.innerHTML = '+';
+        spotFormEl.style.display = 'none';
         resetForm(); 
     }
 }
@@ -839,10 +835,7 @@ function highlightCard(spotId) {
     // Remove previous highlight
     if (activeCardId) {
         const prevCard = document.getElementById(`card-${activeCardId}`);
-        if (prevCard) {
-            prevCard.classList.remove('highlight');
-            gsap.to(prevCard, { boxShadow: "none", duration: 0.3 });
-        }
+        if (prevCard) prevCard.classList.remove('highlight');
     }
     
     // Highlight new card
@@ -850,26 +843,6 @@ function highlightCard(spotId) {
         const newCard = document.getElementById(`card-${spotId}`);
         if (newCard) {
             newCard.classList.add('highlight');
-            
-            // Professional Entrance Animation
-            gsap.fromTo(newCard, 
-                { x: 30, opacity: 0, scale: 0.95, filter: "brightness(2) contrast(1.5)" },
-                { 
-                    x: 0, 
-                    opacity: 1, 
-                    scale: 1, 
-                    filter: "brightness(1) contrast(1)", 
-                    duration: 0.6, 
-                    ease: "back.out(1.7)" 
-                }
-            );
-
-            // Glowing Pulse effect
-            gsap.fromTo(newCard, 
-                { boxShadow: "0 0 0px rgba(0, 255, 255, 0)" },
-                { boxShadow: "0 0 25px var(--neon-blue)", duration: 0.8, yoyo: true, repeat: 1 }
-            );
-
             // Instant scroll to the card (no animation)
             newCard.scrollIntoView({ 
                 behavior: 'auto', 
@@ -883,12 +856,6 @@ function highlightCard(spotId) {
                 const delayedCard = document.getElementById(`card-${spotId}`);
                 if (delayedCard) {
                     delayedCard.classList.add('highlight');
-                    
-                    gsap.fromTo(delayedCard, 
-                        { x: 30, opacity: 0 },
-                        { x: 0, opacity: 1, duration: 0.5, ease: "power2.out" }
-                    );
-
                     delayedCard.scrollIntoView({ 
                         behavior: 'auto', 
                         block: 'center',
@@ -934,7 +901,7 @@ function createSpotCard(spot, index) {
     });
 
     const bustClass = spot.bust === 'safe' ? 'bust-safe' : (spot.bust === 'medium' ? 'bust-medium' : 'bust-high');
-    const bustText = spot.bust === 'safe' ? 'Czill' : (spot.bust === 'medium' ? 'Wywalaja' : 'Przewalone');
+    const bustText = spot.bust === 'safe' ? 'Spoko' : (spot.bust === 'medium' ? 'Uwaga' : 'Ryzyko');
     
     // Generowanie tagów z dodatkowymi info
     const tagsHtml = (spot.tags || []).map(tag => {
@@ -1492,10 +1459,14 @@ const navKonto = document.getElementById('navKonto');
 const navMapa = document.getElementById('navMapa');
 const navSpoty = document.getElementById('navSpoty');
 const navUstawienia = document.getElementById('navUstawienia');
+const settingsContent = document.getElementById('settingsContent');
+const settingsTilesDownload = document.querySelectorAll('.settings-tile-download');
+const settingsTilesTheme = document.querySelectorAll('.settings-tile-theme');
+const settingsDownloadPanels = document.querySelectorAll('.settings-download-panel');
 
 // Zwraca true dla trybu mobilnego (tutaj wymuszony)
 function isMobile() {
-    return true; // ALWAYS FORCE MOBILE LOGIC/LAYOUT
+    return window.innerWidth <= 768 || true; // FORCE MOBILE STYLE
 }
 
 // Przełącza sekcje sidebaru (konto/spoty/mapa), ustawia klasę active
@@ -1511,6 +1482,7 @@ function switchSidebarSection(target) {
     // Hide all sections first
     authContent.classList.remove('active');
     spotsListContent.classList.remove('active');
+    settingsContent.classList.remove('active');
     
     // Remove active class from all nav items
     document.querySelectorAll('.mobile-nav .nav-item').forEach(item => item.classList.remove('active'));
@@ -1523,6 +1495,9 @@ function switchSidebarSection(target) {
         navSpoty.classList.add('active');
     } else if (target === 'map') {
         navMapa.classList.add('active');
+    } else if (target === 'settings') {
+        settingsContent.classList.add('active');
+        if (navUstawienia) navUstawienia.classList.add('active');
     }
 }
 
@@ -1533,6 +1508,12 @@ mobileNav.addEventListener('click', (e) => {
     }
 });
 
+const openSettingsBtn = document.getElementById('openSettingsBtn');
+if (openSettingsBtn) {
+    openSettingsBtn.addEventListener('click', () => {
+        switchSidebarSection('settings');
+    });
+}
 // Force mobile view check
 if (isMobile()) {
     switchSidebarSection('map');
@@ -1582,6 +1563,10 @@ auth.onAuthStateChanged(async user => {
 document.addEventListener('DOMContentLoaded', () => {
     detectCityByIP();
     runLoaderOnce();
+    
+    // Show PWA installation notification on mobile
+    showPwaInstallNotification();
+    
     let initialLoad = true;
     spotsCollection.onSnapshot(snapshot => {
         const newSpots = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -1589,6 +1574,54 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSpots(getActiveFilters()); 
         initialLoad = false;
     });
+});
+
+// Theme
+function applyThemeFromStorage() {
+    const pref = localStorage.getItem('skejty_theme') || 'dark';
+    if (pref === 'dark') document.body.classList.add('dark-mode');
+    else document.body.classList.remove('dark-mode');
+    settingsTilesTheme.forEach(tile => {
+        const span = tile.querySelector('span');
+        if (span) span.textContent = `Motyw: ${document.body.classList.contains('dark-mode') ? 'Ciemny' : 'Jasny'}`;
+        const icon = tile.querySelector('i');
+        if (icon) icon.className = document.body.classList.contains('dark-mode') ? 'fas fa-moon' : 'fas fa-sun';
+    });
+}
+applyThemeFromStorage();
+settingsTilesTheme.forEach(tile => {
+    tile.addEventListener('click', () => {
+        const dark = !document.body.classList.contains('dark-mode');
+        if (dark) document.body.classList.add('dark-mode');
+        else document.body.classList.remove('dark-mode');
+        localStorage.setItem('skejty_theme', dark ? 'dark' : 'light');
+        applyThemeFromStorage();
+    });
+});
+
+// Settings: Downloads panel
+settingsTilesDownload.forEach(tile => {
+    tile.addEventListener('click', () => {
+        const panel = tile.closest('.sidebar-section').querySelector('.settings-download-panel');
+        if (panel) {
+            const visible = panel.style.display !== 'none';
+            panel.style.display = visible ? 'none' : 'block';
+        }
+    });
+});
+
+// --- USTAWIENIA: przyciski pobierania ---
+const ANDROID_APK_URL = 'https://www.dropbox.com/scl/fi/e3jjh30zfssh1o35q3bp1/Skejty.apk?rlkey=nip6hpsvuat0z2rg9i50xxhw6&st=htsr6a3g&dl=1';
+const IOS_PACKAGE_URL = 'https://www.dropbox.com/scl/fi/c4yz06w31m1yrpxt9annc/Skejty.gz?rlkey=rnuhscziti4knkl5tw93h3ebi&st=jpp4lwkz&dl=1';
+
+document.querySelectorAll('.download-browser-btn').forEach(btn => {
+    btn.addEventListener('click', () => triggerInstallOrGuide());
+});
+document.querySelectorAll('.download-android-btn').forEach(btn => {
+    btn.addEventListener('click', () => { window.location.href = ANDROID_APK_URL; });
+});
+document.querySelectorAll('.download-ios-btn').forEach(btn => {
+    btn.addEventListener('click', () => { window.location.href = IOS_PACKAGE_URL; });
 });
 
 // --- CUSTOM CURSOR ---
@@ -1603,12 +1636,4 @@ document.querySelectorAll('[data-hover]').forEach(el => {
     el.addEventListener('mouseout', () => customCursor.classList.remove('hovered'));
 });
 
-// === SERVICE WORKER REGISTRATION ===
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('✅ SW zarejestrowany:', reg.scope))
-            .catch(err => console.error('❌ Błąd SW:', err));
-    });
-}
 

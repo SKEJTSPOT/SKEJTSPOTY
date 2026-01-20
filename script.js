@@ -1471,8 +1471,8 @@ function renderMarkersOnly(filters = { selectedBust: 'all', selectedTags: [] }) 
                 title: spot.name
             }).addTo(map);
             marker.on('click', () => {
-                // Add visual feedback animation for marker click
-                animateMarkerClick(marker);
+                // Intense glitch animation for spot markers
+                glitchSpotAnimation(marker);
                 
                 map.setView([spot.lat, spot.lng], 17);
                 switchSidebarSection('spotsList');
@@ -1613,86 +1613,173 @@ document.querySelectorAll('[data-hover]').forEach(el => {
 
 // Animation for spot card clicks
 function animateSpotClick(cardElement, spot) {
-    // Bounce and scale effect
+    // Glitch effect instead of zoom
     gsap.to(cardElement, {
-        scale: 1.05,
-        duration: 0.1,
+        duration: 0.3,
+        repeat: 3,
         yoyo: true,
-        repeat: 1,
-        ease: "power2.out",
+        ease: "steps(3)",
         onStart: () => {
-            // Add temporary glow effect
-            cardElement.style.boxShadow = '0 0 20px var(--neon-pink), 0 0 30px var(--neon-blue)';
-            cardElement.style.borderColor = 'var(--neon-pink)';
+            // Add glitch effects
+            cardElement.style.transform = 'translateX(0)';
+            cardElement.style.filter = 'hue-rotate(0deg) contrast(1)';
+        },
+        onUpdate: function() {
+            // Random glitch transformations
+            const glitchX = (Math.random() - 0.5) * 10;
+            const glitchY = (Math.random() - 0.5) * 5;
+            const hueShift = Math.random() * 60 - 30;
+            const contrast = 1 + Math.random() * 0.5;
+            
+            cardElement.style.transform = `translate(${glitchX}px, ${glitchY}px)`;
+            cardElement.style.filter = `hue-rotate(${hueShift}deg) contrast(${contrast})`;
         },
         onComplete: () => {
-            // Remove glow effect
+            // Reset styles
+            cardElement.style.transform = '';
+            cardElement.style.filter = '';
             cardElement.style.boxShadow = '';
             cardElement.style.borderColor = '';
         }
     });
     
-    // Particle burst effect (simple version)
-    createParticleBurst(cardElement);
+    // Add static glitch lines
+    createGlitchLines(cardElement);
 }
 
-// Animation for map marker clicks
-function animateMarkerClick(marker) {
+// Intense glitch animation specifically for spot markers
+function glitchSpotAnimation(marker) {
     const markerElement = marker._icon;
     if (!markerElement) return;
     
-    // Pulse effect
-    gsap.fromTo(markerElement, 
-        { 
-            scale: 1,
-            filter: 'brightness(1)'
-        },
-        { 
-            scale: 1.8,
-            filter: 'brightness(2) hue-rotate(90deg)',
-            duration: 0.3,
-            yoyo: true,
-            repeat: 1,
-            ease: "elastic.out(1, 0.5)"
+    // Store original styles
+    const originalTransform = markerElement.style.transform;
+    const originalFilter = markerElement.style.filter;
+    
+    // Create intense glitch timeline
+    const tl = gsap.timeline({
+        onComplete: () => {
+            // Restore original styles
+            markerElement.style.transform = originalTransform;
+            markerElement.style.filter = originalFilter;
         }
-    );
+    });
+    
+    // Phase 1: Rapid shaking
+    tl.to(markerElement, {
+        duration: 0.1,
+        repeat: 8,
+        x: () => (Math.random() - 0.5) * 20,
+        y: () => (Math.random() - 0.5) * 15,
+        ease: "steps(1)"
+    });
+    
+    // Phase 2: Color chaos
+    tl.to(markerElement, {
+        duration: 0.2,
+        filter: "hue-rotate(180deg) contrast(3) brightness(4) saturate(2)",
+        ease: "steps(3)"
+    }, "-=0.1");
+    
+    // Phase 3: Scale distortion
+    tl.to(markerElement, {
+        duration: 0.15,
+        scale: () => 0.5 + Math.random() * 1.5,
+        ease: "steps(2)"
+    }, "-=0.15");
+    
+    // Phase 4: Final glitch burst
+    tl.to(markerElement, {
+        duration: 0.1,
+        x: 0,
+        y: 0,
+        scale: 1.8,
+        filter: "hue-rotate(360deg) contrast(5) brightness(0.5)",
+        ease: "power1.out"
+    });
+    
+    // Phase 5: Return to normal with overshoot
+    tl.to(markerElement, {
+        duration: 0.2,
+        scale: 1,
+        filter: "hue-rotate(0deg) contrast(1) brightness(1)",
+        ease: "elastic.out(1, 0.3)"
+    });
+    
+    // Add glitch particles around the marker
+    createSpotGlitchParticles(markerElement);
 }
 
-// Create particle burst effect
-function createParticleBurst(element) {
-    const rect = element.getBoundingClientRect();
+// Create glitch particles specifically for spot markers
+function createSpotGlitchParticles(markerElement) {
+    const rect = markerElement.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
     
-    // Create 8 particles
-    for (let i = 0; i < 8; i++) {
-        const particle = document.createElement('div');
-        particle.style.position = 'fixed';
-        particle.style.left = centerX + 'px';
-        particle.style.top = centerY + 'px';
-        particle.style.width = '6px';
-        particle.style.height = '6px';
-        particle.style.backgroundColor = i % 2 === 0 ? 'var(--neon-pink)' : 'var(--neon-blue)';
-        particle.style.borderRadius = '50%';
-        particle.style.zIndex = '9999';
-        particle.style.pointerEvents = 'none';
+    // Create 12 glitch fragments
+    for (let i = 0; i < 12; i++) {
+        const fragment = document.createElement('div');
+        fragment.style.position = 'fixed';
+        fragment.style.left = centerX + 'px';
+        fragment.style.top = centerY + 'px';
+        fragment.style.width = (3 + Math.random() * 8) + 'px';
+        fragment.style.height = (3 + Math.random() * 8) + 'px';
+        fragment.style.backgroundColor = i % 3 === 0 ? 'var(--neon-pink)' : 
+                                       i % 3 === 1 ? 'var(--neon-blue)' : 
+                                       'var(--neon-green)';
+        fragment.style.zIndex = '9999';
+        fragment.style.pointerEvents = 'none';
+        fragment.style.mixBlendMode = 'screen';
         
-        document.body.appendChild(particle);
+        document.body.appendChild(fragment);
         
-        // Random direction
-        const angle = (i * 45) * (Math.PI / 180);
-        const distance = 50 + Math.random() * 50;
+        // Random glitch trajectory
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 30 + Math.random() * 70;
         const endX = centerX + Math.cos(angle) * distance;
         const endY = centerY + Math.sin(angle) * distance;
         
-        gsap.to(particle, {
+        // Glitchy movement
+        gsap.to(fragment, {
             x: endX - centerX,
             y: endY - centerY,
             opacity: 0,
-            duration: 0.6,
-            ease: "power2.out",
+            duration: 0.3 + Math.random() * 0.4,
+            ease: "steps(" + (2 + Math.floor(Math.random() * 4)) + ")",
             onComplete: () => {
-                document.body.removeChild(particle);
+                document.body.removeChild(fragment);
+            }
+        });
+    }
+}
+
+// Create glitch lines effect
+function createGlitchLines(element) {
+    const rect = element.getBoundingClientRect();
+    
+    // Create 5 horizontal glitch lines
+    for (let i = 0; i < 5; i++) {
+        const line = document.createElement('div');
+        line.style.position = 'fixed';
+        line.style.left = rect.left + 'px';
+        line.style.top = (rect.top + (rect.height / 5) * i) + 'px';
+        line.style.width = rect.width + 'px';
+        line.style.height = '2px';
+        line.style.backgroundColor = i % 2 === 0 ? 'var(--neon-pink)' : 'var(--neon-blue)';
+        line.style.zIndex = '9999';
+        line.style.pointerEvents = 'none';
+        line.style.mixBlendMode = 'screen';
+        
+        document.body.appendChild(line);
+        
+        // Animate line with glitch effect
+        gsap.to(line, {
+            x: (Math.random() - 0.5) * 20,
+            opacity: 0,
+            duration: 0.4,
+            ease: "steps(5)",
+            onComplete: () => {
+                document.body.removeChild(line);
             }
         });
     }

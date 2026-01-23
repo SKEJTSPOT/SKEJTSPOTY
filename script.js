@@ -11,10 +11,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-db.settings({
-    cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
-    experimentalForceLongPolling: true
-});
 const spotsCollection = db.collection('spots');
 
 const IMGBB_API_KEY = '8fd076f6d9cc935b3dcf18f88af1ed67';
@@ -50,30 +46,28 @@ const newNickInput = document.getElementById('newNickInput');
 const newPasswordInput = document.getElementById('newPasswordInput');
 
 // --- OGÓLNE NARZĘDZIA UI ---
-// Optimized notification system with CSS transitions
 function showNotification(message, type = 'info', duration = 4000) {
     const container = document.getElementById('notification-container');
     const notif = document.createElement('div');
     notif.className = `notification ${type}`;
     notif.textContent = message;
-    
-    // Use CSS transitions instead of GSAP for better performance
-    notif.style.transform = 'translateY(100%)';
-    notif.style.opacity = '0';
-    
-    container.prepend(notif);
-    
-    // Trigger reflow then animate
-    notif.offsetHeight; // Force reflow
-    notif.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
-    notif.style.transform = 'translateY(0)';
-    notif.style.opacity = '1';
-    
+
+    container.prepend(notif); 
+
+    gsap.fromTo(notif, 
+        { y: '100%', opacity: 0, scale: 0.9 }, 
+        { y: '0%', opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.7)" }
+    );
+
     setTimeout(() => {
-        notif.style.transition = 'all 0.3s ease-in';
-        notif.style.opacity = '0';
-        notif.style.transform = 'translateY(-100%)';
-        setTimeout(() => notif.remove(), 300);
+        gsap.to(notif, 
+            { 
+                opacity: 0, y: '-100%', duration: 0.5, ease: "power2.in",
+                onComplete: () => {
+                    notif.remove();
+                }
+            }
+        );
     }, duration);
 }
 
@@ -314,74 +308,27 @@ let clusterMarkers = [];
 const CLUSTER_ZOOM_THRESHOLD = 11;
 const CLUSTER_RADIUS_METERS = 5000;
 
-// Optimization: Debounce function for frequent events
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Optimization: Throttle function for scroll/resize events
-function throttle(func, limit) {
-    let inThrottle;
-    return function() {
-        const args = arguments;
-        const context = this;
-        if (!inThrottle) {
-            func.apply(context, args);
-            inThrottle = true;
-            setTimeout(() => inThrottle = false, limit);
-        }
-    };
-}
-
-// === OPTYMALIZACJA WCZYTYWANIA MAPY ===
-// 1. Definicja warstw mapy z optymalizacją ładowania
+// 1. Definicja warstw mapy (Wyglądów)
 const openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap',
-    maxZoom: 18,
-    tileSize: 256,
-    updateWhenIdle: true,
-    updateWhenZooming: false,
-    reuseTiles: true
+    attribution: '&copy; OpenStreetMap'
 });
 
-const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{
-    maxZoom: 18,
-    subdomains:['mt0','mt1','mt2','mt3'],
-    tileSize: 256,
-    updateWhenIdle: true,
-    updateWhenZooming: false,
-    reuseTiles: true
+const googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{
+    maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']
 });
 
-const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
-    maxZoom: 18,
-    subdomains:['mt0','mt1','mt2','mt3'],
-    tileSize: 256,
-    updateWhenIdle: true,
-    updateWhenZooming: false,
-    reuseTiles: true
+const googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
+    maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']
 });
 
-// 2. Optymalizacja inicjalizacji mapy
+// 2. Inicjalizacja mapy (Domyślnie ustawiamy Google Streets)
 const map = L.map('map', {
     center: [52.0693, 19.4803],
     zoom: 6,
-    layers: [googleStreets],
-    zoomControl: false,
-    // Optymalizacje wydajności
-    fadeAnimation: false,
-    zoomAnimation: false,
-    markerZoomAnimation: false,
-    inertia: false,
-    worldCopyJump: false
+    layers: [googleStreets], // To jest mapa startowa
+    zoomControl: false // Wyłączamy domyślny zoom, żeby nie zasłaniał (opcjonalne)
 });
 
 // Dodajemy przyciski zoomu w lepszym miejscu (opcjonalne, jeśli chcesz standardowe to usuń tę linię i usuń zoomControl: false powyżej)
@@ -972,32 +919,27 @@ function highlightCardNoScroll(spotId) {
         activeCardId = null;
     }
 }
-// Optimized card creation with template literals and reduced DOM operations
 function createSpotCard(spot, index) {
-    // Reuse existing card if possible
-    const existingCard = document.getElementById(`card-${spot.id}`);
-    if (existingCard) {
-        return existingCard;
-    }
-    
     const card = document.createElement('div');
     card.className = 'spot-card';
     card.id = `card-${spot.id}`;
     card.setAttribute('data-hover', '');
     
-    // Event delegation - attach once to parent
     card.addEventListener('click', () => {
+        // Add visual feedback animation
+        animateSpotClick(card, spot);
+        
         if (isMobile() && mainSidebar.classList.contains('active')) {
-            return;
+        } else if (!isMobile()) {
+            map.flyTo([spot.lat, spot.lng], 17, { duration: 0.8 });
         }
-        map.flyTo([spot.lat, spot.lng], 17, { duration: 0.8 });
         highlightCard(spot.id);
     });
 
     const bustClass = spot.bust === 'safe' ? 'bust-safe' : (spot.bust === 'medium' ? 'bust-medium' : 'bust-high');
     const bustText = spot.bust === 'safe' ? 'Czill' : (spot.bust === 'medium' ? 'Wywalaja' : 'Przewalone');
     
-    // Pre-compute tag HTML
+    // Generowanie tagów z dodatkowymi info
     const tagsHtml = (spot.tags || []).map(tag => {
         let tagLabel = tag;
         if (tag === 'Schody' && spot.stairsCount) {
@@ -1009,19 +951,28 @@ function createSpotCard(spot, index) {
         return `<span class="tag">${tagLabel}</span>`;
     }).join('');
     
-    // Optimize image handling
-    const allImages = [...(spot.imageData ? [spot.imageData] : []), ...(spot.galleryImages || [])];
-    const galleryHtml = allImages.length > 0 
-        ? `<div class="cyber-scroll" style="display: flex; gap: 10px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 10px; scroll-snap-type: x mandatory;">
-           ${allImages.map((url, i) => 
-               `<div style="flex: 0 0 90%; scroll-snap-align: center; border-radius: 8px; overflow: hidden; border: 2px solid var(--neon-pink);">
-                   <img src="${url}" onclick="openLightboxSpot('${spot.id}', ${i})" style="width: 100%; height: 280px; object-fit: cover; cursor: pointer; display: block;" loading="lazy">
-               </div>`
-           ).join('')}
-           </div>`
-        : '<div style="font-size: 0.8rem; color: #666; font-style: italic; margin-bottom: 10px;">Brak zdjęć spotu.</div>';
+    // --- GALERIA ZDJĘĆ (SLIDESHOW) ---
+    let allImages = [];
+    if (spot.imageData) allImages.push(spot.imageData);
+    if (spot.galleryImages && spot.galleryImages.length > 0) {
+        allImages = [...allImages, ...spot.galleryImages];
+    }
 
-    // Single DOM update with template literal
+    let galleryHtml = '';
+    if (allImages.length > 0) {
+        galleryHtml = '<div class="cyber-scroll" style="display: flex; gap: 10px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 10px; scroll-snap-type: x mandatory;">';
+        allImages.forEach((url, i) => {
+            galleryHtml += `<div style="flex: 0 0 90%; scroll-snap-align: center; border-radius: 8px; overflow: hidden; border: 2px solid var(--neon-pink);">
+                <img src="${url}" onclick="openLightboxSpot('${spot.id}', ${i})" style="width: 100%; height: 280px; object-fit: cover; cursor: pointer; display: block;">
+            </div>`;
+        });
+        galleryHtml += '</div>';
+    } else {
+        // Placeholder jeśli brak zdjęć?
+        galleryHtml = '<div style="font-size: 0.8rem; color: #666; font-style: italic; margin-bottom: 10px;">Brak zdjęć spotu.</div>';
+    }
+    // ---------------------
+
     card.innerHTML = `
         <h3 style="color: var(--neon-blue); margin-bottom: 5px;">${spot.name}</h3>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -1038,7 +989,6 @@ function createSpotCard(spot, index) {
         </div>
     `;
 
-    // Append comments section
     card.appendChild(createCommentSection(spot.id, spot.comments || []));
 
     return card;
@@ -1285,12 +1235,9 @@ async function searchLocation() {
     }
 }
 
-// Optimized search with debouncing
-const debouncedSearchLocation = debounce(searchLocation, 300);
-
-searchBtn.addEventListener('click', debouncedSearchLocation);
+searchBtn.addEventListener('click', searchLocation);
 searchInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') debouncedSearchLocation();
+    if (e.key === 'Enter') searchLocation();
 });
 
 locateUserBtn.addEventListener('click', () => {
@@ -1324,95 +1271,38 @@ locateUserBtn.addEventListener('click', () => {
 });
 
 // Wykrywanie miasta po IP (bez zgód)
-// === ULEPSZONE WYKRYWANIE LOKALIZACJI ===
 async function detectCityByIP() {
     try {
-        // Sprawdź najpierw localStorage
-        const cachedLocation = localStorage.getItem('userLocation');
-        if (cachedLocation) {
-            const { lat, lng, city, timestamp } = JSON.parse(cachedLocation);
-            // Użyj cache przez 1 godzinę
-            if (Date.now() - timestamp < 3600000) {
-                map.setView([lat, lng], 12);
-                if (city && searchInput) searchInput.value = city;
-                return;
+        // Pierwszy provider: ipinfo.io (bez klucza, ograniczenia rate)
+        let city, loc;
+        try {
+            const res = await fetch('https://ipinfo.io/json', { headers: { 'Accept': 'application/json' } });
+            const data = await res.json();
+            city = data.city;
+            loc = data.loc; // "lat,lng"
+        } catch (e) {}
+        
+        // Fallback: ipapi.co jeśli ipinfo nie zwróci danych
+        if (!loc) {
+            const res2 = await fetch('https://ipapi.co/json/', { headers: { 'Accept': 'application/json' } });
+            const data2 = await res2.json();
+            city = city || data2.city;
+            if (data2.latitude && data2.longitude) {
+                loc = `${data2.latitude},${data2.longitude}`;
             }
         }
         
-        // Nowoczesna metoda z GeoIP-API
-        let locationData = null;
-        
-        // Próbuj kilka serwisów w kolejności
-        const providers = [
-            'https://ipapi.co/json/',
-            'https://ipwho.is/',
-            'https://freegeoip.app/json/'
-        ];
-        
-        for (const url of providers) {
-            try {
-                const response = await fetch(url, { 
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' },
-                    signal: AbortSignal.timeout(3000) // Timeout 3 sekundy
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    // Normalizacja danych z różnych API
-                    let lat, lng, city;
-                    if (data.latitude && data.longitude) {
-                        lat = data.latitude;
-                        lng = data.longitude;
-                        city = data.city || data.City;
-                    } else if (data.lat && data.lon) {
-                        lat = data.lat;
-                        lng = data.lon;
-                        city = data.city;
-                    }
-                    
-                    if (lat && lng) {
-                        locationData = { lat, lng, city };
-                        break;
-                    }
-                }
-            } catch (err) {
-                console.warn(`Provider ${url} failed:`, err);
-                continue;
-            }
-        }
-        
-        if (locationData) {
-            const { lat, lng, city } = locationData;
-            
-            // Zapisz do cache
-            localStorage.setItem('userLocation', JSON.stringify({
-                lat, lng, city, timestamp: Date.now()
-            }));
-            
-            // Animowane przejście do lokalizacji
-            map.flyTo([lat, lng], 12, { 
-                duration: 1.5,
-                animate: true,
-                easeLinearity: 0.5
-            });
-            
-            if (city && searchInput) {
+        if (loc) {
+            const [lat, lng] = loc.split(',').map(Number);
+            map.flyTo([lat, lng], 12, { duration: 1.2 });
+            if (city) {
                 searchInput.value = city;
-                showNotification(`📍 Wykryto Twoją lokalizację: ${city}`, 'success', 3000);
+                showNotification(`Wykryto miasto: ${city}`, 'info', 2500);
             }
-        } else {
-            // Fallback do centrum Polski
-            map.setView([52.0693, 19.4803], 6);
-            showNotification('📍 Nie można wykryć lokalizacji. Ustawiono domyślnie centrum Polski.', 'info', 4000);
         }
-        
     } catch (err) {
-        console.warn('Geolocation detection failed:', err);
-        // Fallback
-        map.setView([52.0693, 19.4803], 6);
-        if (searchInput) searchInput.placeholder = 'Wpisz swoje miasto...';
+        // Cicho ignorujemy, żeby nie przeszkadzać startowi aplikacji
+        console.warn('IP geolocation failed', err);
     }
 }
 
@@ -1437,26 +1327,13 @@ if (applyFilterBtn) applyFilterBtn.addEventListener('click', applyFilter);
 if (filterBustEl) filterBustEl.addEventListener('change', applyFilter);
 filterTagEls.forEach(el => el.addEventListener('change', applyFilter));
 
-// === OPTYMALIZACJA WCZYTYWANIA I RENDEROWANIA SPOTÓW ===
-// Cache dla wyrenderowanych kart
-const renderedSpotsCache = new Map();
-let lastRenderedFilters = null;
-
+// --- GŁÓWNA FUNKCJA RENDERUJĄCA SPOTY I STOSUJĄCA FILTRY ---
 function renderSpots(filters = { selectedBust: 'all', selectedTags: [] }) {
     const spotsListEl = document.getElementById('spotsList');
-    
-    // Sprawdź czy filtry się nie zmieniły
-    const filterKey = JSON.stringify(filters);
-    if (lastRenderedFilters === filterKey) return;
-    lastRenderedFilters = filterKey;
-    
-    // Pokaż loading indicator
-    const spotCountEl = document.getElementById('spotCount');
-    if (spotCountEl) spotCountEl.textContent = '...';
-    
-    // Optymalizacja filtrowania
+    spotsListEl.innerHTML = '';
+    clearAllMarkers();
     let filteredSpots = spots;
-    
+
     if (filters.selectedBust !== 'all') {
         filteredSpots = filteredSpots.filter(spot => spot.bust === filters.selectedBust);
     }
@@ -1467,67 +1344,27 @@ function renderSpots(filters = { selectedBust: 'all', selectedTags: [] }) {
         );
     }
 
-    // Aktualizuj licznik
-    if (spotCountEl) spotCountEl.textContent = filteredSpots.length;
+    document.getElementById('spotCount').textContent = filteredSpots.length;
 
-    // Batch processing z limitem dla lepszej wydajności
-    const batchSize = 20; // Renderuj po 20 spotów na raz
-    const sortedSpots = filteredSpots
+    filteredSpots
         .sort((a, b) => {
-            const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-            const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+            const timeA = a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+            const timeB = b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
             return timeB - timeA;
+        }) 
+        .forEach((spot, index) => {
+            spotsListEl.appendChild(createSpotCard(spot, index + 1));
         });
-
-    // Wyczyść tylko jeśli naprawdę potrzeba
-    if (spotsListEl.children.length > 0) {
-        spotsListEl.innerHTML = '';
-    }
     
-    // Renderuj partiami
-    let currentIndex = 0;
+    renderMarkersOnly(filters);
     
-    function renderBatch() {
-        const fragment = document.createDocumentFragment();
-        const endIndex = Math.min(currentIndex + batchSize, sortedSpots.length);
-        
-        for (let i = currentIndex; i < endIndex; i++) {
-            const spot = sortedSpots[i];
-            // Sprawdź cache
-            if (renderedSpotsCache.has(spot.id)) {
-                fragment.appendChild(renderedSpotsCache.get(spot.id).cloneNode(true));
-            } else {
-                const card = createSpotCard(spot, i + 1);
-                renderedSpotsCache.set(spot.id, card.cloneNode(true));
-                fragment.appendChild(card);
-            }
-        }
-        
-        spotsListEl.appendChild(fragment);
-        currentIndex = endIndex;
-        
-        // Kontynuuj jeśli są jeszcze spoty
-        if (currentIndex < sortedSpots.length) {
-            requestAnimationFrame(renderBatch);
-        } else {
-            // Renderuj markery po zakończeniu renderowania kart
-            renderMarkersOnly(filters);
-            restoreActiveCard();
-        }
-    }
-    
-    // Rozpocznij renderowanie
-    requestAnimationFrame(renderBatch);
-}
-
-function restoreActiveCard() {
     if (activeCardId) {
         const activeCard = document.getElementById(`card-${activeCardId}`);
         if (activeCard) {
             activeCard.classList.add('highlight');
-            activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            activeCard.scrollIntoView({ behavior: 'auto', block: 'nearest' });
         } else {
-            activeCardId = null;
+            activeCardId = null; 
         }
     }
     
@@ -1613,65 +1450,45 @@ function filterSpotsLocal(filters) {
     return filteredSpots;
 }
 
-// Optimized marker rendering with bounds checking and lazy loading
+// Renderuje markery: przy małym zoomie klastry, przy dużym pojedyncze spoty
 function renderMarkersOnly(filters = { selectedBust: 'all', selectedTags: [] }) {
     clearAllMarkers();
     const filteredSpots = filterSpotsLocal(filters);
-    
-    // Get current map bounds for viewport culling
-    const bounds = map.getBounds();
-    const zoom = map.getZoom();
-    
-    if (zoom < CLUSTER_ZOOM_THRESHOLD) {
+    if (map.getZoom() < CLUSTER_ZOOM_THRESHOLD) {
         const clusters = buildClusters(filteredSpots);
-        const visibleClusters = clusters.filter(c => 
-            bounds.contains([c.lat, c.lng])
-        );
-        
-        visibleClusters.forEach(c => {
-            const marker = L.marker([c.lat, c.lng], { 
-                icon: createClusterMarkerIcon(c.spots.length),
-                title: `${c.spots.length} spotów`
-            }).addTo(map);
-            
+        clusters.forEach(c => {
+            const marker = L.marker([c.lat, c.lng], { icon: createClusterMarkerIcon(c.spots.length) }).addTo(map);
             marker.on('click', () => {
                 map.setView([c.lat, c.lng], CLUSTER_ZOOM_THRESHOLD + 1);
             });
-            
+            // Removed GSAP animation for cluster markers
             clusterMarkers.push(marker);
         });
     } else {
-        // Only render markers in current viewport
-        const visibleSpots = filteredSpots.filter(spot => 
-            bounds.contains([spot.lat, spot.lng])
-        );
-        
-        visibleSpots.forEach(spot => {
+        filteredSpots.forEach(spot => {
             const marker = L.marker([spot.lat, spot.lng], {
                 icon: createCustomMarkerIcon(spot),
                 title: spot.name
             }).addTo(map);
-            
             marker.on('click', () => {
+                // Intense glitch animation for spot markers
+                glitchSpotAnimation(marker);
+                
                 map.setView([spot.lat, spot.lng], 17);
                 switchSidebarSection('spotsList');
+                // Ensure we highlight and scroll to the spot card
                 setTimeout(() => {
                     highlightCard(spot.id);
                 }, 300);
             });
-            
+            // Removed GSAP animation for spot markers
             markers.push(marker);
         });
     }
 }
 
-// Optimize map event handlers with throttling
-const throttledRenderMarkers = throttle(() => {
-    renderMarkersOnly(getActiveFilters());
-}, 150);
-
-map.on('zoomend', throttledRenderMarkers);
-map.on('moveend', throttledRenderMarkers);
+map.on('zoomend', () => renderMarkersOnly(getActiveFilters()));
+map.on('moveend', () => renderMarkersOnly(getActiveFilters()));
 // --- PRZEŁĄCZANIE SEKCEJI SIDEBAR NA MOBILE ---
 const authContent = document.getElementById('authContent');
 const spotsListContent = document.getElementById('spotsListContent');
@@ -1768,71 +1585,205 @@ auth.onAuthStateChanged(async user => {
     renderSpots(getActiveFilters());
 });
 
-// === OPTYMALIZACJA STARTU APLIKACJI ===
 document.addEventListener('DOMContentLoaded', () => {
-    // Uruchom loader
+    detectCityByIP();
     runLoaderOnce();
-    
-    // Optymalizacja inicjalizacji Firebase
     let initialLoad = true;
-    let lastSnapshotHash = '';
-    
-    spotsCollection.onSnapshot({ includeMetadataChanges: false }, snapshot => {
+    spotsCollection.onSnapshot(snapshot => {
         const newSpots = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        // Hash porównawczy zamiast stringify dla lepszej wydajności
-        const newHash = newSpots.map(s => s.id).join('|');
-        
-        if (newHash !== lastSnapshotHash) {
-            lastSnapshotHash = newHash;
-            spots = newSpots;
+        spots = newSpots;
+        renderSpots(getActiveFilters()); 
+        initialLoad = false;
+    });
+});
+
+// --- CUSTOM CURSOR ---
+const customCursor = document.getElementById('cursor');
+document.addEventListener('mousemove', (e) => {
+    customCursor.style.left = e.clientX + 'px';
+    customCursor.style.top = e.clientY + 'px';
+});
+
+document.querySelectorAll('[data-hover]').forEach(el => {
+    el.addEventListener('mouseover', () => customCursor.classList.add('hovered'));
+    el.addEventListener('mouseout', () => customCursor.classList.remove('hovered'));
+});
+
+// --- SPOT CLICK ANIMATIONS ---
+
+// Animation for spot card clicks
+function animateSpotClick(cardElement, spot) {
+    // Glitch effect instead of zoom
+    gsap.to(cardElement, {
+        duration: 0.3,
+        repeat: 3,
+        yoyo: true,
+        ease: "steps(3)",
+        onStart: () => {
+            // Add glitch effects
+            cardElement.style.transform = 'translateX(0)';
+            cardElement.style.filter = 'hue-rotate(0deg) contrast(1)';
+        },
+        onUpdate: function() {
+            // Random glitch transformations
+            const glitchX = (Math.random() - 0.5) * 10;
+            const glitchY = (Math.random() - 0.5) * 5;
+            const hueShift = Math.random() * 60 - 30;
+            const contrast = 1 + Math.random() * 0.5;
             
-            // Opóźnij pierwszy render dla lepszego UX
-            if (initialLoad) {
-                setTimeout(() => {
-                    renderSpots(getActiveFilters());
-                    initialLoad = false;
-                }, 500);
-            } else {
-                renderSpots(getActiveFilters());
-            }
+            cardElement.style.transform = `translate(${glitchX}px, ${glitchY}px)`;
+            cardElement.style.filter = `hue-rotate(${hueShift}deg) contrast(${contrast})`;
+        },
+        onComplete: () => {
+            // Reset styles
+            cardElement.style.transform = '';
+            cardElement.style.filter = '';
+            cardElement.style.boxShadow = '';
+            cardElement.style.borderColor = '';
         }
     });
     
-    // Rozpocznij wykrywanie lokalizacji po załadowaniu mapy
-    map.whenReady(() => {
-        setTimeout(() => {
-            detectCityByIP();
-        }, 1000); // Daj czas na załadowanie mapy
-    });
-});
-
-// --- OPTIMIZED CUSTOM CURSOR ---
-const customCursor = document.getElementById('cursor');
-let cursorRAF;
-
-// Optimized mouse move handler with requestAnimationFrame
-function updateCursor(e) {
-    if (cursorRAF) cancelAnimationFrame(cursorRAF);
-    cursorRAF = requestAnimationFrame(() => {
-        customCursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
-    });
+    // Add static glitch lines
+    createGlitchLines(cardElement);
 }
 
-document.addEventListener('mousemove', updateCursor);
+// Intense glitch animation specifically for spot markers
+function glitchSpotAnimation(marker) {
+    const markerElement = marker._icon;
+    if (!markerElement) return;
+    
+    // Store original styles
+    const originalTransform = markerElement.style.transform;
+    const originalFilter = markerElement.style.filter;
+    
+    // Create intense glitch timeline
+    const tl = gsap.timeline({
+        onComplete: () => {
+            // Restore original styles
+            markerElement.style.transform = originalTransform;
+            markerElement.style.filter = originalFilter;
+        }
+    });
+    
+    // Phase 1: Rapid shaking
+    tl.to(markerElement, {
+        duration: 0.1,
+        repeat: 8,
+        x: () => (Math.random() - 0.5) * 20,
+        y: () => (Math.random() - 0.5) * 15,
+        ease: "steps(1)"
+    });
+    
+    // Phase 2: Color chaos
+    tl.to(markerElement, {
+        duration: 0.2,
+        filter: "hue-rotate(180deg) contrast(3) brightness(4) saturate(2)",
+        ease: "steps(3)"
+    }, "-=0.1");
+    
+    // Phase 3: Scale distortion
+    tl.to(markerElement, {
+        duration: 0.15,
+        scale: () => 0.5 + Math.random() * 1.5,
+        ease: "steps(2)"
+    }, "-=0.15");
+    
+    // Phase 4: Final glitch burst
+    tl.to(markerElement, {
+        duration: 0.1,
+        x: 0,
+        y: 0,
+        scale: 1.8,
+        filter: "hue-rotate(360deg) contrast(5) brightness(0.5)",
+        ease: "power1.out"
+    });
+    
+    // Phase 5: Return to normal with overshoot
+    tl.to(markerElement, {
+        duration: 0.2,
+        scale: 1,
+        filter: "hue-rotate(0deg) contrast(1) brightness(1)",
+        ease: "elastic.out(1, 0.3)"
+    });
+    
+    // Add glitch particles around the marker
+    createSpotGlitchParticles(markerElement);
+}
 
-// Event delegation for hover effects
-document.addEventListener('mouseover', (e) => {
-    if (e.target.hasAttribute('data-hover')) {
-        customCursor.classList.add('hovered');
+// Create glitch particles specifically for spot markers
+function createSpotGlitchParticles(markerElement) {
+    const rect = markerElement.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    // Create 12 glitch fragments
+    for (let i = 0; i < 12; i++) {
+        const fragment = document.createElement('div');
+        fragment.style.position = 'fixed';
+        fragment.style.left = centerX + 'px';
+        fragment.style.top = centerY + 'px';
+        fragment.style.width = (3 + Math.random() * 8) + 'px';
+        fragment.style.height = (3 + Math.random() * 8) + 'px';
+        fragment.style.backgroundColor = i % 3 === 0 ? 'var(--neon-pink)' : 
+                                       i % 3 === 1 ? 'var(--neon-blue)' : 
+                                       'var(--neon-green)';
+        fragment.style.zIndex = '9999';
+        fragment.style.pointerEvents = 'none';
+        fragment.style.mixBlendMode = 'screen';
+        
+        document.body.appendChild(fragment);
+        
+        // Random glitch trajectory
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 30 + Math.random() * 70;
+        const endX = centerX + Math.cos(angle) * distance;
+        const endY = centerY + Math.sin(angle) * distance;
+        
+        // Glitchy movement
+        gsap.to(fragment, {
+            x: endX - centerX,
+            y: endY - centerY,
+            opacity: 0,
+            duration: 0.3 + Math.random() * 0.4,
+            ease: "steps(" + (2 + Math.floor(Math.random() * 4)) + ")",
+            onComplete: () => {
+                document.body.removeChild(fragment);
+            }
+        });
     }
-});
+}
 
-document.addEventListener('mouseout', (e) => {
-    if (e.target.hasAttribute('data-hover')) {
-        customCursor.classList.remove('hovered');
+// Create glitch lines effect
+function createGlitchLines(element) {
+    const rect = element.getBoundingClientRect();
+    
+    // Create 5 horizontal glitch lines
+    for (let i = 0; i < 5; i++) {
+        const line = document.createElement('div');
+        line.style.position = 'fixed';
+        line.style.left = rect.left + 'px';
+        line.style.top = (rect.top + (rect.height / 5) * i) + 'px';
+        line.style.width = rect.width + 'px';
+        line.style.height = '2px';
+        line.style.backgroundColor = i % 2 === 0 ? 'var(--neon-pink)' : 'var(--neon-blue)';
+        line.style.zIndex = '9999';
+        line.style.pointerEvents = 'none';
+        line.style.mixBlendMode = 'screen';
+        
+        document.body.appendChild(line);
+        
+        // Animate line with glitch effect
+        gsap.to(line, {
+            x: (Math.random() - 0.5) * 20,
+            opacity: 0,
+            duration: 0.4,
+            ease: "steps(5)",
+            onComplete: () => {
+                document.body.removeChild(line);
+            }
+        });
     }
-});
+}
 
 // === SERVICE WORKER REGISTRATION ===
 if ('serviceWorker' in navigator) {
@@ -1842,4 +1793,3 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.error('❌ Błąd SW:', err));
     });
 }
-

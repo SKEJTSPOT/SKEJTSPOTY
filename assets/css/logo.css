@@ -1,5 +1,11 @@
-:root { --logo-scale: 1.2; }
+:root { 
+    --logo-scale: 1.2; 
+    /* Optymalizacje wydajności */
+    --transition-duration: 0.3s;
+    --glitch-interval: 5s;
+}
 
+/* === OPTYMALIZACJA WYDAJNOŚCI LOGA === */
 .app-logo {
     position: relative; 
     z-index: 10; 
@@ -7,7 +13,10 @@
     display: flex; 
     justify-content: center; 
     align-items: center; 
-    overflow: visible; 
+    overflow: visible;
+    /* Optymalizacja renderowania */
+    will-change: transform;
+    transform: translateZ(0); /* Wymusza akcelerację sprzętową */
 }
 
 .app-logo-text {
@@ -15,26 +24,30 @@
     font-weight: 900;
     font-size: 32px;
     line-height: 1;
-    /* Cleaner split gradient with a tiny gap to prevent bleeding */
+    /* Zoptymalizowany gradient bez przerw */
     background: linear-gradient(90deg, 
         var(--neon-green) 0%, 
-        var(--neon-green) 49.5%, 
-        #fff 49.5%, 
-        #fff 50.5%, 
-        var(--neon-pink) 50.5%, 
+        var(--neon-green) 49.8%, 
+        #fff 49.8%, 
+        #fff 50.2%, 
+        var(--neon-pink) 50.2%, 
         var(--neon-pink) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    /* Sharper shadows, less "muddy" */
     text-shadow: 2px 2px 0px rgba(0,0,0,0.8);
     transform: scale(var(--logo-scale));
-    animation: textGlitch 5s infinite;
+    /* Zoptymalizowana animacja glitch */
+    animation: textGlitch var(--glitch-interval) infinite;
     position: relative;
     z-index: 1;
+    /* Optymalizacje wydajności */
+    will-change: transform, text-shadow;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
 }
 
-/* Split Glow Strategy */
+/* Split Glow Strategy - zoptymalizowane */
 .app-logo-text::before,
 .app-logo-text::after {
     content: "SKEJTY";
@@ -46,7 +59,9 @@
     z-index: -1;
     color: transparent;
     pointer-events: none;
-    transition: all 0.3s ease;
+    /* Optymalizacje */
+    will-change: clip-path, text-shadow;
+    backface-visibility: hidden;
 }
 
 .app-logo-text::before {
@@ -59,9 +74,22 @@
     clip-path: inset(-10px -10px -10px 50%);
 }
 
+/* Zoptymalizowana animacja glitch z mniejszą częstotliwością */
 @keyframes textGlitch {
-    0%, 94%, 100% { text-shadow: 0 0 6px rgba(57,255,20,0.5), 0 0 10px rgba(255,0,255,0.45); transform: scale(var(--logo-scale)) translateX(0); }
-    95% { text-shadow: -3px 0 var(--neon-red), 3px 0 var(--neon-blue); transform: scale(var(--logo-scale)) translateX(1px); }
-    97% { text-shadow: 3px 0 var(--neon-red), -3px 0 var(--neon-blue); transform: scale(var(--logo-scale)) translateX(-1px); }
-    99% { text-shadow: -2px 0 var(--neon-green), 2px 0 var(--neon-pink); transform: scale(var(--logo-scale)) translateY(1px); }
-}
+    0%, 96%, 100% { 
+        text-shadow: 0 0 6px rgba(57,255,20,0.5), 0 0 10px rgba(255,0,255,0.45); 
+        transform: scale(var(--logo-scale)) translateX(0); 
+    }
+    97% { 
+        text-shadow: -2px 0 var(--neon-red), 2px 0 var(--neon-blue); 
+        transform: scale(var(--logo-scale)) translateX(1px); 
+    }
+    98% { 
+        text-shadow: 2px 0 var(--neon-red), -2px 0 var(--neon-blue); 
+        transform: scale(var(--logo-scale)) translateX(-1px); 
+    }
+    99% { 
+        text-shadow: -1px 0 var(--neon-green), 1px 0 var(--neon-pink); 
+        transform: scale(var(--logo-scale)) translateY(1px); 
+    }
+}j

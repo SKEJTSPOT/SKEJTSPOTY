@@ -13,10 +13,6 @@
     --form-bg: white;
     --comment-bg: #f4f4f4;
     --shadow-color: rgba(0,0,0,0.1);
-    
-    /* Performance variables */
-    --transition-standard: 0.2s ease;
-    --transition-fast: 0.1s ease;
 }
 
 /* --- TRYB CIEMNY (Dark Mode) --- */
@@ -36,77 +32,8 @@ body.dark-mode {
     --shadow-color: rgba(0, 243, 255, 0.1);
 }
 
-/* --- PERFORMANCE OPTIMIZATIONS --- */
-/* Enable hardware acceleration */
-* {
-    will-change: auto;
-}
-
-/* Optimize animations with containment */
-.rider-group,
-.skateboard,
-.wheel-spin-svg,
-.leg-back-group,
-.shin-back,
-.leg-front-group,
-.arm-front-group,
-.forearm-front,
-.arm-back-group,
-.forearm-back,
-.speed-line {
-    will-change: transform;
-    backface-visibility: hidden;
-    transform-style: preserve-3d;
-    /* Add containment for better performance */
-    contain: layout style paint;
-}
-
-/* Optimize scrolling areas */
-.spots-list,
-.sidebar-section,
-.cyber-scroll,
-.map-wrapper {
-    will-change: scroll-position;
-    overscroll-behavior: contain;
-    /* Optimize rendering */
-    contain: layout style;
-}
-
-/* Optimize hover effects */
-[data-hover]:hover {
-    will-change: transform, box-shadow;
-}
-
 /* --- OGÓLNE STYLI DLA OBU TRYBÓW --- */
-* { 
-    margin: 0; 
-    padding: 0; 
-    box-sizing: border-box; 
-    cursor: none; 
-}
-
-/* Reduce repaints on transitions */
-*, *::before, *::after {
-    transition-property: background-color, border-color, color, fill, stroke, opacity, transform;
-    transition-duration: 0.15s;
-    transition-timing-function: ease;
-}
-
-/* Optimize frequently updated elements */
-.notification,
-.btn-neon,
-.custom-marker-icon,
-.cluster-marker {
-    will-change: transform, opacity;
-    backface-visibility: hidden;
-}
-
-/* Contain expensive elements */
-#map,
-.spot-card,
-.cyber-form {
-    contain: layout style paint;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
 
 @media (pointer: coarse) {
     * { cursor: auto !important; }
